@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { 
   Building, 
   Plus, 
@@ -15,6 +15,7 @@ import {
 } from '@lucide/vue';
 import { useAuth } from '../../../composables/useAuth';
 import type { ApiResponse } from '../../../../shared/types/api';
+import AppTableCard from '../../../components/common/AppTableCard.vue';
 
 definePageMeta({
   layout: 'dashboard',
@@ -82,6 +83,19 @@ const filteredProperties = computed(() => {
       p.city.toLowerCase().includes(q) ||
       p.addressLine1.toLowerCase().includes(q)
   );
+});
+
+// Pagination state
+const currentPage = ref(1);
+const pageSize = ref(5);
+
+const paginatedProperties = computed(() => {
+  const start = (currentPage.value - 1) * pageSize.value;
+  return filteredProperties.value.slice(start, start + pageSize.value);
+});
+
+watch(searchQuery, () => {
+  currentPage.value = 1;
 });
 
 // Summary stats
@@ -181,40 +195,28 @@ onMounted(() => {
       </div>
     </div>
 
-    <!-- Filter & Table Card -->
-    <div class="table-shell card-flat">
-      <div class="table-toolbar">
-        <div class="search-wrap">
-          <Search :size="15" class="search-icon" />
-          <input
-            v-model="searchQuery"
-            type="text"
-            placeholder="Filter properties by title or location..."
-            class="table-search-input"
-          />
-        </div>
-      </div>
-
-      <!-- Loading State -->
-      <div v-if="isLoading" class="loading-state">
-        <div class="loading-spinner"></div>
-        <p>Loading properties...</p>
-      </div>
-
-      <!-- Empty State -->
-      <div v-else-if="filteredProperties.length === 0" class="empty-table-state">
-        <Building :size="32" class="empty-icon" />
-        <h4>No properties found</h4>
-        <p>Create your first real estate listing to begin managing units and leases.</p>
+    <!-- Properties Table using shared AppTableCard -->
+    <AppTableCard
+      v-model:search="searchQuery"
+      search-placeholder="Filter properties by title or location..."
+      :is-loading="isLoading"
+      :is-empty="filteredProperties.length === 0"
+      empty-title="No properties found"
+      empty-description="Create your first real estate listing to begin managing units and leases."
+      :empty-icon="Building"
+      v-model:current-page="currentPage"
+      v-model:page-size="pageSize"
+      :total-items="filteredProperties.length"
+      item-name="properties"
+    >
+      <template #empty-action>
         <NuxtLink to="/dashboard/properties/create" class="btn-primary mt-2">
           <Plus :size="15" />
           <span>Add First Property</span>
         </NuxtLink>
-      </div>
+      </template>
 
-      <!-- Data Table -->
-      <div v-else class="data-table-container">
-        <table class="data-table">
+      <table class="data-table">
           <thead>
             <tr>
               <th>Property Details</th>
@@ -226,7 +228,7 @@ onMounted(() => {
             </tr>
           </thead>
           <tbody>
-            <tr v-for="prop in filteredProperties" :key="prop.id">
+            <tr v-for="prop in paginatedProperties" :key="prop.id">
               <td>
                 <div class="prop-cell">
                   <div class="prop-icon-box">
@@ -293,9 +295,8 @@ onMounted(() => {
               </td>
             </tr>
           </tbody>
-        </table>
-      </div>
-    </div>
+      </table>
+    </AppTableCard>
 
     <!-- Delete Confirmation Modal -->
     <div v-if="propertyToDelete" class="modal-backdrop">
@@ -358,11 +359,11 @@ onMounted(() => {
 .metrics-row {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1rem;
+  gap: 0.75rem;
 }
 
 .stat-card {
-  padding: 1.25rem;
+  padding: 0.85rem 1.15rem;
   background: var(--bg-surface);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);
@@ -371,18 +372,18 @@ onMounted(() => {
 }
 
 .stat-label {
-  font-size: 0.72rem;
-  font-weight: 700;
+  font-size: 0.7rem;
+  font-weight: 600;
   text-transform: uppercase;
   color: var(--text-dim);
   letter-spacing: 0.05em;
 }
 
 .stat-value {
-  font-size: 1.75rem;
+  font-size: 1.5rem;
   font-weight: 700;
   color: var(--text-main);
-  margin: 0.2rem 0;
+  margin: 0.15rem 0;
 }
 
 .stat-desc {
@@ -443,7 +444,8 @@ onMounted(() => {
   height: 32px;
   border-radius: var(--radius-sm);
   background: var(--primary-subtle);
-  color: #818cf8;
+  color: var(--color-indigo-accent);
+  border: 1px solid rgba(79, 70, 229, 0.2);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -457,7 +459,7 @@ onMounted(() => {
 }
 
 .prop-link:hover {
-  color: #818cf8;
+  color: var(--color-indigo-accent);
 }
 
 .loc-text {

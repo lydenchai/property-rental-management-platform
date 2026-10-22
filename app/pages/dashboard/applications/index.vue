@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { 
   ClipboardList, 
   Search, 
@@ -17,6 +17,7 @@ import {
 } from '@lucide/vue';
 import { useAuth } from '../../../composables/useAuth';
 import type { ApiResponse } from '../../../../shared/types/api';
+import AppTableCard from '../../../components/common/AppTableCard.vue';
 
 definePageMeta({
   layout: 'dashboard',
@@ -110,6 +111,19 @@ const filteredApplications = computed(() => {
   });
 });
 
+// Pagination state
+const currentPage = ref(1);
+const pageSize = ref(5);
+
+const paginatedApplications = computed(() => {
+  const start = (currentPage.value - 1) * pageSize.value;
+  return filteredApplications.value.slice(start, start + pageSize.value);
+});
+
+watch([activeTab, searchQuery], () => {
+  currentPage.value = 1;
+});
+
 function openReviewModal(app: ApplicationItem, decision: 'APPROVED' | 'REJECTED') {
   appToReview.value = app;
   reviewDecision.value = decision;
@@ -195,9 +209,21 @@ onMounted(() => {
       </div>
     </div>
 
-    <!-- Filter & Table Shell -->
-    <div class="table-shell card-flat">
-      <div class="table-toolbar">
+    <!-- Applications Table using shared AppTableCard -->
+    <AppTableCard
+      v-model:search="searchQuery"
+      search-placeholder="Search by unit, property, or tenant..."
+      :is-loading="isLoading"
+      :is-empty="filteredApplications.length === 0"
+      empty-title="No applications found"
+      :empty-description="isTenant ? 'You haven\'t submitted any rental applications yet. Browse properties to apply for a unit.' : 'No applications match the selected filter criteria.'"
+      :empty-icon="ClipboardList"
+      v-model:current-page="currentPage"
+      v-model:page-size="pageSize"
+      :total-items="filteredApplications.length"
+      item-name="applications"
+    >
+      <template #toolbar-start>
         <div class="tab-pill-group">
           <button
             @click="activeTab = 'ALL'"
@@ -224,35 +250,9 @@ onMounted(() => {
             Rejected ({{ applications.filter(a => a.status === 'REJECTED').length }})
           </button>
         </div>
+      </template>
 
-        <div class="search-wrap">
-          <Search :size="14" class="search-icon" />
-          <input
-            v-model="searchQuery"
-            type="text"
-            placeholder="Search by unit or property..."
-            class="table-search-input"
-          />
-        </div>
-      </div>
-
-      <!-- Loading State -->
-      <div v-if="isLoading" class="loading-state">
-        <div class="loading-spinner"></div>
-        <p>Loading rental applications...</p>
-      </div>
-
-      <!-- Empty State -->
-      <div v-else-if="filteredApplications.length === 0" class="empty-state">
-        <ClipboardList :size="32" class="empty-icon" />
-        <h4>No applications found</h4>
-        <p v-if="isTenant">You haven't submitted any rental applications yet. Browse properties to apply for a unit.</p>
-        <p v-else>No applications match the selected filter criteria.</p>
-      </div>
-
-      <!-- Applications Table -->
-      <div v-else class="data-table-container">
-        <table class="data-table">
+      <table class="data-table">
           <thead>
             <tr>
               <th>Property & Unit</th>
@@ -265,7 +265,7 @@ onMounted(() => {
             </tr>
           </thead>
           <tbody>
-            <tr v-for="app in filteredApplications" :key="app.id">
+            <tr v-for="app in paginatedApplications" :key="app.id">
               <td>
                 <div class="unit-cell">
                   <span class="font-semibold">Unit {{ app.unit?.unitNumber || 'N/A' }}</span>
@@ -346,9 +346,8 @@ onMounted(() => {
               </td>
             </tr>
           </tbody>
-        </table>
-      </div>
-    </div>
+      </table>
+    </AppTableCard>
 
     <!-- Review Decision Modal -->
     <div v-if="appToReview" class="modal-backdrop">
@@ -451,27 +450,26 @@ onMounted(() => {
 }
 
 .tab-pill {
-  background: var(--bg-subtle);
-  border: 1px solid var(--border-default);
-  padding: 0.35rem 0.75rem;
-  border-radius: var(--radius-sm);
+   background: none;
+  border: none;
   color: var(--text-muted);
   font-size: 0.8rem;
   font-weight: 500;
+  padding: 0.35rem 0.75rem;
+  border-radius: var(--radius-sm);
   cursor: pointer;
   transition: all 0.15s ease;
 }
 
 .tab-pill:hover {
-  background: var(--bg-surface-hover);
   color: var(--text-main);
 }
 
 .tab-pill.active {
-  background: var(--primary-subtle);
-  border-color: var(--primary);
-  color: #818cf8;
-  font-weight: 600;
+  background: var(--bg-surface);
+  color: var(--text-main);
+  border: 1px solid var(--border-default);
+  box-shadow: none;
 }
 
 .search-wrap {
@@ -541,11 +539,11 @@ onMounted(() => {
 }
 
 .text-emerald {
-  color: #34d399;
+  color: var(--color-emerald-accent);
 }
 
 .text-amber {
-  color: #fbbf24;
+  color: var(--color-amber-accent);
 }
 
 .text-danger {

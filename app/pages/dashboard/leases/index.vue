@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { 
   FileText, 
   FileSignature, 
@@ -16,6 +16,7 @@ import {
 } from '@lucide/vue';
 import { useAuth } from '../../../composables/useAuth';
 import type { ApiResponse } from '../../../../shared/types/api';
+import AppTableCard from '../../../components/common/AppTableCard.vue';
 
 definePageMeta({
   layout: 'dashboard',
@@ -107,8 +108,8 @@ async function executeCreateLease() {
       method: 'POST',
       body: {
         ...createLeaseForm.value,
-        startDate: new Date(createLeaseForm.value.startDate).toISOString(),
-        endDate: new Date(createLeaseForm.value.endDate).toISOString(),
+        startDate: new Date(createLeaseForm.value.startDate!).toISOString(),
+        endDate: new Date(createLeaseForm.value.endDate!).toISOString(),
       },
     });
 
@@ -155,6 +156,19 @@ const filteredLeases = computed(() => {
     const tenant = l.tenant?.fullName?.toLowerCase() || '';
     return unit.includes(q) || prop.includes(q) || tenant.includes(q);
   });
+});
+
+// Pagination state
+const currentPage = ref(1);
+const pageSize = ref(5);
+
+const paginatedLeases = computed(() => {
+  const start = (currentPage.value - 1) * pageSize.value;
+  return filteredLeases.value.slice(start, start + pageSize.value);
+});
+
+watch(searchQuery, () => {
+  currentPage.value = 1;
 });
 
 function openSignModal(lease: LeaseItem) {
@@ -259,36 +273,21 @@ onMounted(() => {
       </div>
     </div>
 
-    <!-- Leases Table Shell -->
-    <div class="table-shell card-flat">
-      <div class="table-toolbar">
-        <div class="search-wrap">
-          <Search :size="14" class="search-icon" />
-          <input
-            v-model="searchQuery"
-            type="text"
-            placeholder="Search leases by unit or property..."
-            class="table-search-input"
-          />
-        </div>
-      </div>
-
-      <!-- Loading State -->
-      <div v-if="isLoading" class="loading-state">
-        <div class="loading-spinner"></div>
-        <p>Loading lease agreements...</p>
-      </div>
-
-      <!-- Empty State -->
-      <div v-else-if="filteredLeases.length === 0" class="empty-state">
-        <FileText :size="32" class="empty-icon" />
-        <h4>No lease agreements found</h4>
-        <p>Lease agreements are generated automatically when rental applications are approved by landlords.</p>
-      </div>
-
-      <!-- Leases Table -->
-      <div v-else class="data-table-container">
-        <table class="data-table">
+    <!-- Leases Table using shared AppTableCard -->
+    <AppTableCard
+      v-model:search="searchQuery"
+      search-placeholder="Search leases by unit, property, or tenant..."
+      :is-loading="isLoading"
+      :is-empty="filteredLeases.length === 0"
+      empty-title="No lease agreements found"
+      empty-description="Lease agreements are generated automatically when rental applications are approved by landlords."
+      :empty-icon="FileText"
+      v-model:current-page="currentPage"
+      v-model:page-size="pageSize"
+      :total-items="filteredLeases.length"
+      item-name="leases"
+    >
+      <table class="data-table">
           <thead>
             <tr>
               <th>Property & Unit</th>
@@ -301,7 +300,7 @@ onMounted(() => {
             </tr>
           </thead>
           <tbody>
-            <tr v-for="lease in filteredLeases" :key="lease.id">
+            <tr v-for="lease in paginatedLeases" :key="lease.id">
               <td>
                 <div class="unit-cell">
                   <span class="font-semibold">Unit {{ lease.unit?.unitNumber || '101A' }}</span>
@@ -394,9 +393,8 @@ onMounted(() => {
               </td>
             </tr>
           </tbody>
-        </table>
-      </div>
-    </div>
+      </table>
+    </AppTableCard>
 
     <!-- Sign Lease Modal -->
     <div v-if="leaseToSign" class="modal-backdrop">
@@ -729,12 +727,14 @@ onMounted(() => {
 
 .sig-badge.signed {
   background: var(--accent-emerald-subtle);
-  color: #34d399;
+  color: var(--color-emerald-accent);
+  border: 1px solid rgba(5, 150, 105, 0.2);
 }
 
 .sig-badge.pending {
   background: var(--accent-amber-subtle);
-  color: #fbbf24;
+  color: var(--color-amber-accent);
+  border: 1px solid rgba(217, 119, 6, 0.2);
 }
 
 .font-semibold {

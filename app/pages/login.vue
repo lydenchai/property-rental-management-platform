@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue';
-import { ShieldCheck, Building, Key, Wrench } from '@lucide/vue';
+import { ShieldCheck, Building, Key, Wrench, Check } from '@lucide/vue';
 import { useAuth } from '../composables/useAuth';
 
 definePageMeta({
@@ -95,10 +95,11 @@ async function handleLogin() {
           :key="item.role"
           type="button"
           @click="fillDemo(item)"
-          class="demo-chip"
+          :class="['demo-chip', { 'demo-chip-active': email === item.email }]"
         >
           <component :is="item.icon" :size="15" class="chip-icon" />
           <span class="chip-role">{{ item.role }}</span>
+          <Check v-if="email === item.email" :size="13" class="chip-check" />
         </button>
       </div>
     </div>
@@ -193,13 +194,26 @@ async function handleLogin() {
   color: var(--text-main);
 }
 
+.demo-chip-active {
+  background: var(--bg-surface-hover);
+  border-color: var(--primary);
+  color: var(--text-main);
+  box-shadow: 0 0 0 1px var(--primary);
+}
+
 .chip-icon {
   color: var(--text-muted);
   flex-shrink: 0;
 }
 
-.demo-chip:hover .chip-icon {
-  color: #818cf8;
+.demo-chip:hover .chip-icon,
+.demo-chip-active .chip-icon {
+  color: var(--primary);
+}
+
+.chip-check {
+  margin-left: auto;
+  color: var(--accent-emerald);
 }
 
 .register-prompt {

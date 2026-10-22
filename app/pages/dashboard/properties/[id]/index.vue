@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { 
   Building, 
   ArrowLeft, 
@@ -15,6 +15,7 @@ import {
 } from '@lucide/vue';
 import PropertyMap from '../../../../components/common/PropertyMap.vue';
 import type { ApiResponse } from '../../../../../shared/types/api';
+import AppTableCard from '../../../../components/common/AppTableCard.vue';
 
 definePageMeta({
   layout: 'dashboard',
@@ -60,6 +61,16 @@ const property = ref<PropertyDetail | null>(null);
 const isLoading = ref(true);
 const errorMessage = ref<string | null>(null);
 const successMessage = ref<string | null>(null);
+
+// Units pagination state
+const currentUnitPage = ref(1);
+const unitPageSize = ref(5);
+
+const paginatedUnits = computed(() => {
+  if (!property.value?.units) return [];
+  const start = (currentUnitPage.value - 1) * unitPageSize.value;
+  return property.value.units.slice(start, start + unitPageSize.value);
+});
 
 // Unit modal state
 const isUnitModalOpen = ref(false);
@@ -276,33 +287,35 @@ onMounted(() => {
         </ClientOnly>
       </div>
 
-      <!-- Units Management Section -->
-      <div class="units-shell card-flat">
-        <div class="units-header">
-          <div>
-            <h3>Unit Inventory</h3>
-            <p class="subtitle">Manage pricing, floor area, and occupancy status for each individual unit.</p>
-          </div>
-          <button @click="openAddUnitModal" class="btn-primary">
-            <Plus :size="15" />
+      <!-- Units Management Section using shared AppTableCard -->
+      <AppTableCard
+        title="Unit Inventory"
+        subtitle="Manage pricing, floor area, and occupancy status for each individual unit."
+        :show-search="false"
+        :is-empty="!property.units || property.units.length === 0"
+        empty-title="No units configured yet"
+        empty-description="Add individual apartments or office units with their respective monthly rent and square footage."
+        :empty-icon="Layers"
+        v-model:current-page="currentUnitPage"
+        v-model:page-size="unitPageSize"
+        :total-items="property.units?.length || 0"
+        item-name="units"
+      >
+        <template #toolbar-end>
+          <button @click="openAddUnitModal" class="btn-primary btn-sm">
+            <Plus :size="14" />
             <span>Add Unit</span>
           </button>
-        </div>
+        </template>
 
-        <!-- Empty Units -->
-        <div v-if="!property.units || property.units.length === 0" class="empty-units-state">
-          <Layers :size="32" class="empty-icon" />
-          <h4>No units configured yet</h4>
-          <p>Add individual apartments or office units with their respective monthly rent and square footage.</p>
+        <template #empty-action>
           <button @click="openAddUnitModal" class="btn-primary mt-2">
             <Plus :size="14" />
             <span>Add First Unit</span>
           </button>
-        </div>
+        </template>
 
-        <!-- Units Table -->
-        <div v-else class="data-table-container">
-          <table class="data-table">
+        <table class="data-table">
             <thead>
               <tr>
                 <th>Unit #</th>
@@ -316,7 +329,7 @@ onMounted(() => {
               </tr>
             </thead>
             <tbody>
-              <tr v-for="unit in property.units" :key="unit.id">
+              <tr v-for="unit in paginatedUnits" :key="unit.id">
                 <td class="font-semibold">Unit {{ unit.unitNumber }}</td>
                 <td>Level {{ unit.floor }}</td>
                 <td>{{ unit.sizeSqFt }} sq m</td>
@@ -358,9 +371,8 @@ onMounted(() => {
                 </td>
               </tr>
             </tbody>
-          </table>
-        </div>
-      </div>
+        </table>
+      </AppTableCard>
     </div>
 
     <!-- Unit Add / Edit Modal -->
@@ -561,7 +573,7 @@ onMounted(() => {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: #818cf8;
+  color: var(--color-indigo-accent);
 }
 
 .summary-main h2 {
@@ -610,7 +622,7 @@ onMounted(() => {
 }
 
 .text-emerald {
-  color: #34d399;
+  color: var(--color-emerald-accent);
 }
 
 .stat-actions {

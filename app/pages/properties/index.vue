@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { 
   Building, 
   MapPin, 
@@ -13,8 +13,8 @@ import {
   Map as MapIcon,
   Columns2
 } from '@lucide/vue';
-import type { ApiResponse } from '../../shared/types/api';
 import PropertiesMapExplorer from '../../components/common/PropertiesMapExplorer.vue';
+import AppPagination from '../../components/common/AppPagination.vue';
 
 interface Property {
   id: string;
@@ -69,7 +69,7 @@ async function fetchProperties() {
     if (res.success && res.data) {
       properties.value = res.data.properties;
       if (properties.value.length > 0 && !activePropertyId.value) {
-        activePropertyId.value = properties.value[0].id;
+        activePropertyId.value = properties.value[0]?.id!;
       }
     } else {
       errorMessage.value = res.error?.message || 'Failed to load properties';
@@ -90,21 +90,51 @@ const availableCities = computed(() => {
   return Array.from(cities);
 });
 
+// Pagination state
+const currentPage = ref(1);
+const pageSize = ref(6);
+
+const paginatedProperties = computed(() => {
+  const start = (currentPage.value - 1) * pageSize.value;
+  return properties.value.slice(start, start + pageSize.value);
+});
+
+watch([searchKeyword, selectedCity, minPrice, maxPrice, selectedBeds], () => {
+  currentPage.value = 1;
+});
+
 function resetFilters() {
   searchKeyword.value = '';
   selectedCity.value = '';
   minPrice.value = '';
   maxPrice.value = '';
   selectedBeds.value = '';
+  currentPage.value = 1;
   fetchProperties();
 }
 
 function handleSearch() {
+  currentPage.value = 1;
   fetchProperties();
 }
 
 function selectProperty(id: string) {
   activePropertyId.value = id;
+}
+
+const PROPERTY_COVERS: Record<string, string> = {
+  'prop-skyline-01': 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=800&q=80',
+  'prop-oakwood-02': 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=800&q=80',
+  'prop-metropolitan-03': 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80',
+  'prop-peak-04': 'https://images.unsplash.com/photo-1574362848149-11496d93a7c7?auto=format&fit=crop&w=800&q=80',
+  'prop-toulkork-05': 'https://images.unsplash.com/photo-1580587771525-78b9dba3b914?auto=format&fit=crop&w=800&q=80',
+  'prop-chroy-06': 'https://images.unsplash.com/photo-1515263487990-61b07816b324?auto=format&fit=crop&w=800&q=80',
+  'prop-otres-07': 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&w=800&q=80',
+  'prop-kampot-08': 'https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=800&q=80',
+};
+
+function getPropertyThumbnail(property: Property): string {
+  return PROPERTY_COVERS[property.id] || 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=800&q=80';
 }
 
 onMounted(() => {
@@ -117,7 +147,6 @@ onMounted(() => {
     <!-- Header Section -->
     <section class="page-header">
       <div class="header-container">
-        <span class="eyebrow">Cambodia Rental Listings</span>
         <h1>Explore Available Properties</h1>
         <p class="header-subtitle">
           Discover verified apartments and residences with flexible leasing, clear terms, and interactive vector maps powered by OpenFreeMap.
@@ -266,64 +295,71 @@ onMounted(() => {
       <!-- Left: Property Cards Column -->
       <div class="split-cards-col">
         <article
-          v-for="property in properties"
+          v-for="property in paginatedProperties"
           :key="property.id"
           :class="['property-card card-flat', { 'is-active-card': activePropertyId === property.id }]"
           @mouseenter="selectProperty(property.id)"
           @click="selectProperty(property.id)"
         >
-          <div class="property-card-header">
-            <div class="card-icon-box">
-              <Building :size="18" />
-            </div>
-            <div class="header-status">
-              <span v-if="property.availableUnitsCount > 0" class="badge badge-success">
-                {{ property.availableUnitsCount }} Available
+          <!-- Card Image Header -->
+          <div class="card-hero-media">
+            <img :src="getPropertyThumbnail(property)" :alt="property.title" class="card-hero-img" loading="lazy" />
+            <div class="card-hero-overlay">
+              <span :class="['badge', property.availableUnitsCount > 0 ? 'badge-success' : 'badge-warning']">
+                {{ property.availableUnitsCount > 0 ? `${property.availableUnitsCount} Units` : 'Occupied' }}
               </span>
-              <span v-else class="badge badge-warning">
-                Occupied
-              </span>
+              <span class="city-pill">{{ property.city }}</span>
             </div>
           </div>
 
-          <div class="property-body">
-            <h2 class="property-title">
-              <NuxtLink :to="`/properties/${property.id}`">{{ property.title }}</NuxtLink>
-            </h2>
+          <div class="property-card-content">
+            <div class="property-body">
+              <h2 class="property-title">
+                <NuxtLink :to="`/properties/${property.id}`">{{ property.title }}</NuxtLink>
+              </h2>
 
-            <div class="property-location">
-              <MapPin :size="13" class="loc-icon" />
-              <span>{{ property.addressLine1 }}, {{ property.city }}</span>
-            </div>
-
-            <p class="property-description">
-              {{ property.description }}
-            </p>
-          </div>
-
-          <div class="property-footer">
-            <div class="price-box">
-              <span class="price-label">Monthly Rent</span>
-              <div class="price-val">
-                <template v-if="property.minRent > 0">
-                  <span class="rent-highlight">${{ property.minRent.toLocaleString() }}</span>
-                  <span v-if="property.maxRent > property.minRent" class="price-range">
-                    – ${{ property.maxRent.toLocaleString() }}
-                  </span>
-                  <span class="price-period">/mo</span>
-                </template>
-                <template v-else>
-                  <span class="price-inquire">Inquire</span>
-                </template>
+              <div class="property-location">
+                <MapPin :size="13" class="loc-icon" />
+                <span>{{ property.addressLine1 }}, {{ property.city }}</span>
               </div>
+
+              <p class="property-description">
+                {{ property.description }}
+              </p>
             </div>
 
-            <NuxtLink :to="`/properties/${property.id}`" class="btn-primary card-cta">
-              <span>View</span>
-              <ArrowRight :size="13" />
-            </NuxtLink>
+            <div class="property-footer">
+              <div class="price-box">
+                <span class="price-label">Starting From</span>
+                <div class="price-val">
+                  <template v-if="property.minRent > 0">
+                    <span class="rent-highlight">${{ property.minRent.toLocaleString() }}</span>
+                    <span class="price-period">/mo</span>
+                  </template>
+                  <template v-else>
+                    <span class="price-inquire">Inquire</span>
+                  </template>
+                </div>
+              </div>
+
+              <NuxtLink :to="`/properties/${property.id}`" class="btn-primary card-cta">
+                <span>View</span>
+                <ArrowRight :size="13" />
+              </NuxtLink>
+            </div>
           </div>
         </article>
+
+        <!-- Split View Pagination -->
+        <div class="split-pagination card-flat mt-4">
+          <AppPagination
+            v-model:currentPage="currentPage"
+            v-model:pageSize="pageSize"
+            :pageSizeOptions="[4, 6, 8, 12]"
+            :totalItems="properties.length"
+            itemName="properties"
+          />
+        </div>
       </div>
 
       <!-- Right: Sticky OpenFreeMap Explorer -->
@@ -345,79 +381,91 @@ onMounted(() => {
     </div>
 
     <!-- 3. STANDARD GRID CARDS VIEW -->
-    <div v-else class="properties-grid">
-      <article
-        v-for="property in properties"
-        :key="property.id"
-        class="property-card card-flat"
-      >
-        <div class="property-card-header">
-          <div class="card-icon-box">
-            <Building :size="20" />
-          </div>
-          <div class="header-status">
-            <span v-if="property.availableUnitsCount > 0" class="badge badge-success">
-              {{ property.availableUnitsCount }} {{ property.availableUnitsCount === 1 ? 'Unit' : 'Units' }} Available
-            </span>
-            <span v-else class="badge badge-warning">
-              Fully Occupied
-            </span>
-          </div>
-        </div>
-
-        <div class="property-body">
-          <h2 class="property-title">
-            <NuxtLink :to="`/properties/${property.id}`">{{ property.title }}</NuxtLink>
-          </h2>
-
-          <div class="property-location">
-            <MapPin :size="14" class="loc-icon" />
-            <span>{{ property.addressLine1 }}, {{ property.city }}, {{ property.state }} {{ property.postalCode }}</span>
-          </div>
-
-          <p class="property-description">
-            {{ property.description }}
-          </p>
-
-          <!-- Amenities list -->
-          <div v-if="property.amenities?.length" class="amenities-row">
-            <span
-              v-for="amenity in property.amenities.slice(0, 4)"
-              :key="amenity"
-              class="amenity-tag"
-            >
-              <Check :size="12" class="tag-check" />
-              {{ amenity }}
-            </span>
-            <span v-if="property.amenities.length > 4" class="amenity-tag-more">
-              +{{ property.amenities.length - 4 }} more
-            </span>
-          </div>
-        </div>
-
-        <div class="property-footer">
-          <div class="price-box">
-            <span class="price-label">Monthly Rent</span>
-            <div class="price-val">
-              <template v-if="property.minRent > 0">
-                <span class="rent-highlight">${{ property.minRent.toLocaleString() }}</span>
-                <span v-if="property.maxRent > property.minRent" class="price-range">
-                  – ${{ property.maxRent.toLocaleString() }}
-                </span>
-                <span class="price-period">/mo</span>
-              </template>
-              <template v-else>
-                <span class="price-inquire">Inquire for rates</span>
-              </template>
+    <div v-else class="properties-grid-container">
+      <div class="properties-grid">
+        <article
+          v-for="property in paginatedProperties"
+          :key="property.id"
+          class="property-card card-flat"
+        >
+          <!-- Card Image Header -->
+          <div class="card-hero-media">
+            <img :src="getPropertyThumbnail(property)" :alt="property.title" class="card-hero-img" loading="lazy" />
+            <div class="card-hero-overlay">
+              <span :class="['badge', property.availableUnitsCount > 0 ? 'badge-success' : 'badge-warning']">
+                {{ property.availableUnitsCount > 0 ? `${property.availableUnitsCount} Units Available` : 'Fully Occupied' }}
+              </span>
+              <span class="city-pill">{{ property.city }}</span>
             </div>
           </div>
 
-          <NuxtLink :to="`/properties/${property.id}`" class="btn-primary card-cta">
-            <span>View Units</span>
-            <ArrowRight :size="14" />
-          </NuxtLink>
-        </div>
-      </article>
+          <div class="property-card-content">
+            <div class="property-body">
+              <h2 class="property-title">
+                <NuxtLink :to="`/properties/${property.id}`">{{ property.title }}</NuxtLink>
+              </h2>
+
+              <div class="property-location">
+                <MapPin :size="14" class="loc-icon" />
+                <span>{{ property.addressLine1 }}, {{ property.city }}, {{ property.state }} {{ property.postalCode }}</span>
+              </div>
+
+              <p class="property-description">
+                {{ property.description }}
+              </p>
+
+              <!-- Amenities list -->
+              <div v-if="property.amenities?.length" class="amenities-row">
+                <span
+                  v-for="amenity in property.amenities.slice(0, 4)"
+                  :key="amenity"
+                  class="amenity-tag"
+                >
+                  <Check :size="12" class="tag-check" />
+                  {{ amenity }}
+                </span>
+                <span v-if="property.amenities.length > 4" class="amenity-tag-more">
+                  +{{ property.amenities.length - 4 }} more
+                </span>
+              </div>
+            </div>
+
+            <div class="property-footer">
+              <div class="price-box">
+                <span class="price-label">Starting From</span>
+                <div class="price-val">
+                  <template v-if="property.minRent > 0">
+                    <span class="rent-highlight">${{ property.minRent.toLocaleString() }}</span>
+                    <span v-if="property.maxRent > property.minRent" class="price-range">
+                      – ${{ property.maxRent.toLocaleString() }}
+                    </span>
+                    <span class="price-period">/mo</span>
+                  </template>
+                  <template v-else>
+                    <span class="price-inquire">Inquire for rates</span>
+                  </template>
+                </div>
+              </div>
+
+              <NuxtLink :to="`/properties/${property.id}`" class="btn-primary card-cta">
+                <span>View Units</span>
+                <ArrowRight :size="14" />
+              </NuxtLink>
+            </div>
+          </div>
+        </article>
+      </div>
+
+      <!-- Grid Cards Pagination -->
+      <div class="grid-pagination-wrapper card-flat mt-4">
+        <AppPagination
+          v-model:currentPage="currentPage"
+          v-model:pageSize="pageSize"
+          :pageSizeOptions="[6, 12, 18, 24]"
+          :totalItems="properties.length"
+          itemName="properties"
+        />
+      </div>
     </div>
   </div>
 </template>
@@ -442,14 +490,6 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
-}
-
-.eyebrow {
-  font-size: 0.8rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: #818cf8;
 }
 
 .page-header h1 {
@@ -679,36 +719,65 @@ onMounted(() => {
 .property-card {
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-  padding: 1.5rem;
+  padding: 0 !important;
   background: var(--bg-surface);
-  border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);
-  transition: border-color 0.15s ease, background-color 0.15s ease;
+  overflow: hidden;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
   cursor: pointer;
 }
 
 .property-card:hover {
-  border-color: var(--border-default);
-  background: var(--bg-surface-hover);
+  box-shadow: none;
 }
 
-.property-card-header {
+.card-hero-media {
+  position: relative;
+  width: 100%;
+  height: 180px;
+  background: #0f172a;
+  overflow: hidden;
+}
+
+.card-hero-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.25s ease;
+}
+
+.property-card:hover .card-hero-img {
+  transform: scale(1.03);
+}
+
+.card-hero-overlay {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  right: 10px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 1rem;
+  gap: 8px;
 }
 
-.card-icon-box {
-  width: 38px;
-  height: 38px;
-  border-radius: var(--radius-sm);
-  background: var(--primary-subtle);
-  color: #818cf8;
+.city-pill {
+  font-size: 0.7rem;
+  font-weight: 600;
+  background: rgba(15, 23, 42, 0.75);
+  color: #ffffff;
+  padding: 2px 7px;
+  border-radius: 4px;
+  backdrop-filter: blur(2px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.property-card-content {
   display: flex;
-  align-items: center;
-  justify-content: center;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 1.25rem 1.25rem;
+  flex: 1;
 }
 
 .property-body {

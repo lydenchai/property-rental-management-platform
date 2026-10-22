@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { 
   CreditCard, 
   DollarSign, 
@@ -16,6 +16,7 @@ import {
 } from '@lucide/vue';
 import { useAuth } from '../../../composables/useAuth';
 import type { ApiResponse } from '../../../../shared/types/api';
+import AppTableCard from '../../../components/common/AppTableCard.vue';
 
 definePageMeta({
   layout: 'dashboard',
@@ -155,6 +156,19 @@ const filteredInvoices = computed(() => {
     const tenant = inv.tenant?.fullName?.toLowerCase() || '';
     return invNum.includes(q) || unit.includes(q) || prop.includes(q) || tenant.includes(q);
   });
+});
+
+// Pagination state
+const currentPage = ref(1);
+const pageSize = ref(5);
+
+const paginatedInvoices = computed(() => {
+  const start = (currentPage.value - 1) * pageSize.value;
+  return filteredInvoices.value.slice(start, start + pageSize.value);
+});
+
+watch([activeTab, searchQuery], () => {
+  currentPage.value = 1;
 });
 
 async function executeGenerateInvoice() {
@@ -350,10 +364,21 @@ onMounted(() => {
       </div>
     </div>
 
-    <!-- Table Shell -->
-    <div class="table-shell card-flat">
-      <div class="table-top-actions">
-        <!-- Tabs -->
+    <!-- Invoices Table using shared AppTableCard -->
+    <AppTableCard
+      v-model:search="searchQuery"
+      search-placeholder="Search by invoice #, tenant, unit..."
+      :is-loading="isLoading"
+      :is-empty="filteredInvoices.length === 0"
+      empty-title="No invoices found"
+      empty-description="Invoices will appear here once generated for active leases."
+      :empty-icon="FileText"
+      v-model:current-page="currentPage"
+      v-model:page-size="pageSize"
+      :total-items="filteredInvoices.length"
+      item-name="invoices"
+    >
+      <template #toolbar-start>
         <div class="status-tabs">
           <button
             class="tab-btn"
@@ -391,35 +416,9 @@ onMounted(() => {
             Overdue
           </button>
         </div>
+      </template>
 
-        <!-- Search Bar -->
-        <div class="search-wrap">
-          <Search :size="14" class="search-icon" />
-          <input
-            v-model="searchQuery"
-            type="text"
-            placeholder="Search by invoice #, tenant, unit..."
-            class="table-search-input"
-          />
-        </div>
-      </div>
-
-      <!-- Loading State -->
-      <div v-if="isLoading" class="loading-state">
-        <div class="loading-spinner"></div>
-        <p>Loading invoice records...</p>
-      </div>
-
-      <!-- Empty State -->
-      <div v-else-if="filteredInvoices.length === 0" class="empty-state">
-        <FileText :size="32" class="empty-icon" />
-        <h4>No invoices found</h4>
-        <p>Invoices will appear here once generated for active leases.</p>
-      </div>
-
-      <!-- Invoices Table -->
-      <div v-else class="data-table-container">
-        <table class="data-table">
+      <table class="data-table">
           <thead>
             <tr>
               <th>Invoice Number</th>
@@ -433,7 +432,7 @@ onMounted(() => {
             </tr>
           </thead>
           <tbody>
-            <tr v-for="inv in filteredInvoices" :key="inv.id">
+            <tr v-for="inv in paginatedInvoices" :key="inv.id">
               <td>
                 <div class="invoice-num-cell">
                   <span class="font-mono font-semibold">{{ inv.invoiceNumber }}</span>
@@ -508,9 +507,8 @@ onMounted(() => {
               </td>
             </tr>
           </tbody>
-        </table>
-      </div>
-    </div>
+      </table>
+    </AppTableCard>
 
     <!-- Generate Invoice Modal -->
     <div v-if="isGenerateModalOpen" class="modal-backdrop">
@@ -885,8 +883,6 @@ onMounted(() => {
 .status-tabs {
   display: flex;
   background: var(--bg-canvas);
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-sm);
   padding: 0.2rem;
   gap: 0.2rem;
 }
@@ -910,7 +906,8 @@ onMounted(() => {
 .tab-btn.active {
   background: var(--bg-surface);
   color: var(--text-main);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--border-default);
+  box-shadow: none;
 }
 
 .search-wrap {
@@ -1146,10 +1143,11 @@ onMounted(() => {
   align-items: center;
   gap: 0.35rem;
   background: var(--accent-emerald-subtle);
-  color: #34d399;
-  font-size: 0.75rem;
-  font-weight: 700;
-  padding: 0.25rem 0.6rem;
+  color: var(--color-emerald-accent);
+  border: 1px solid rgba(5, 150, 105, 0.25);
+  font-size: 0.725rem;
+  font-weight: 500;
+  padding: 0.2rem 0.55rem;
   border-radius: var(--radius-sm);
 }
 
