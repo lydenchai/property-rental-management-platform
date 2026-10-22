@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: rentease-postgres
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-rentease_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-rentease_secure_pass}
+      POSTGRES_DB: ${POSTGRES_DB:-rentease_db}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-rentease_user} -d ${POSTGRES_DB:-rentease_db}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - rentease-network
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: rentease-app
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-rentease_user}:${POSTGRES_PASSWORD:-rentease_secure_pass}@postgres:5432/${POSTGRES_DB:-rentease_db}?schema=public
+      SESSION_SECRET: ${SESSION_SECRET:-rentease_production_hardened_secret_key_32_bytes_min}
+      NODE_ENV: production
+      PORT: 3000
+      HOST: 0.0.0.0
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - rentease-network
+
+networks:
+  rentease-network:
+    driver: bridge
+
+volumes:
+  postgres_data:

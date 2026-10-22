@@ -1,0 +1,13 @@
+node_modules
+.output
+.nuxt
+.git
+.github
+tests
+playwright-report
+test-results
+*.log
+.DS_Store
+.env
+.env.local
+.env.*.local
