@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { 
   Users, 
   ShieldCheck, 
@@ -14,6 +14,7 @@ import {
 } from '@lucide/vue';
 import { useAuth } from '../../../composables/useAuth';
 import type { ApiResponse } from '../../../../shared/types/api';
+import AppTableCard from '../../../components/common/AppTableCard.vue';
 
 definePageMeta({
   layout: 'dashboard',
@@ -90,6 +91,19 @@ const filteredUsers = computed(() => {
     const role = u.role.toLowerCase();
     return name.includes(q) || email.includes(q) || phone.includes(q) || role.includes(q);
   });
+});
+
+// Pagination state
+const currentPage = ref(1);
+const pageSize = ref(5);
+
+const paginatedUsers = computed(() => {
+  const start = (currentPage.value - 1) * pageSize.value;
+  return filteredUsers.value.slice(start, start + pageSize.value);
+});
+
+watch([roleFilter, statusFilter, searchQuery], () => {
+  currentPage.value = 1;
 });
 
 async function executeToggleStatus() {
@@ -179,9 +193,21 @@ onMounted(() => {
       </div>
     </div>
 
-    <!-- Table Shell -->
-    <div class="table-shell card-flat">
-      <div class="table-toolbar">
+    <!-- Users Table using shared AppTableCard -->
+    <AppTableCard
+      v-model:search="searchQuery"
+      search-placeholder="Search by name, email, or role..."
+      :is-loading="isLoading"
+      :is-empty="filteredUsers.length === 0"
+      empty-title="No user accounts found"
+      empty-description="Users matching the specified filters will appear in this registry."
+      :empty-icon="Users"
+      v-model:current-page="currentPage"
+      v-model:page-size="pageSize"
+      :total-items="filteredUsers.length"
+      item-name="users"
+    >
+      <template #toolbar-start>
         <div class="filter-controls">
           <div class="select-wrap">
             <Filter :size="13" class="filter-icon" />
@@ -202,34 +228,9 @@ onMounted(() => {
             </select>
           </div>
         </div>
+      </template>
 
-        <div class="search-wrap">
-          <Search :size="14" class="search-icon" />
-          <input
-            v-model="searchQuery"
-            type="text"
-            placeholder="Search by name, email, or role..."
-            class="table-search-input"
-          />
-        </div>
-      </div>
-
-      <!-- Loading State -->
-      <div v-if="isLoading" class="loading-state">
-        <div class="loading-spinner"></div>
-        <p>Loading user accounts...</p>
-      </div>
-
-      <!-- Empty State -->
-      <div v-else-if="filteredUsers.length === 0" class="empty-state">
-        <Users :size="32" class="empty-icon" />
-        <h4>No user accounts found</h4>
-        <p>Users matching the specified filters will appear in this registry.</p>
-      </div>
-
-      <!-- Users Table -->
-      <div v-else class="data-table-container">
-        <table class="data-table">
+      <table class="data-table">
           <thead>
             <tr>
               <th>User Name & Email</th>
@@ -241,7 +242,7 @@ onMounted(() => {
             </tr>
           </thead>
           <tbody>
-            <tr v-for="u in filteredUsers" :key="u.id">
+            <tr v-for="u in paginatedUsers" :key="u.id">
               <td>
                 <div class="user-cell">
                   <span class="font-semibold">{{ u.fullName }}</span>
@@ -258,7 +259,7 @@ onMounted(() => {
                     'badge-admin': u.role === 'ADMIN',
                     'badge-landlord': u.role === 'LANDLORD',
                     'badge-tenant': u.role === 'TENANT',
-                    'badge-tech': u.role === 'TECHNICIAN',
+                    'badge-technician': u.role === 'TECHNICIAN',
                   }"
                 >
                   {{ u.role }}
@@ -293,9 +294,8 @@ onMounted(() => {
               </td>
             </tr>
           </tbody>
-        </table>
-      </div>
-    </div>
+      </table>
+    </AppTableCard>
 
     <!-- Toggle Status Modal -->
     <div v-if="userToToggle" class="modal-backdrop">
@@ -489,49 +489,32 @@ onMounted(() => {
   flex-direction: column;
 }
 
-.badge-admin {
-  background: rgba(239, 68, 68, 0.12);
-  color: #f87171;
-}
-
-.badge-landlord {
-  background: rgba(99, 102, 241, 0.12);
-  color: var(--primary);
-}
-
-.badge-tenant {
-  background: var(--accent-emerald-subtle);
-  color: #34d399;
-}
-
-.badge-tech {
-  background: rgba(245, 158, 11, 0.12);
-  color: #fbbf24;
-}
-
 .status-pill {
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
-  font-size: 0.75rem;
-  font-weight: 600;
+  font-size: 0.725rem;
+  font-weight: 500;
   padding: 0.15rem 0.5rem;
   border-radius: var(--radius-sm);
+  text-transform: capitalize;
 }
 
 .status-pill.active {
   background: var(--accent-emerald-subtle);
-  color: #34d399;
+  color: var(--color-emerald-accent);
+  border: 1px solid rgba(16, 185, 129, 0.2);
 }
 
 .status-pill.suspended {
-  background: rgba(239, 68, 68, 0.12);
-  color: #f87171;
+  background: var(--accent-rose-subtle);
+  color: var(--color-rose-accent);
+  border: 1px solid rgba(239, 68, 68, 0.2);
 }
 
 .status-pill .dot {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
   border-radius: 50%;
   background: currentColor;
 }

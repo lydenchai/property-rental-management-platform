@@ -914,7 +914,8 @@ onMounted(() => {
   background: var(--bg-surface, #ffffff);
   color: var(--text-main, #0f172a);
   font-weight: 600;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  border: 1px solid var(--border-default, #cbd5e1);
+  box-shadow: none;
 }
 
 /* Visual Cards Grid */
@@ -928,15 +929,13 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  border: 1px solid var(--border-default, #e2e8f0);
   border-radius: var(--radius-md, 8px);
   background: var(--bg-surface, #ffffff);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition: border-color 0.15s ease;
 }
 
 .unit-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 16px -4px rgba(0, 0, 0, 0.08);
+  box-shadow: none;
 }
 
 .unit-card-media {
@@ -1016,7 +1015,7 @@ onMounted(() => {
 .unit-card-thumbs {
   display: flex;
   gap: 6px;
-  padding: 8px 12px;
+  padding: 8px 12px 12px 0;
   background: var(--bg-surface, #141c2e);
   border-bottom: 1px solid var(--border-subtle, #1e293b);
 }
@@ -1053,7 +1052,6 @@ onMounted(() => {
 }
 
 .unit-card-body {
-  padding: 1.1rem;
   display: flex;
   flex-direction: column;
   gap: 0.85rem;

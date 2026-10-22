@@ -20,6 +20,7 @@ interface Props {
   title: string;
   address?: string;
   city?: string;
+  label?: string;
   zoom?: number;
   height?: string;
 }
@@ -27,8 +28,9 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), {
   latitude: 11.5516,
   longitude: 104.9224,
+  label: 'ទីតាំង',
   zoom: 15,
-  height: '420px',
+  height: '440px',
 });
 
 const { isDark } = useTheme();
@@ -41,19 +43,19 @@ const mapError = ref<string | null>(null);
 const isFullscreen = ref(false);
 const copiedCoords = ref(false);
 
-// OpenFreeMap vector tile style endpoints (all free, keyless, production-grade)
+// OpenFreeMap vector tile style endpoints (Bright style matches user screenshot)
 const MAP_STYLES = [
-  { id: 'liberty', name: 'Liberty', url: 'https://tiles.openfreemap.org/styles/liberty' },
   { id: 'bright', name: 'Bright', url: 'https://tiles.openfreemap.org/styles/bright' },
+  { id: 'liberty', name: 'Liberty', url: 'https://tiles.openfreemap.org/styles/liberty' },
   { id: 'positron', name: 'Positron', url: 'https://tiles.openfreemap.org/styles/positron' },
   { id: 'dark', name: 'Dark', url: 'https://tiles.openfreemap.org/styles/dark' },
 ];
 
-const selectedStyle = ref<string>(isDark.value ? 'dark' : 'liberty');
+const selectedStyle = ref<string>('bright');
 
 watch(isDark, (newDark) => {
   if (!isUserStyleChoice.value) {
-    const newStyle = newDark ? 'dark' : 'liberty';
+    const newStyle = newDark ? 'dark' : 'bright';
     changeStyle(newStyle, false);
   }
 });
@@ -93,13 +95,17 @@ function copyCoordinates() {
 
 function createMarkerElement(): HTMLElement {
   const el = document.createElement('div');
-  el.className = 'custom-map-marker';
+  el.className = 'user-pin-marker-wrapper';
   el.innerHTML = `
-    <div class="marker-pulse"></div>
-    <div class="marker-icon">
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/>
-        <circle cx="12" cy="10" r="3"/>
+    <div class="pin-speech-bubble" title="${props.title}">
+      <span class="pin-bubble-title">${props.label || 'ទីតាំង'}</span>
+      <div class="pin-bubble-triangle"></div>
+    </div>
+    <div class="pin-teardrop-icon">
+      <svg width="28" height="34" viewBox="0 0 28 34" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M14 0C6.268 0 0 6.268 0 14c0 10.5 14 20 14 20s14-9.5 14-20C28 6.268 21.732 0 14 0z" fill="#E53935"/>
+        <circle cx="14" cy="14" r="5.5" fill="#FFFFFF"/>
+        <circle cx="14" cy="14" r="3.2" fill="#C62828"/>
       </svg>
     </div>
   `;
@@ -147,18 +153,18 @@ async function initMap() {
     }
 
     const currentStyleUrl = MAP_STYLES.find(s => s.id === selectedStyle.value)?.url 
-      || 'https://tiles.openfreemap.org/styles/liberty';
+      || 'https://tiles.openfreemap.org/styles/bright';
 
     const map = new maplibregl.Map({
       container: mapContainer.value,
       style: currentStyleUrl,
       center: [lng, lat],
       zoom: props.zoom,
-      attributionControl: false, // We render a clean custom attribution
+      attributionControl: true, // Native compact OpenFreeMap attribution in bottom-right
     });
 
-    // Add navigation controls (zoom & pitch/compass)
-    map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), 'top-right');
+    // Add navigation controls (zoom only) in top-left matching screenshot
+    map.addControl(new maplibregl.NavigationControl({ showCompass: false, showZoom: true }), 'top-left');
 
     const addMarkerAndPopup = () => {
       if (markerInstance) {
@@ -173,9 +179,6 @@ async function initMap() {
         .setLngLat([lng, lat])
         .setPopup(popup)
         .addTo(map);
-
-      // Open popup by default
-      markerInstance.togglePopup();
     };
 
     map.on('load', () => {
@@ -398,7 +401,7 @@ onUnmounted(() => {
   border: 1px solid var(--border-default, #334155);
   border-radius: var(--radius-md, 8px);
   overflow: hidden;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+  box-shadow: none;
   display: flex;
   flex-direction: column;
 }
@@ -639,99 +642,154 @@ onUnmounted(() => {
 </style>
 
 <style>
-/* Global styles for MapLibre marker and popup */
-.custom-map-marker {
-  position: relative;
+/* -------------------------------------------------------------
+ * Custom Pin Marker with "ទីតាំង" Speech Bubble (Matches Screenshot)
+ * ------------------------------------------------------------- */
+.user-pin-marker-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   cursor: pointer;
-  width: 36px;
-  height: 36px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.marker-pulse {
-  position: absolute;
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  background: rgba(16, 185, 129, 0.35);
-  animation: pulse-ring 2s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
-}
-
-.marker-icon {
+  user-select: none;
   position: relative;
-  z-index: 2;
-  width: 32px;
-  height: 32px;
-  border-radius: 50% 50% 50% 0;
-  transform: rotate(-45deg);
-  background: #10b981;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #ffffff;
-  box-shadow: 0 4px 10px rgba(16, 185, 129, 0.5);
-  border: 2px solid #ffffff;
   transition: transform 0.15s ease;
 }
 
-.marker-icon svg {
-  transform: rotate(45deg);
+.pin-speech-bubble {
+  background: #ffffff;
+  border: 1px solid #d1d5db;
+  border-radius: 5px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
+  padding: 2px 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  margin-bottom: 3px;
+  white-space: nowrap;
 }
 
-.custom-map-marker:hover .marker-icon {
-  transform: rotate(-45deg) scale(1.15);
-  background: #059669;
+.pin-bubble-title {
+  font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  color: #111827;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
 }
 
-@keyframes pulse-ring {
-  0% {
-    transform: scale(0.6);
-    opacity: 1;
-  }
-
-  100% {
-    transform: scale(1.8);
-    opacity: 0;
-  }
+.pin-bubble-triangle {
+  position: absolute;
+  bottom: -5px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-top: 5px solid #ffffff;
 }
 
+.pin-teardrop-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  filter: drop-shadow(0 3px 5px rgba(0, 0, 0, 0.35));
+  transition: transform 0.15s ease;
+}
+
+.user-pin-marker-wrapper:hover .pin-teardrop-icon {
+  transform: scale(1.1);
+}
+
+/* MapLibre Top-Left Zoom Controls */
+.maplibre-container .maplibregl-ctrl-top-left {
+  top: 10px;
+  left: 10px;
+}
+
+.maplibre-container .maplibregl-ctrl-group {
+  background: #ffffff !important;
+  border: 1px solid #d1d5db !important;
+  border-radius: 6px !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2) !important;
+  overflow: hidden !important;
+}
+
+.maplibre-container .maplibregl-ctrl-group button {
+  width: 32px !important;
+  height: 32px !important;
+  background-color: #ffffff !important;
+  border-bottom: 1px solid #e5e7eb !important;
+}
+
+.maplibre-container .maplibregl-ctrl-group button:last-child {
+  border-bottom: none !important;
+}
+
+.maplibre-container .maplibregl-ctrl-group button:hover {
+  background-color: #f3f4f6 !important;
+}
+
+/* MapLibre Compact Attribution */
+.maplibre-container .maplibregl-ctrl-attrib {
+  background-color: rgba(255, 255, 255, 0.85) !important;
+  color: #374151 !important;
+  font-size: 11px !important;
+  padding: 2px 6px !important;
+  border-radius: 4px !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1) !important;
+  margin: 0 10px 10px 0 !important;
+}
+
+.maplibre-container .maplibregl-ctrl-attrib a {
+  color: #1f2937 !important;
+  text-decoration: none !important;
+}
+
+.maplibre-container .maplibregl-ctrl-attrib a:hover {
+  text-decoration: underline !important;
+}
+
+/* MapLibre Popup */
 .maplibregl-popup-content {
-  background: #141c2e !important;
-  color: #f8fafc !important;
+  background: #ffffff !important;
+  color: #0f172a !important;
   border-radius: 8px !important;
   padding: 12px 14px !important;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5) !important;
-  border: 1px solid #334155 !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15) !important;
+  border: 1px solid #e2e8f0 !important;
   font-family: inherit !important;
 }
 
+html.dark .maplibregl-popup-content {
+  background: #141c2e !important;
+  color: #f8fafc !important;
+  border-color: #334155 !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5) !important;
+}
+
 .maplibregl-popup-anchor-bottom .maplibregl-popup-tip {
+  border-top-color: #ffffff !important;
+}
+
+html.dark .maplibregl-popup-anchor-bottom .maplibregl-popup-tip {
   border-top-color: #141c2e !important;
 }
 
-.maplibregl-popup-anchor-top .maplibregl-popup-tip {
-  border-bottom-color: #141c2e !important;
-}
-
-.maplibregl-popup-anchor-left .maplibregl-popup-tip {
-  border-right-color: #141c2e !important;
-}
-
-.maplibregl-popup-anchor-right .maplibregl-popup-tip {
-  border-left-color: #141c2e !important;
-}
-
 .maplibregl-popup-close-button {
-  color: #94a3b8 !important;
+  color: #64748b !important;
   font-size: 16px !important;
   padding: 4px 8px !important;
 }
 
 .maplibregl-popup-close-button:hover {
-  color: #ffffff !important;
+  color: #0f172a !important;
   background: transparent !important;
+}
+
+html.dark .maplibregl-popup-close-button:hover {
+  color: #ffffff !important;
 }
 
 .map-popup-card {
@@ -741,14 +799,22 @@ onUnmounted(() => {
 .popup-title {
   font-weight: 600;
   font-size: 0.88rem;
-  color: #f8fafc;
+  color: #0f172a;
   margin-bottom: 3px;
+}
+
+html.dark .popup-title {
+  color: #f8fafc;
 }
 
 .popup-address {
   font-size: 0.78rem;
-  color: #94a3b8;
+  color: #64748b;
   margin-bottom: 8px;
+}
+
+html.dark .popup-address {
+  color: #94a3b8;
 }
 
 .popup-actions {
@@ -759,12 +825,21 @@ onUnmounted(() => {
 .popup-link {
   font-size: 0.75rem;
   font-weight: 600;
-  color: #38bdf8;
+  color: #2563eb;
   text-decoration: none;
 }
 
 .popup-link:hover {
   text-decoration: underline;
+  color: #1d4ed8;
+}
+
+html.dark .popup-link {
+  color: #38bdf8;
+}
+
+html.dark .popup-link:hover {
   color: #7dd3fc;
 }
 </style>
+

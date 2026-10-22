@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { ref, computed, watch } from 'vue';
 import { 
   Building2, 
   LayoutDashboard, 
@@ -12,20 +13,45 @@ import {
   Users, 
   ShieldCheck,
   LogOut,
-  CheckCircle2,
-  BarChart3
+  BarChart3,
+  Menu,
+  X
 } from '@lucide/vue';
 import { useAuth } from '../composables/useAuth';
 import ThemeToggle from '../components/common/ThemeToggle.vue';
 
 const { user, userRole, logout, isAdmin, isLandlord, isTenant, isTechnician } = useAuth();
 const route = useRoute();
+const isMobileNavOpen = ref(false);
+
+const roleTitles: Record<string, string> = {
+  ADMIN: 'System Admin',
+  LANDLORD: 'Landlord',
+  TENANT: 'Tenant',
+  TECHNICIAN: 'Technician',
+};
+
+const formattedRole = computed(() => {
+  return (userRole.value && roleTitles[userRole.value]) || userRole.value || '';
+});
+
+watch(() => route.path, () => {
+  isMobileNavOpen.value = false;
+});
 </script>
 
 <template>
   <div class="dashboard-shell">
+    <!-- Mobile backdrop -->
+    <div 
+      v-if="isMobileNavOpen" 
+      class="sidebar-backdrop" 
+      @click="isMobileNavOpen = false" 
+      aria-hidden="true"
+    />
+
     <!-- Sidebar -->
-    <aside class="sidebar">
+    <aside :class="['sidebar', { 'mobile-open': isMobileNavOpen }]">
       <div class="sidebar-header">
         <NuxtLink to="/" class="brand">
           <div class="brand-icon-wrapper">
@@ -33,6 +59,13 @@ const route = useRoute();
           </div>
           <span class="brand-name">Rent<span class="brand-accent">Ease</span></span>
         </NuxtLink>
+        <button 
+          class="mobile-close-btn" 
+          @click="isMobileNavOpen = false" 
+          aria-label="Close Navigation"
+        >
+          <X :size="18" />
+        </button>
       </div>
 
       <nav class="sidebar-nav">
@@ -107,36 +140,40 @@ const route = useRoute();
       </nav>
 
       <div class="sidebar-footer">
-        <div class="user-info-card">
-          <div class="user-avatar">{{ user?.fullName?.charAt(0) || 'U' }}</div>
-          <div class="user-meta">
-            <div class="user-name">{{ user?.fullName }}</div>
-            <span :class="`badge badge-${userRole?.toLowerCase()}`">{{ userRole }}</span>
+        <div class="user-profile-tile">
+          <div class="user-avatar-circle">
+            {{ user?.fullName?.charAt(0) || 'U' }}
           </div>
+          <div class="user-meta-details">
+            <span class="user-display-name" :title="user?.fullName">{{ user?.fullName }}</span>
+            <span class="user-role-label">{{ formattedRole }}</span>
+          </div>
+          <button @click="logout" class="logout-icon-action" title="Sign Out" aria-label="Sign Out">
+            <LogOut :size="15" />
+          </button>
         </div>
-        <button @click="logout" class="btn-secondary btn-block logout-btn">
-          <LogOut :size="14" />
-          <span>Log Out</span>
-        </button>
       </div>
     </aside>
 
     <!-- Main Content Area -->
     <div class="dashboard-body">
       <header class="topbar">
-        <div class="topbar-title">
-          <h2>{{ route.meta.title || 'Dashboard' }}</h2>
+        <div class="topbar-left">
+          <button 
+            class="mobile-toggle-btn" 
+            @click="isMobileNavOpen = !isMobileNavOpen"
+            aria-label="Toggle navigation drawer"
+          >
+            <Menu :size="18" />
+          </button>
+          <div class="topbar-title">
+            <h2>{{ route.meta.title || 'Dashboard' }}</h2>
+          </div>
         </div>
+
         <div class="topbar-actions">
           <ThemeToggle />
-          <div class="status-indicator">
-            <CheckCircle2 :size="14" class="status-icon" />
-            <span>System Operational</span>
-          </div>
           <NotificationBell />
-          <div class="user-pill">
-            <span class="user-email">{{ user?.email }}</span>
-          </div>
         </div>
       </header>
 
@@ -150,7 +187,11 @@ const route = useRoute();
 <style scoped>
 .dashboard-shell {
   display: flex;
-  min-height: 100vh;
+  height: 100vh;
+  max-height: 100vh;
+  width: 100%;
+  overflow: hidden;
+  background-color: var(--bg-primary);
 }
 
 .sidebar {
@@ -159,14 +200,30 @@ const route = useRoute();
   border-right: 1px solid var(--border-subtle);
   display: flex;
   flex-direction: column;
-  position: sticky;
-  top: 0;
   height: 100vh;
+  max-height: 100vh;
+  flex-shrink: 0;
+  overflow: hidden;
+  z-index: 30;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .sidebar-header {
-  padding: 1.25rem 1.25rem;
+  padding: 1.25rem;
   border-bottom: 1px solid var(--border-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+
+.mobile-close-btn {
+  display: none;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 0.25rem;
 }
 
 .brand {
@@ -176,6 +233,7 @@ const route = useRoute();
   font-size: 1.25rem;
   font-weight: 700;
   color: var(--text-main);
+  text-decoration: none;
 }
 
 .brand-icon-wrapper {
@@ -186,20 +244,23 @@ const route = useRoute();
   height: 30px;
   border-radius: var(--radius-sm);
   background: var(--primary-subtle);
-  color: #818cf8;
+  color: var(--color-indigo-accent);
 }
 
 .brand-accent {
-  color: #818cf8;
+  color: var(--color-indigo-accent);
 }
 
 .sidebar-nav {
   flex: 1;
   overflow-y: auto;
+  overflow-x: hidden;
   padding: 1rem 0.75rem;
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-subtle) transparent;
 }
 
 .nav-section-title {
@@ -220,6 +281,7 @@ const route = useRoute();
   color: var(--text-muted);
   font-weight: 500;
   font-size: 0.875rem;
+  text-decoration: none;
   transition: background-color 0.15s ease, color 0.15s ease;
 }
 
@@ -239,74 +301,108 @@ const route = useRoute();
 
 .nav-item.active {
   background: var(--primary-subtle);
-  color: #818cf8;
+  color: var(--color-indigo-accent);
   font-weight: 600;
 }
 
 .nav-item.active .nav-icon {
-  color: #818cf8;
+  color: var(--color-indigo-accent);
 }
 
 .sidebar-footer {
-  padding: 1rem;
+  padding: 0.85rem;
   border-top: 1px solid var(--border-subtle);
-  background: var(--bg-primary);
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
+  background: var(--bg-secondary);
+  flex-shrink: 0;
 }
 
-.user-info-card {
+.user-profile-tile {
   display: flex;
   align-items: center;
   gap: 0.65rem;
+  padding: 0.45rem 0.55rem;
+  background: transparent;
+  border-radius: var(--radius-sm);
+  transition: background-color 0.15s ease;
 }
 
-.user-avatar {
-  width: 34px;
-  height: 34px;
-  border-radius: var(--radius-sm);
+.user-profile-tile:hover {
+  background: var(--bg-hover);
+}
+
+.user-avatar-circle {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
   background: var(--bg-subtle);
-  border: 1px solid var(--border-default);
+  border: 1px solid var(--border-subtle);
   color: var(--text-main);
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: 600;
-  font-size: 0.875rem;
+  font-size: 0.8rem;
+  flex-shrink: 0;
 }
 
-.user-meta {
+.user-meta-details {
   display: flex;
   flex-direction: column;
-  gap: 0.2rem;
-  overflow: hidden;
+  gap: 0.1rem;
+  flex: 1;
+  min-width: 0;
 }
 
-.user-name {
-  font-size: 0.85rem;
+.user-display-name {
+  font-size: 0.825rem;
   font-weight: 600;
   color: var(--text-main);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  line-height: 1.25;
 }
 
-.btn-block {
-  width: 100%;
+.user-role-label {
+  font-size: 0.725rem;
+  color: var(--text-muted);
+  font-weight: 400;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.logout-btn {
-  padding: 0.45rem 0.75rem;
-  font-size: 0.8rem;
-  gap: 0.4rem;
+.logout-icon-action {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.15s ease;
+}
+
+.logout-icon-action:hover {
+  background: var(--bg-primary);
+  color: var(--accent-rose);
+  border-color: var(--border-subtle);
 }
 
 .dashboard-body {
   flex: 1;
   display: flex;
   flex-direction: column;
+  height: 100vh;
+  max-height: 100vh;
   min-width: 0;
+  overflow: hidden;
+  position: relative;
 }
 
 .topbar {
@@ -317,43 +413,111 @@ const route = useRoute();
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-shrink: 0;
+  z-index: 20;
+}
+
+.topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.mobile-toggle-btn {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-surface);
+  border-radius: var(--radius-sm);
+  color: var(--text-main);
+  cursor: pointer;
 }
 
 .topbar-title h2 {
   font-size: 1.15rem;
   font-weight: 600;
+  color: var(--text-main);
 }
 
 .topbar-actions {
   display: flex;
   align-items: center;
-  gap: 1.25rem;
-}
-
-.status-indicator {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  font-size: 0.8rem;
-  color: var(--text-muted);
-}
-
-.status-icon {
-  color: var(--accent-emerald);
-}
-
-.user-pill {
-  font-size: 0.8rem;
-  color: var(--text-muted);
-  background: var(--bg-surface);
-  padding: 0.3rem 0.65rem;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--border-subtle);
+  gap: 0.85rem;
 }
 
 .dashboard-content {
   flex: 1;
   padding: 1.75rem;
   overflow-y: auto;
+  overflow-x: hidden;
+  scroll-behavior: smooth;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-subtle) transparent;
+}
+
+.dashboard-content::-webkit-scrollbar,
+.sidebar-nav::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.dashboard-content::-webkit-scrollbar-track,
+.sidebar-nav::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.dashboard-content::-webkit-scrollbar-thumb,
+.sidebar-nav::-webkit-scrollbar-thumb {
+  background: var(--border-subtle);
+  border-radius: var(--radius-full);
+}
+
+.dashboard-content::-webkit-scrollbar-thumb:hover,
+.sidebar-nav::-webkit-scrollbar-thumb:hover {
+  background: var(--border-default);
+}
+
+/* Mobile & Tablet Drawer */
+@media (max-width: 768px) {
+  .sidebar {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    transform: translateX(-100%);
+    box-shadow: 0 0 24px rgba(0, 0, 0, 0.25);
+  }
+
+  .sidebar.mobile-open {
+    transform: translateX(0);
+  }
+
+  .mobile-close-btn {
+    display: block;
+  }
+
+  .mobile-toggle-btn {
+    display: inline-flex;
+  }
+
+  .sidebar-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(2px);
+    z-index: 25;
+  }
+
+  .topbar {
+    padding: 0 1rem;
+  }
+
+  .dashboard-content {
+    padding: 1rem;
+  }
 }
 </style>

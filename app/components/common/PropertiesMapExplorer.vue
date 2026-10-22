@@ -51,17 +51,17 @@ const isLoading = ref(true);
 const isFullscreen = ref(false);
 
 const MAP_STYLES = [
-  { id: 'liberty', name: 'Liberty', url: 'https://tiles.openfreemap.org/styles/liberty' },
   { id: 'bright', name: 'Bright', url: 'https://tiles.openfreemap.org/styles/bright' },
+  { id: 'liberty', name: 'Liberty', url: 'https://tiles.openfreemap.org/styles/liberty' },
   { id: 'positron', name: 'Positron', url: 'https://tiles.openfreemap.org/styles/positron' },
   { id: 'dark', name: 'Dark', url: 'https://tiles.openfreemap.org/styles/dark' },
 ];
 
-const selectedStyle = ref<string>(isDark.value ? 'dark' : 'liberty');
+const selectedStyle = ref<string>('bright');
 
 watch(isDark, (newDark) => {
   if (!isUserStyleChoice.value) {
-    const newStyle = newDark ? 'dark' : 'liberty';
+    const newStyle = newDark ? 'dark' : 'bright';
     changeStyle(newStyle, false);
   }
 });
@@ -109,7 +109,7 @@ async function initMap() {
     }
 
     const currentStyleUrl = MAP_STYLES.find(s => s.id === selectedStyle.value)?.url 
-      || 'https://tiles.openfreemap.org/styles/liberty';
+      || 'https://tiles.openfreemap.org/styles/bright';
 
     // Default center on Phnom Penh
     const map = new maplibregl.Map({
@@ -117,10 +117,10 @@ async function initMap() {
       style: currentStyleUrl,
       center: [104.9224, 11.5516],
       zoom: 12,
-      attributionControl: false,
+      attributionControl: true,
     });
 
-    map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), 'top-right');
+    map.addControl(new maplibregl.NavigationControl({ showCompass: false, showZoom: true }), 'top-left');
 
     const renderMarkers = () => {
       // Clear old markers
@@ -405,7 +405,7 @@ onUnmounted(() => {
   border: 1px solid var(--border-default, #334155);
   border-radius: var(--radius-md, 8px);
   overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+  box-shadow: none;
   display: flex;
   flex-direction: column;
 }
@@ -711,5 +711,54 @@ onUnmounted(() => {
 
 .popup-cta-btn:hover {
   background: #1d4ed8;
+}
+
+/* MapLibre Top-Left Zoom Controls */
+.maplibre-container .maplibregl-ctrl-top-left {
+  top: 10px;
+  left: 10px;
+}
+
+.maplibre-container .maplibregl-ctrl-group {
+  background: #ffffff !important;
+  border: 1px solid #d1d5db !important;
+  border-radius: 6px !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2) !important;
+  overflow: hidden !important;
+}
+
+.maplibre-container .maplibregl-ctrl-group button {
+  width: 32px !important;
+  height: 32px !important;
+  background-color: #ffffff !important;
+  border-bottom: 1px solid #e5e7eb !important;
+}
+
+.maplibre-container .maplibregl-ctrl-group button:last-child {
+  border-bottom: none !important;
+}
+
+.maplibre-container .maplibregl-ctrl-group button:hover {
+  background-color: #f3f4f6 !important;
+}
+
+/* MapLibre Compact Attribution */
+.maplibre-container .maplibregl-ctrl-attrib {
+  background-color: rgba(255, 255, 255, 0.85) !important;
+  color: #374151 !important;
+  font-size: 11px !important;
+  padding: 2px 6px !important;
+  border-radius: 4px !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1) !important;
+  margin: 0 10px 10px 0 !important;
+}
+
+.maplibre-container .maplibregl-ctrl-attrib a {
+  color: #1f2937 !important;
+  text-decoration: none !important;
+}
+
+.maplibre-container .maplibregl-ctrl-attrib a:hover {
+  text-decoration: underline !important;
 }
 </style>

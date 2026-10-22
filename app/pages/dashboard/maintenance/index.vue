@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { 
   Wrench, 
   AlertTriangle, 
@@ -18,6 +18,7 @@ import {
 } from '@lucide/vue';
 import { useAuth } from '../../../composables/useAuth';
 import type { ApiResponse } from '../../../../shared/types/api';
+import AppTableCard from '../../../components/common/AppTableCard.vue';
 
 definePageMeta({
   layout: 'dashboard',
@@ -151,6 +152,19 @@ const filteredRequests = computed(() => {
     const tech = r.assignments?.[0]?.technician?.fullName?.toLowerCase() || '';
     return title.includes(q) || desc.includes(q) || unit.includes(q) || prop.includes(q) || tenant.includes(q) || tech.includes(q);
   });
+});
+
+// Pagination state
+const currentPage = ref(1);
+const pageSize = ref(5);
+
+const paginatedRequests = computed(() => {
+  const start = (currentPage.value - 1) * pageSize.value;
+  return filteredRequests.value.slice(start, start + pageSize.value);
+});
+
+watch([activeTab, searchQuery], () => {
+  currentPage.value = 1;
 });
 
 async function executeCreateTicket() {
@@ -384,10 +398,21 @@ onMounted(() => {
       </div>
     </div>
 
-    <!-- Table Shell -->
-    <div class="table-shell card-flat">
-      <div class="table-top-actions">
-        <!-- Status Tabs -->
+    <!-- Maintenance Tickets Table using shared AppTableCard -->
+    <AppTableCard
+      v-model:search="searchQuery"
+      search-placeholder="Search tickets, units, or technicians..."
+      :is-loading="isLoading"
+      :is-empty="filteredRequests.length === 0"
+      empty-title="No maintenance tickets found"
+      empty-description="Tickets submitted by tenants will appear here along with their workflow progress."
+      :empty-icon="Wrench"
+      v-model:current-page="currentPage"
+      v-model:page-size="pageSize"
+      :total-items="filteredRequests.length"
+      item-name="tickets"
+    >
+      <template #toolbar-start>
         <div class="status-tabs">
           <button
             class="tab-btn"
@@ -432,35 +457,9 @@ onMounted(() => {
             Closed
           </button>
         </div>
+      </template>
 
-        <!-- Search Bar -->
-        <div class="search-wrap">
-          <Search :size="14" class="search-icon" />
-          <input
-            v-model="searchQuery"
-            type="text"
-            placeholder="Search tickets, units, or technicians..."
-            class="table-search-input"
-          />
-        </div>
-      </div>
-
-      <!-- Loading State -->
-      <div v-if="isLoading" class="loading-state">
-        <div class="loading-spinner"></div>
-        <p>Loading maintenance requests...</p>
-      </div>
-
-      <!-- Empty State -->
-      <div v-else-if="filteredRequests.length === 0" class="empty-state">
-        <Wrench :size="32" class="empty-icon" />
-        <h4>No maintenance tickets found</h4>
-        <p>Tickets submitted by tenants will appear here along with their workflow progress.</p>
-      </div>
-
-      <!-- Tickets Table -->
-      <div v-else class="data-table-container">
-        <table class="data-table">
+      <table class="data-table">
           <thead>
             <tr>
               <th>Priority</th>
@@ -473,7 +472,7 @@ onMounted(() => {
             </tr>
           </thead>
           <tbody>
-            <tr v-for="ticket in filteredRequests" :key="ticket.id">
+            <tr v-for="ticket in paginatedRequests" :key="ticket.id">
               <td>
                 <span
                   class="priority-badge"
@@ -577,9 +576,8 @@ onMounted(() => {
               </td>
             </tr>
           </tbody>
-        </table>
-      </div>
-    </div>
+      </table>
+    </AppTableCard>
 
     <!-- Create Maintenance Request Modal -->
     <div v-if="isCreateModalOpen" class="modal-backdrop">
@@ -954,11 +952,8 @@ onMounted(() => {
 .status-tabs {
   display: flex;
   background: var(--bg-canvas);
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-sm);
   padding: 0.2rem;
   gap: 0.2rem;
-  flex-wrap: wrap;
 }
 
 .tab-btn {
@@ -980,7 +975,8 @@ onMounted(() => {
 .tab-btn.active {
   background: var(--bg-surface);
   color: var(--text-main);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--border-default);
+  box-shadow: none;
 }
 
 .search-wrap {
@@ -1037,30 +1033,33 @@ onMounted(() => {
 }
 
 .priority-badge.p-emergency {
-  background: rgba(239, 68, 68, 0.15);
-  color: #f87171;
-  border: 1px solid rgba(239, 68, 68, 0.3);
+  background: var(--accent-rose-subtle);
+  color: var(--color-rose-accent);
+  border: 1px solid rgba(220, 38, 38, 0.25);
 }
 
 .priority-badge.p-high {
-  background: rgba(245, 158, 11, 0.15);
-  color: #fbbf24;
-  border: 1px solid rgba(245, 158, 11, 0.3);
+  background: var(--accent-amber-subtle);
+  color: var(--color-amber-accent);
+  border: 1px solid rgba(217, 119, 6, 0.25);
 }
 
 .priority-badge.p-medium {
-  background: rgba(99, 102, 241, 0.15);
-  color: #818cf8;
+  background: var(--primary-subtle);
+  color: var(--color-indigo-accent);
+  border: 1px solid rgba(79, 70, 229, 0.25);
 }
 
 .priority-badge.p-low {
   background: rgba(148, 163, 184, 0.1);
   color: var(--text-dim);
+  border: 1px solid rgba(148, 163, 184, 0.25);
 }
 
 .badge-primary {
-  background: rgba(99, 102, 241, 0.15);
-  color: #818cf8;
+  background: var(--primary-subtle);
+  color: var(--color-indigo-accent);
+  border: 1px solid rgba(79, 70, 229, 0.25);
 }
 
 .badge-muted {

@@ -26,10 +26,7 @@ const { isAuthenticated, user, logout } = useAuth();
         <div class="nav-actions">
           <ThemeToggle />
           <template v-if="isAuthenticated">
-            <NuxtLink to="/dashboard" class="btn-primary">
-              <span>Dashboard</span>
-              <span class="role-pill">{{ user?.role }}</span>
-            </NuxtLink>
+            <NuxtLink to="/dashboard" class="btn-primary">Dashboard</NuxtLink>
             <button @click="logout" class="btn-secondary">Log Out</button>
           </template>
           <template v-else>
@@ -136,15 +133,6 @@ const { isAuthenticated, user, logout } = useAuth();
   display: flex;
   align-items: center;
   gap: 0.75rem;
-}
-
-.role-pill {
-  font-size: 0.7rem;
-  font-weight: 600;
-  background: rgba(255, 255, 255, 0.15);
-  padding: 0.15rem 0.45rem;
-  border-radius: var(--radius-sm);
-  letter-spacing: 0.03em;
 }
 
 .main-content {

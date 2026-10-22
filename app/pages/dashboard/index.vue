@@ -50,31 +50,28 @@ onMounted(() => {
 
 <template>
   <div class="dashboard-page">
-    <!-- Welcome Header Banner -->
+    <!-- Overview Header -->
     <div class="welcome-card card-flat">
       <div class="welcome-content">
-        <div class="role-badge-row">
-          <span :class="`badge badge-${userRole?.toLowerCase()}`">{{ userRole }} Portal</span>
-        </div>
-        <h1>Welcome, {{ user?.fullName }}</h1>
+        <h1>Overview</h1>
         <p class="welcome-desc">
           <template v-if="isAdmin">
-            Supervisory console. Monitor system properties, tenant applications, billing reconciliations, and platform audit logs.
+            System health, platform tenancy, billing reconciliations, and platform audit overview.
           </template>
           <template v-else-if="isLandlord">
-            Manage your real estate portfolio, review tenant applications, track monthly rental receipts, and oversee maintenance operations.
+            Real estate portfolio performance, tenant occupancy, and monthly rental receipts.
           </template>
           <template v-else-if="isTenant">
-            View your active lease, track monthly rent statements, submit maintenance tickets, and browse available units.
+            Active lease summary, monthly rental statements, and maintenance tickets.
           </template>
           <template v-else-if="isTechnician">
-            View assigned repair tickets, inspect property maintenance tasks, update progress notes, and log completed work.
+            Assigned maintenance work orders, repair inspection notes, and schedule.
           </template>
         </p>
       </div>
 
-      <div class="quick-action-panel">
-        <button @click="fetchMetrics" class="btn-secondary refresh-btn" title="Refresh Metrics">
+      <div class="quick-action-panel gap-2">
+        <button @click="fetchMetrics" class="btn-secondary" title="Refresh Metrics">
           <RefreshCw :size="14" :class="{ 'spin-icon': isLoading }" />
           <span>Refresh</span>
         </button>
@@ -543,20 +540,20 @@ onMounted(() => {
   flex-shrink: 0;
 }
 
-.bg-indigo { background: var(--primary-subtle); color: #818cf8; border: 1px solid rgba(99, 102, 241, 0.2); }
-.bg-emerald { background: var(--accent-emerald-subtle); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.2); }
-.bg-cyan { background: var(--accent-sky-subtle); color: #38bdf8; border: 1px solid rgba(2, 132, 199, 0.2); }
-.bg-amber { background: var(--accent-amber-subtle); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.2); }
-.bg-purple { background: rgba(168, 85, 247, 0.1); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.2); }
-.bg-zinc { background: rgba(148, 163, 184, 0.1); color: #94a3b8; border: 1px solid rgba(148, 163, 184, 0.2); }
-.bg-rose { background: rgba(244, 63, 94, 0.1); color: #fb7185; border: 1px solid rgba(244, 63, 94, 0.2); }
+.bg-indigo { background: var(--primary-subtle); color: var(--color-indigo-accent); border: 1px solid rgba(99, 102, 241, 0.2); }
+.bg-emerald { background: var(--accent-emerald-subtle); color: var(--color-emerald-accent); border: 1px solid rgba(16, 185, 129, 0.2); }
+.bg-cyan { background: var(--accent-sky-subtle); color: var(--color-cyan-accent); border: 1px solid rgba(2, 132, 199, 0.2); }
+.bg-amber { background: var(--accent-amber-subtle); color: var(--color-amber-accent); border: 1px solid rgba(245, 158, 11, 0.2); }
+.bg-purple { background: rgba(168, 85, 247, 0.1); color: var(--color-purple-accent); border: 1px solid rgba(168, 85, 247, 0.2); }
+.bg-zinc { background: rgba(148, 163, 184, 0.1); color: var(--text-dim); border: 1px solid rgba(148, 163, 184, 0.2); }
+.bg-rose { background: var(--accent-rose-subtle); color: var(--color-rose-accent); border: 1px solid rgba(244, 63, 94, 0.2); }
 
 .refresh-btn {
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
   font-size: 0.8rem;
-  padding: 0.45rem 0.75rem;
+  padding: 0.7rem 0.75rem;
 }
 
 .spin-icon {
@@ -598,10 +595,10 @@ onMounted(() => {
   font-size: 0.75rem;
 }
 
-.text-emerald { color: #34d399; }
-.text-amber { color: #fbbf24; }
-.text-indigo { color: #818cf8; }
-.text-rose { color: #fb7185; }
+.text-emerald { color: var(--color-emerald-accent); }
+.text-amber { color: var(--color-amber-accent); }
+.text-indigo { color: var(--color-indigo-accent); }
+.text-rose { color: var(--color-rose-accent); }
 .text-muted { color: var(--text-dim); }
 
 .workflow-section {

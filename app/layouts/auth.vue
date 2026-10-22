@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Building2, ArrowLeft } from '@lucide/vue';
+import ThemeToggle from '../components/common/ThemeToggle.vue';
 </script>
 
 <template>
@@ -8,10 +9,14 @@ import { Building2, ArrowLeft } from '@lucide/vue';
       <div class="auth-header">
         <NuxtLink to="/" class="brand">
           <div class="brand-icon-wrapper">
-            <Building2 :size="20" class="brand-icon-svg" />
+            <Building2 :size="18" class="brand-icon-svg" />
           </div>
           <span class="brand-name">Rent<span class="brand-accent">Ease</span></span>
         </NuxtLink>
+
+        <div class="auth-theme-box">
+          <ThemeToggle />
+        </div>
       </div>
 
       <main class="auth-card card-flat">
@@ -21,7 +26,7 @@ import { Building2, ArrowLeft } from '@lucide/vue';
       <div class="auth-footer">
         <NuxtLink to="/" class="back-link">
           <ArrowLeft :size="14" />
-          <span>Return to Home</span>
+          <span>Return to Homepage</span>
         </NuxtLink>
       </div>
     </div>
@@ -34,8 +39,9 @@ import { Building2, ArrowLeft } from '@lucide/vue';
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 2rem 1.5rem;
+  padding: 2.5rem 1.5rem;
   background-color: var(--bg-primary);
+  transition: background-color 0.2s ease;
 }
 
 .auth-container {
@@ -48,38 +54,42 @@ import { Building2, ArrowLeft } from '@lucide/vue';
 
 .auth-header {
   display: flex;
-  justify-content: center;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 0.25rem;
 }
 
 .brand {
   display: flex;
   align-items: center;
-  gap: 0.6rem;
-  font-size: 1.5rem;
+  gap: 0.55rem;
+  font-size: 1.35rem;
   font-weight: 700;
   color: var(--text-main);
+  letter-spacing: -0.02em;
 }
 
 .brand-icon-wrapper {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 34px;
-  height: 34px;
+  width: 32px;
+  height: 32px;
   border-radius: var(--radius-sm);
-  background: var(--primary-subtle);
-  color: #818cf8;
+  background: var(--primary);
+  color: #ffffff;
 }
 
 .brand-accent {
-  color: #818cf8;
+  color: var(--primary);
 }
 
 .auth-card {
   padding: 2rem;
   background: var(--bg-surface);
-  border: 1px solid var(--border-subtle);
+  border: 1px solid var(--border-default);
   border-radius: var(--radius-md);
+  box-shadow: none;
 }
 
 .auth-footer {
@@ -92,6 +102,7 @@ import { Building2, ArrowLeft } from '@lucide/vue';
   gap: 0.4rem;
   color: var(--text-dim);
   font-size: 0.85rem;
+  font-weight: 500;
   transition: color 0.15s ease;
 }
 

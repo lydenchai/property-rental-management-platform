@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { 
   ShieldCheck, 
   History, 
@@ -16,6 +16,7 @@ import {
 } from '@lucide/vue';
 import { useAuth } from '../../../composables/useAuth';
 import type { ApiResponse } from '../../../../shared/types/api';
+import AppTableCard from '../../../components/common/AppTableCard.vue';
 
 definePageMeta({
   layout: 'dashboard',
@@ -95,6 +96,19 @@ const filteredLogs = computed(() => {
   });
 });
 
+// Pagination state
+const currentPage = ref(1);
+const pageSize = ref(10);
+
+const paginatedLogs = computed(() => {
+  const start = (currentPage.value - 1) * pageSize.value;
+  return filteredLogs.value.slice(start, start + pageSize.value);
+});
+
+watch([actionFilter, entityFilter, searchQuery], () => {
+  currentPage.value = 1;
+});
+
 onMounted(() => {
   loadAuditLogs();
 });
@@ -121,9 +135,21 @@ onMounted(() => {
       <span>{{ errorMessage }}</span>
     </div>
 
-    <!-- Filter & Search Toolbar Shell -->
-    <div class="table-shell card-flat">
-      <div class="table-toolbar">
+    <!-- Audit Logs Table using shared AppTableCard -->
+    <AppTableCard
+      v-model:search="searchQuery"
+      search-placeholder="Search by action, user, entity ID, or IP..."
+      :is-loading="isLoading"
+      :is-empty="filteredLogs.length === 0"
+      empty-title="No audit log entries found"
+      empty-description="System events will appear here as transactions and administrative actions are performed."
+      :empty-icon="History"
+      v-model:current-page="currentPage"
+      v-model:page-size="pageSize"
+      :total-items="filteredLogs.length"
+      item-name="logs"
+    >
+      <template #toolbar-start>
         <div class="filter-controls">
           <div class="select-wrap">
             <Filter :size="13" class="filter-icon" />
@@ -151,34 +177,9 @@ onMounted(() => {
             </select>
           </div>
         </div>
+      </template>
 
-        <div class="search-wrap">
-          <Search :size="14" class="search-icon" />
-          <input
-            v-model="searchQuery"
-            type="text"
-            placeholder="Search by action, user, entity ID, or IP..."
-            class="table-search-input"
-          />
-        </div>
-      </div>
-
-      <!-- Loading State -->
-      <div v-if="isLoading" class="loading-state">
-        <div class="loading-spinner"></div>
-        <p>Loading audit trail records...</p>
-      </div>
-
-      <!-- Empty State -->
-      <div v-else-if="filteredLogs.length === 0" class="empty-state">
-        <History :size="32" class="empty-icon" />
-        <h4>No audit log entries found</h4>
-        <p>System events will appear here as transactions and administrative actions are performed.</p>
-      </div>
-
-      <!-- Audit Logs Table -->
-      <div v-else class="data-table-container">
-        <table class="data-table">
+      <table class="data-table">
           <thead>
             <tr>
               <th>Timestamp (UTC)</th>
@@ -191,7 +192,7 @@ onMounted(() => {
             </tr>
           </thead>
           <tbody>
-            <tr v-for="log in filteredLogs" :key="log.id">
+            <tr v-for="log in paginatedLogs" :key="log.id">
               <td>
                 <div class="timestamp-cell font-mono text-xs">
                   <span>{{ new Date(log.createdAt).toLocaleDateString() }}</span>
@@ -238,9 +239,8 @@ onMounted(() => {
               </td>
             </tr>
           </tbody>
-        </table>
-      </div>
-    </div>
+      </table>
+    </AppTableCard>
 
     <!-- Payload Inspector Modal -->
     <div v-if="selectedLog" class="modal-backdrop">

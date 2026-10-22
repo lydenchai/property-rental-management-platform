@@ -93,7 +93,7 @@ onUnmounted(() => {
 
 // Room label heuristics based on image index
 function getImageLabel(index: number): string {
-  const labels = ['Living Area', 'Master Bedroom', 'Modern Kitchen', 'Bathroom & Balcony'];
+  const labels: any[] = ['Living Area', 'Master Bedroom', 'Modern Kitchen', 'Bathroom & Balcony'];
   return labels[index % labels.length];
 }
 </script>

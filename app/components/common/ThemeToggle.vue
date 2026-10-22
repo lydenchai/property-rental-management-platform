@@ -33,12 +33,15 @@ const { isDark, toggleTheme } = useTheme();
 .theme-toggle-btn {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 0.45rem;
-  padding: 0.45rem 0.65rem;
-  border-radius: var(--radius-sm, 6px);
-  background: var(--bg-subtle, #1e293b);
-  border: 1px solid var(--border-default, #334155);
-  color: var(--text-main, #f8fafc);
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border-radius: var(--radius-full, 9999px);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-main);
   font-size: 0.8rem;
   font-weight: 600;
   cursor: pointer;
@@ -46,8 +49,8 @@ const { isDark, toggleTheme } = useTheme();
 }
 
 .theme-toggle-btn:hover {
-  background: var(--bg-surface-hover, #1a243b);
-  border-color: var(--text-muted, #94a3b8);
+  background: var(--bg-surface-hover);
+  border-color: var(--border-default);
 }
 
 .icon-swap-container {

@@ -88,7 +88,7 @@ async function handleRegister() {
           id="reg-phone"
           v-model="phone"
           type="tel"
-          placeholder="+1 (555) 000-0000"
+          placeholder="+855 12 345 678"
           class="input-field"
         />
       </div>
