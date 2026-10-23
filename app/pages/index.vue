@@ -15,6 +15,8 @@ import {
 } from '@lucide/vue';
 import { useAuth } from '../composables/useAuth';
 
+import FeatureCard from '../components/common/FeatureCard.vue';
+
 const { isAuthenticated } = useAuth();
 
 const keyMetrics = [
@@ -29,6 +31,39 @@ const featuredCities = [
   { name: 'Siem Reap', desc: 'Heritage boutique villas and riverside serviced residences', count: '2 Complexes' },
   { name: 'Sihanoukville', desc: 'Modern coastal sea-view residential towers & suites', count: '1 Complex' },
   { name: 'Kampot', desc: 'Riverside colonial estates and scenic garden residences', count: '1 Complex' },
+];
+
+const platformCapabilities = [
+  {
+    icon: Building,
+    title: 'Landlords & Asset Managers',
+    desc: 'Maintain accurate unit inventories, publish listings, evaluate incoming applications, and track recurring rent schedules with automated notifications.',
+  },
+  {
+    icon: Key,
+    title: 'Tenants & Residents',
+    desc: 'Inspect floor plans and room galleries, submit digital applications, sign leases, and pay invoices with instant digital receipts and payment verification.',
+  },
+  {
+    icon: Wrench,
+    title: 'Operations & Technicians',
+    desc: 'Receive assigned maintenance work orders, view unit specifications, report progress notes, and confirm repair resolutions on site.',
+  },
+  {
+    icon: ShieldCheck,
+    title: 'Platform Administrators',
+    desc: 'Oversee cross-organization user accounts, verify platform system health, and inspect immutable security audit logs for compliance.',
+  },
+  {
+    icon: Compass,
+    title: 'Interactive Vector Mapping',
+    desc: 'Explore properties across Phnom Penh, Siem Reap, Sihanoukville, and Kampot using OpenFreeMap high-res vector tiles and custom location markers.',
+  },
+  {
+    icon: CheckCircle2,
+    title: 'Automated Lease & Billing',
+    desc: 'Generate legally binding lease agreements, track automated invoice cycles, record settlement receipts, and prevent rent delinquency.',
+  },
 ];
 </script>
 
@@ -138,45 +173,13 @@ const featuredCities = [
         </div>
 
         <div class="pillars-grid">
-          <div class="pillar-card card-flat">
-            <div class="pillar-icon bg-indigo">
-              <Building :size="20" />
-            </div>
-            <h3>Landlords &amp; Asset Managers</h3>
-            <p>
-              Maintain accurate unit inventories, publish listings, evaluate incoming applications, and track recurring rent schedules.
-            </p>
-          </div>
-
-          <div class="pillar-card card-flat">
-            <div class="pillar-icon bg-emerald">
-              <Key :size="20" />
-            </div>
-            <h3>Tenants &amp; Residents</h3>
-            <p>
-              Inspect floor plans and room galleries, submit digital applications, sign leases, and pay invoices with instant digital receipts.
-            </p>
-          </div>
-
-          <div class="pillar-card card-flat">
-            <div class="pillar-icon bg-amber">
-              <Wrench :size="20" />
-            </div>
-            <h3>Operations &amp; Technicians</h3>
-            <p>
-              Receive assigned maintenance work orders, view unit specifications, report progress notes, and confirm repair resolutions.
-            </p>
-          </div>
-
-          <div class="pillar-card card-flat">
-            <div class="pillar-icon bg-rose">
-              <ShieldCheck :size="20" />
-            </div>
-            <h3>Platform Administrators</h3>
-            <p>
-              Oversee cross-organization user accounts, verify platform system health, and inspect immutable security audit logs.
-            </p>
-          </div>
+          <FeatureCard
+            v-for="(cap, idx) in platformCapabilities"
+            :key="idx"
+            :icon="cap.icon"
+            :title="cap.title"
+            :description="cap.desc"
+          />
         </div>
       </div>
     </section>
@@ -443,41 +446,55 @@ const featuredCities = [
   margin: 0 auto;
 }
 
-.pillars-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: 1.25rem;
+.pillars-section {
+  padding: 1rem 1.5rem 4rem;
 }
 
-.pillar-card {
-  padding: 1.75rem;
+.section-header {
+  text-align: center;
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 0.5rem;
+  margin-bottom: 2.5rem;
 }
 
-.pillar-icon {
-  width: 40px;
-  height: 40px;
-  border-radius: var(--radius-sm);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.bg-indigo { background: var(--primary-subtle); color: var(--primary); border: 1px solid rgba(79, 70, 229, 0.2); }
-.bg-emerald { background: var(--accent-emerald-subtle); color: var(--accent-emerald); border: 1px solid rgba(16, 185, 129, 0.2); }
-.bg-amber { background: var(--accent-amber-subtle); color: var(--accent-amber); border: 1px solid rgba(245, 158, 11, 0.2); }
-.bg-rose { background: var(--accent-rose-subtle); color: var(--accent-rose); border: 1px solid rgba(239, 68, 68, 0.2); }
-
-.pillar-card h3 {
-  font-size: 1.1rem;
+.eyebrow {
+  color: var(--primary);
+  font-size: 0.76rem;
   font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
 }
 
-.pillar-card p {
+.section-header h2 {
+  font-size: 2.15rem;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+}
+
+.section-subtitle {
   color: var(--text-muted);
-  font-size: 0.875rem;
-  line-height: 1.55;
+  font-size: 1rem;
+  max-width: 620px;
+  margin: 0 auto;
+  line-height: 1.6;
+}
+
+.pillars-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+}
+
+@media (min-width: 640px) {
+  .pillars-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .pillars-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
 }
 </style>

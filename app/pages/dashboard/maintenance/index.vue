@@ -17,7 +17,14 @@ import {
   AlertCircle
 } from '@lucide/vue';
 import { useAuth } from '../../../composables/useAuth';
-import type { ApiResponse } from '../../../../shared/types/api';
+import { useMaintenanceStore } from '../../../stores/maintenance.store';
+import type { 
+  MaintenanceItem, 
+  CreateMaintenanceInput, 
+  AssignTechnicianInput, 
+  UpdateProgressInput, 
+  ConfirmResolutionInput 
+} from '~~/shared/types';
 import AppTableCard from '../../../components/common/AppTableCard.vue';
 
 definePageMeta({
@@ -28,51 +35,22 @@ definePageMeta({
 
 const { user, isLandlord, isTenant, isTechnician, isAdmin } = useAuth();
 
-interface MaintenanceItem {
-  id: string;
-  unitId: string;
-  tenantId: string;
-  title: string;
-  description: string;
-  priority: string;
-  status: string;
-  requestedAt: string;
-  resolvedAt: string | null;
-  confirmedAt: string | null;
-  resolutionNotes: string | null;
-  createdAt: string;
-  unit?: {
-    id: string;
-    unitNumber: string;
-    property?: {
-      id: string;
-      title: string;
-      city: string;
-      state: string;
-    };
-  };
-  tenant?: {
-    id: string;
-    fullName: string;
-    email: string;
-    phone: string | null;
-  };
-  assignments?: Array<{
-    id: string;
-    technicianId: string;
-    assignedAt: string;
-    notes: string | null;
-    technician?: {
-      id: string;
-      fullName: string;
-      email: string;
-    };
-  }>;
-}
+const maintenanceStore = useMaintenanceStore();
+const { 
+  requests, 
+  isLoading, 
+  isSubmitting, 
+  isAssigning, 
+  isUpdating, 
+  isConfirming, 
+  errorMessage, 
+  totalCount, 
+  openCount, 
+  inProgressCount, 
+  awaitingConfirmCount, 
+  closedCount 
+} = maintenanceStore;
 
-const requests = ref<MaintenanceItem[]>([]);
-const isLoading = ref(true);
-const errorMessage = ref<string | null>(null);
 const successMessage = ref<string | null>(null);
 
 // Filters
@@ -81,8 +59,7 @@ const searchQuery = ref('');
 
 // Modals
 const isCreateModalOpen = ref(false);
-const isSubmitting = ref(false);
-const createForm = ref({
+const createForm = ref<CreateMaintenanceInput>({
   unitId: 'unit-skyline-101a',
   title: '',
   description: '',
@@ -90,51 +67,24 @@ const createForm = ref({
 });
 
 const ticketToAssign = ref<MaintenanceItem | null>(null);
-const isAssigning = ref(false);
-const assignForm = ref({
+const assignForm = ref<AssignTechnicianInput>({
   technicianId: 'user-tech-01',
   notes: '',
 });
 
 const ticketToUpdate = ref<MaintenanceItem | null>(null);
-const isUpdating = ref(false);
-const updateForm = ref({
+const updateForm = ref<UpdateProgressInput>({
   status: 'RESOLVED',
   resolutionNotes: '',
 });
 
 const ticketToConfirm = ref<MaintenanceItem | null>(null);
-const isConfirming = ref(false);
-const confirmForm = ref({
+const confirmForm = ref<ConfirmResolutionInput>({
   confirmed: true,
   feedback: '',
 });
 
 const viewingTicket = ref<MaintenanceItem | null>(null);
-
-async function loadRequests() {
-  isLoading.value = true;
-  errorMessage.value = null;
-  try {
-    const res = await $fetch<ApiResponse<{ requests: MaintenanceItem[] }>>('/api/v1/maintenance');
-    if (res.success && res.data) {
-      requests.value = res.data.requests;
-    } else {
-      errorMessage.value = res.error?.message || 'Failed to load maintenance requests';
-    }
-  } catch (err: any) {
-    errorMessage.value = err?.data?.error?.message || err?.message || 'Error loading tickets';
-  } finally {
-    isLoading.value = false;
-  }
-}
-
-// Metrics
-const totalCount = computed(() => requests.value.length);
-const openCount = computed(() => requests.value.filter((r) => r.status === 'OPEN' || r.status === 'ASSIGNED').length);
-const inProgressCount = computed(() => requests.value.filter((r) => r.status === 'IN_PROGRESS').length);
-const awaitingConfirmCount = computed(() => requests.value.filter((r) => r.status === 'RESOLVED').length);
-const closedCount = computed(() => requests.value.filter((r) => r.status === 'CONFIRMED_CLOSED').length);
 
 const filteredRequests = computed(() => {
   return requests.value.filter((r) => {
@@ -168,34 +118,19 @@ watch([activeTab, searchQuery], () => {
 });
 
 async function executeCreateTicket() {
-  isSubmitting.value = true;
-  errorMessage.value = null;
-  try {
-    const res = await $fetch<ApiResponse<{ request: MaintenanceItem; message: string }>>('/api/v1/maintenance', {
-      method: 'POST',
-      body: createForm.value,
-    });
-
-    if (res.success) {
-      successMessage.value = res.data?.message || 'Maintenance ticket created successfully';
-      isCreateModalOpen.value = false;
-      createForm.value = {
-        unitId: 'unit-skyline-101a',
-        title: '',
-        description: '',
-        priority: 'MEDIUM',
-      };
-      await loadRequests();
-      setTimeout(() => {
-        successMessage.value = null;
-      }, 4000);
-    } else {
-      errorMessage.value = res.error?.message || 'Failed to create maintenance ticket';
-    }
-  } catch (err: any) {
-    errorMessage.value = err?.data?.error?.message || err?.message || 'Error creating ticket';
-  } finally {
-    isSubmitting.value = false;
+  const res = await maintenanceStore.createTicket(createForm.value);
+  if (res.success) {
+    successMessage.value = res.message || 'Maintenance ticket created successfully';
+    isCreateModalOpen.value = false;
+    createForm.value = {
+      unitId: 'unit-skyline-101a',
+      title: '',
+      description: '',
+      priority: 'MEDIUM',
+    };
+    setTimeout(() => {
+      successMessage.value = null;
+    }, 4000);
   }
 }
 
@@ -209,28 +144,13 @@ function openAssignModal(ticket: MaintenanceItem) {
 
 async function executeAssign() {
   if (!ticketToAssign.value) return;
-  isAssigning.value = true;
-  errorMessage.value = null;
-  try {
-    const res = await $fetch<ApiResponse<{ request: MaintenanceItem; message: string }>>(`/api/v1/maintenance/${ticketToAssign.value.id}/assign`, {
-      method: 'POST',
-      body: assignForm.value,
-    });
-
-    if (res.success) {
-      successMessage.value = res.data?.message || 'Technician assigned successfully';
-      ticketToAssign.value = null;
-      await loadRequests();
-      setTimeout(() => {
-        successMessage.value = null;
-      }, 4000);
-    } else {
-      errorMessage.value = res.error?.message || 'Failed to assign technician';
-    }
-  } catch (err: any) {
-    errorMessage.value = err?.data?.error?.message || err?.message || 'Error assigning technician';
-  } finally {
-    isAssigning.value = false;
+  const res = await maintenanceStore.assignTechnician(ticketToAssign.value.id, assignForm.value);
+  if (res.success) {
+    successMessage.value = res.message || 'Technician assigned successfully';
+    ticketToAssign.value = null;
+    setTimeout(() => {
+      successMessage.value = null;
+    }, 4000);
   }
 }
 
@@ -244,28 +164,13 @@ function openUpdateModal(ticket: MaintenanceItem) {
 
 async function executeUpdateProgress() {
   if (!ticketToUpdate.value) return;
-  isUpdating.value = true;
-  errorMessage.value = null;
-  try {
-    const res = await $fetch<ApiResponse<{ request: MaintenanceItem; message: string }>>(`/api/v1/maintenance/${ticketToUpdate.value.id}/progress`, {
-      method: 'POST',
-      body: updateForm.value,
-    });
-
-    if (res.success) {
-      successMessage.value = res.data?.message || 'Progress updated successfully';
-      ticketToUpdate.value = null;
-      await loadRequests();
-      setTimeout(() => {
-        successMessage.value = null;
-      }, 4000);
-    } else {
-      errorMessage.value = res.error?.message || 'Failed to update progress';
-    }
-  } catch (err: any) {
-    errorMessage.value = err?.data?.error?.message || err?.message || 'Error updating progress';
-  } finally {
-    isUpdating.value = false;
+  const res = await maintenanceStore.updateProgress(ticketToUpdate.value.id, updateForm.value);
+  if (res.success) {
+    successMessage.value = res.message || 'Progress updated successfully';
+    ticketToUpdate.value = null;
+    setTimeout(() => {
+      successMessage.value = null;
+    }, 4000);
   }
 }
 
@@ -279,33 +184,18 @@ function openConfirmModal(ticket: MaintenanceItem) {
 
 async function executeConfirmResolution() {
   if (!ticketToConfirm.value) return;
-  isConfirming.value = true;
-  errorMessage.value = null;
-  try {
-    const res = await $fetch<ApiResponse<{ request: MaintenanceItem; message: string }>>(`/api/v1/maintenance/${ticketToConfirm.value.id}/confirm`, {
-      method: 'POST',
-      body: confirmForm.value,
-    });
-
-    if (res.success) {
-      successMessage.value = res.data?.message || 'Ticket closed and resolution confirmed';
-      ticketToConfirm.value = null;
-      await loadRequests();
-      setTimeout(() => {
-        successMessage.value = null;
-      }, 4000);
-    } else {
-      errorMessage.value = res.error?.message || 'Failed to confirm resolution';
-    }
-  } catch (err: any) {
-    errorMessage.value = err?.data?.error?.message || err?.message || 'Error confirming closure';
-  } finally {
-    isConfirming.value = false;
+  const res = await maintenanceStore.confirmResolution(ticketToConfirm.value.id, confirmForm.value);
+  if (res.success) {
+    successMessage.value = res.message || 'Ticket closed and resolution confirmed';
+    ticketToConfirm.value = null;
+    setTimeout(() => {
+      successMessage.value = null;
+    }, 4000);
   }
 }
 
 onMounted(() => {
-  loadRequests();
+  maintenanceStore.fetchRequests();
 });
 </script>
 

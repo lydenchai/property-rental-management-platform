@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { ArrowLeft, Building, Plus, X, CheckCircle2, AlertCircle } from '@lucide/vue';
-import type { ApiResponse } from '../../../../shared/types/api';
-
+import { usePropertyStore } from '../../../stores/property.store';
 definePageMeta({
   layout: 'dashboard',
   middleware: 'auth',
@@ -10,6 +9,9 @@ definePageMeta({
 });
 
 const router = useRouter();
+const propertyStore = usePropertyStore();
+const { isSubmitting, errorMessage } = propertyStore;
+const { createProperty } = propertyStore;
 
 const form = ref({
   title: '',
@@ -19,12 +21,10 @@ const form = ref({
   state: '',
   postalCode: '',
   country: 'KH',
-  amenities: [] as string[],
+  amenities: [],
 });
 
 const newAmenity = ref('');
-const isSubmitting = ref(false);
-const errorMessage = ref<string | null>(null);
 
 const standardAmenities = [
   'Swimming Pool',
@@ -39,7 +39,7 @@ const standardAmenities = [
   'Central Air Conditioning',
 ];
 
-function toggleAmenity(item: string) {
+function toggleAmenity(item) {
   if (form.value.amenities.includes(item)) {
     form.value.amenities = form.value.amenities.filter((a) => a !== item);
   } else {
@@ -56,24 +56,9 @@ function addCustomAmenity() {
 }
 
 async function handleCreateProperty() {
-  isSubmitting.value = true;
-  errorMessage.value = null;
-
-  try {
-    const res = await $fetch<ApiResponse<{ property: any }>>('/api/v1/properties', {
-      method: 'POST',
-      body: form.value,
-    });
-
-    if (res.success && res.data?.property) {
-      router.push(`/dashboard/properties/${res.data.property.id}`);
-    } else {
-      errorMessage.value = res.error?.message || 'Failed to create property';
-    }
-  } catch (err: any) {
-    errorMessage.value = err?.data?.error?.message || err?.message || 'Error creating property';
-  } finally {
-    isSubmitting.value = false;
+  const res = await createProperty(form.value);
+  if (res.success && res.property) {
+    router.push(`/dashboard/properties/${res.property.id}`);
   }
 }
 </script>

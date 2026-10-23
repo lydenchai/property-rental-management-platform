@@ -16,7 +16,8 @@ import {
   MessageSquare
 } from '@lucide/vue';
 import { useAuth } from '../../../composables/useAuth';
-import type { ApiResponse } from '../../../../shared/types/api';
+import { useApplicationStore } from '../../../stores/application.store';
+import type { ApplicationItem } from '~~/shared/types';
 import AppTableCard from '../../../components/common/AppTableCard.vue';
 
 definePageMeta({
@@ -26,50 +27,25 @@ definePageMeta({
 });
 
 const { user, isLandlord, isTenant, isAdmin } = useAuth();
+const applicationStore = useApplicationStore();
 
-interface ApplicationItem {
-  id: string;
-  unitId: string;
-  tenantId: string;
-  status: string;
-  desiredMoveInDate: string;
-  proposedRent: number;
-  employmentDetails: string;
-  notes: string | null;
-  reviewedById: string | null;
-  reviewedAt: string | null;
-  reviewReason: string | null;
-  createdAt: string;
-  unit?: {
-    id: string;
-    unitNumber: string;
-    rentAmount: number;
-    bedrooms: number;
-    bathrooms: number;
-    property?: {
-      id: string;
-      title: string;
-      city: string;
-      state: string;
-    };
-  };
-  tenant?: {
-    id: string;
-    fullName: string;
-    email: string;
-    phone: string | null;
-  };
-  property?: {
-    id: string;
-    title: string;
-    city: string;
-    state: string;
-  };
-}
+const {
+  applications,
+  isLoading,
+  isSubmittingReview,
+  errorMessage,
+  totalCount,
+  pendingCount,
+  approvedCount,
+  rejectedCount,
+} = applicationStore;
 
-const applications = ref<ApplicationItem[]>([]);
-const isLoading = ref(true);
-const errorMessage = ref<string | null>(null);
+const {
+  fetchApplications,
+  loadApplications,
+  reviewApplication,
+} = applicationStore;
+
 const successMessage = ref<string | null>(null);
 const activeTab = ref<'ALL' | 'PENDING' | 'APPROVED' | 'REJECTED'>('ALL');
 const searchQuery = ref('');
@@ -78,24 +54,6 @@ const searchQuery = ref('');
 const appToReview = ref<ApplicationItem | null>(null);
 const reviewDecision = ref<'APPROVED' | 'REJECTED'>('APPROVED');
 const reviewReason = ref('');
-const isSubmittingReview = ref(false);
-
-async function loadApplications() {
-  isLoading.value = true;
-  errorMessage.value = null;
-  try {
-    const res = await $fetch<ApiResponse<{ applications: ApplicationItem[] }>>('/api/v1/applications');
-    if (res.success && res.data) {
-      applications.value = res.data.applications;
-    } else {
-      errorMessage.value = res.error?.message || 'Failed to fetch applications';
-    }
-  } catch (err: any) {
-    errorMessage.value = err?.data?.error?.message || err?.message || 'Error loading applications';
-  } finally {
-    isLoading.value = false;
-  }
-}
 
 const filteredApplications = computed(() => {
   return applications.value.filter((app) => {
@@ -134,32 +92,17 @@ function openReviewModal(app: ApplicationItem, decision: 'APPROVED' | 'REJECTED'
 
 async function submitReview() {
   if (!appToReview.value) return;
-  isSubmittingReview.value = true;
-  errorMessage.value = null;
+  const res = await reviewApplication(appToReview.value.id, {
+    status: reviewDecision.value,
+    reason: reviewReason.value,
+  });
 
-  try {
-    const res = await $fetch<ApiResponse<any>>(`/api/v1/applications/${appToReview.value.id}/review`, {
-      method: 'POST',
-      body: {
-        status: reviewDecision.value,
-        reason: reviewReason.value,
-      },
-    });
-
-    if (res.success) {
-      successMessage.value = res.data?.message || `Application ${reviewDecision.value.toLowerCase()} successfully.`;
-      appToReview.value = null;
-      await loadApplications();
-      setTimeout(() => {
-        successMessage.value = null;
-      }, 4000);
-    } else {
-      errorMessage.value = res.error?.message || 'Failed to review application';
-    }
-  } catch (err: any) {
-    errorMessage.value = err?.data?.error?.message || err?.message || 'Error processing review';
-  } finally {
-    isSubmittingReview.value = false;
+  if (res.success) {
+    successMessage.value = res.message || `Application ${reviewDecision.value.toLowerCase()} successfully.`;
+    appToReview.value = null;
+    setTimeout(() => {
+      successMessage.value = null;
+    }, 4000);
   }
 }
 

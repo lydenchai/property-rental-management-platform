@@ -15,7 +15,8 @@ import {
   Plus
 } from '@lucide/vue';
 import { useAuth } from '../../../composables/useAuth';
-import type { ApiResponse } from '../../../../shared/types/api';
+import { useLeaseStore } from '../../../stores/lease.store';
+import type { LeaseItem } from '~~/shared/types';
 import AppTableCard from '../../../components/common/AppTableCard.vue';
 
 definePageMeta({
@@ -25,67 +26,44 @@ definePageMeta({
 });
 
 const { user, isLandlord, isTenant, isAdmin } = useAuth();
+const leaseStore = useLeaseStore();
 
-interface LeaseItem {
-  id: string;
-  unitId: string;
-  tenantId: string;
-  landlordId: string;
-  startDate: string;
-  endDate: string;
-  rentAmount: number;
-  depositAmount: number;
-  paymentDueDay: number;
-  status: string;
-  tenantSignedAt: string | null;
-  landlordSignedAt: string | null;
-  termsAndConditions: string;
-  createdAt: string;
-  unit?: {
-    id: string;
-    unitNumber: string;
-    bedrooms: number;
-    bathrooms: number;
-  };
-  property?: {
-    id: string;
-    title: string;
-    city: string;
-    state: string;
-  };
-  tenant?: {
-    id: string;
-    fullName: string;
-    email: string;
-  };
-  landlord?: {
-    id: string;
-    fullName: string;
-    email: string;
-  };
-}
+const {
+  leases,
+  isLoading,
+  isCreatingLease,
+  isSigning,
+  isTerminating,
+  errorMessage,
+  totalLeases,
+  activeLeases,
+  pendingLeases,
+  terminatedLeases,
+} = leaseStore;
 
-const leases = ref<LeaseItem[]>([]);
-const isLoading = ref(true);
-const errorMessage = ref<string | null>(null);
+const {
+  fetchLeases,
+  loadLeases,
+  createLease,
+  signLease,
+  terminateLease,
+} = leaseStore;
+
 const successMessage = ref<string | null>(null);
 const searchQuery = ref('');
 
 // Signing modal state
 const leaseToSign = ref<LeaseItem | null>(null);
 const agreeToTerms = ref(false);
-const isSigning = ref(false);
 
 // View terms modal state
 const viewLeaseModal = ref<LeaseItem | null>(null);
 
 // Terminate modal state
 const leaseToTerminate = ref<LeaseItem | null>(null);
-const isTerminating = ref(false);
 
 // Create lease modal state
 const isCreateLeaseOpen = ref(false);
-const isCreatingLease = ref(false);
 const createLeaseForm = ref({
   unitId: 'unit-skyline-204b',
   tenantId: 'user-tenant-01',
@@ -101,49 +79,16 @@ const createLeaseForm = ref({
 });
 
 async function executeCreateLease() {
-  isCreatingLease.value = true;
-  errorMessage.value = null;
-  try {
-    const res = await $fetch<ApiResponse<{ lease: any; message: string }>>('/api/v1/leases', {
-      method: 'POST',
-      body: {
-        ...createLeaseForm.value,
-        startDate: new Date(createLeaseForm.value.startDate!).toISOString(),
-        endDate: new Date(createLeaseForm.value.endDate!).toISOString(),
-      },
-    });
+  const res = await createLease({
+    ...createLeaseForm.value,
+  });
 
-    if (res.success) {
-      successMessage.value = res.data?.message || 'Lease agreement created successfully.';
-      isCreateLeaseOpen.value = false;
-      await loadLeases();
-      setTimeout(() => {
-        successMessage.value = null;
-      }, 4000);
-    } else {
-      errorMessage.value = res.error?.message || 'Failed to create lease contract';
-    }
-  } catch (err: any) {
-    errorMessage.value = err?.data?.error?.message || err?.message || 'Error generating lease contract';
-  } finally {
-    isCreatingLease.value = false;
-  }
-}
-
-async function loadLeases() {
-  isLoading.value = true;
-  errorMessage.value = null;
-  try {
-    const res = await $fetch<ApiResponse<{ leases: LeaseItem[] }>>('/api/v1/leases');
-    if (res.success && res.data) {
-      leases.value = res.data.leases;
-    } else {
-      errorMessage.value = res.error?.message || 'Failed to load lease agreements';
-    }
-  } catch (err: any) {
-    errorMessage.value = err?.data?.error?.message || err?.message || 'Error loading leases';
-  } finally {
-    isLoading.value = false;
+  if (res.success) {
+    successMessage.value = res.message || 'Lease agreement created successfully.';
+    isCreateLeaseOpen.value = false;
+    setTimeout(() => {
+      successMessage.value = null;
+    }, 4000);
   }
 }
 
@@ -178,51 +123,26 @@ function openSignModal(lease: LeaseItem) {
 
 async function executeSign() {
   if (!leaseToSign.value || !agreeToTerms.value) return;
-  isSigning.value = true;
-  errorMessage.value = null;
+  const res = await signLease(leaseToSign.value.id);
 
-  try {
-    const res = await $fetch<ApiResponse<{ message: string }>>(`/api/v1/leases/${leaseToSign.value.id}/sign`, {
-      method: 'POST',
-      body: { agreeToTerms: true },
-    });
-
-    if (res.success) {
-      successMessage.value = res.data?.message || 'Lease agreement signed successfully.';
-      leaseToSign.value = null;
-      await loadLeases();
-      setTimeout(() => {
-        successMessage.value = null;
-      }, 4000);
-    } else {
-      errorMessage.value = res.error?.message || 'Failed to sign lease';
-    }
-  } catch (err: any) {
-    errorMessage.value = err?.data?.error?.message || err?.message || 'Error recording signature';
-  } finally {
-    isSigning.value = false;
+  if (res.success) {
+    successMessage.value = res.message || 'Lease agreement signed successfully.';
+    leaseToSign.value = null;
+    setTimeout(() => {
+      successMessage.value = null;
+    }, 4000);
   }
 }
 
 async function executeTerminate() {
   if (!leaseToTerminate.value) return;
-  isTerminating.value = true;
-  try {
-    const res = await $fetch<ApiResponse<{ message: string }>>(`/api/v1/leases/${leaseToTerminate.value.id}/terminate`, {
-      method: 'POST',
-    });
-    if (res.success) {
-      successMessage.value = res.data?.message || 'Lease terminated successfully.';
-      leaseToTerminate.value = null;
-      await loadLeases();
-      setTimeout(() => {
-        successMessage.value = null;
-      }, 4000);
-    }
-  } catch (err: any) {
-    errorMessage.value = err?.data?.error?.message || err?.message || 'Error terminating lease';
-  } finally {
-    isTerminating.value = false;
+  const res = await terminateLease(leaseToTerminate.value.id);
+  if (res.success) {
+    successMessage.value = res.message || 'Lease terminated successfully.';
+    leaseToTerminate.value = null;
+    setTimeout(() => {
+      successMessage.value = null;
+    }, 4000);
   }
 }
 

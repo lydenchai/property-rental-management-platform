@@ -15,7 +15,8 @@ import {
   Activity
 } from '@lucide/vue';
 import { useAuth } from '../../../composables/useAuth';
-import type { ApiResponse } from '../../../../shared/types/api';
+import { useAuditLogStore } from '../../../stores/audit-log.store';
+import type { AuditLogItem } from '~~/shared/types';
 import AppTableCard from '../../../components/common/AppTableCard.vue';
 
 definePageMeta({
@@ -25,29 +26,19 @@ definePageMeta({
 });
 
 const { isAdmin } = useAuth();
+const auditLogStore = useAuditLogStore();
 
-interface AuditLogItem {
-  id: string;
-  userId: string | null;
-  action: string;
-  entityType: string;
-  entityId: string;
-  oldValues?: any | null;
-  newValues?: any | null;
-  ipAddress?: string | null;
-  userAgent?: string | null;
-  createdAt: string;
-  user?: {
-    id: string;
-    fullName: string;
-    email: string;
-    role: string;
-  };
-}
+const {
+  logs,
+  isLoading,
+  errorMessage,
+  totalLogs,
+} = auditLogStore;
 
-const logs = ref<AuditLogItem[]>([]);
-const isLoading = ref(true);
-const errorMessage = ref<string | null>(null);
+const {
+  fetchAuditLogs,
+  loadAuditLogs,
+} = auditLogStore;
 
 // Filters
 const actionFilter = ref('ALL');
@@ -56,23 +47,6 @@ const searchQuery = ref('');
 
 // Payload modal
 const selectedLog = ref<AuditLogItem | null>(null);
-
-async function loadAuditLogs() {
-  isLoading.value = true;
-  errorMessage.value = null;
-  try {
-    const res = await $fetch<ApiResponse<{ logs: AuditLogItem[] }>>('/api/v1/admin/audit-logs');
-    if (res.success && res.data) {
-      logs.value = res.data.logs;
-    } else {
-      errorMessage.value = res.error?.message || 'Failed to load audit logs';
-    }
-  } catch (err: any) {
-    errorMessage.value = err?.data?.error?.message || err?.message || 'Error fetching audit logs';
-  } finally {
-    isLoading.value = false;
-  }
-}
 
 const filteredLogs = computed(() => {
   return logs.value.filter((log) => {

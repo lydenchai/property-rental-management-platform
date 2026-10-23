@@ -13,6 +13,7 @@ import {
   ArrowUpRight
 } from '@lucide/vue';
 import { useAuth } from '../../../composables/useAuth';
+import { useReportStore } from '../../../stores/report.store';
 
 definePageMeta({
   layout: 'dashboard',
@@ -31,72 +32,27 @@ onMounted(() => {
 });
 
 const activeTab = ref<'occupancy' | 'financials'>('occupancy');
-const isLoading = ref(true);
-const occupancyData = ref<any>(null);
-const financialData = ref<any>(null);
-const errorMessage = ref('');
+const reportStore = useReportStore();
 
-const loadReports = async () => {
-  isLoading.value = true;
-  errorMessage.value = '';
-  try {
-    const [occRes, finRes] = await Promise.all([
-      $fetch<any>('/api/v1/reports/occupancy'),
-      $fetch<any>('/api/v1/reports/financials')
-    ]);
+const {
+  occupancyData,
+  financialData,
+  isLoading,
+  errorMessage,
+} = reportStore;
 
-    if (occRes?.success) occupancyData.value = occRes.data;
-    if (finRes?.success) financialData.value = finRes.data;
-  } catch (err: any) {
-    errorMessage.value = err.data?.message || 'Failed to load report analytics.';
-  } finally {
-    isLoading.value = false;
-  }
-};
+const {
+  loadReports,
+  fetchReports,
+  exportCSV: storeExportCSV,
+} = reportStore;
 
 onMounted(() => {
   loadReports();
 });
 
 const exportCSV = () => {
-  if (activeTab.value === 'occupancy' && occupancyData.value?.propertyBreakdown) {
-    const headers = ['Property Title', 'Address', 'Total Units', 'Occupied', 'Available', 'Maintenance', 'Occupancy Rate (%)'];
-    const rows = occupancyData.value.propertyBreakdown.map((p: any) => [
-      `"${p.title.replace(/"/g, '""')}"`,
-      `"${(p.address + ', ' + p.city).replace(/"/g, '""')}"`,
-      p.totalUnits,
-      p.occupiedUnits,
-      p.availableUnits,
-      p.maintenanceUnits,
-      p.occupancyRate
-    ]);
-    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map((r: any[]) => r.join(','))].join('\n');
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement('a');
-    link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `occupancy_report_${new Date().toISOString().slice(0, 10)}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  } else if (activeTab.value === 'financials' && financialData.value) {
-    const headers = ['Metric', 'Amount'];
-    const rows = [
-      ['Total Invoiced', financialData.value.totalInvoiced],
-      ['Total Collected', financialData.value.totalCollected],
-      ['Outstanding Balance', financialData.value.outstandingBalance],
-      ['Overdue Total', financialData.value.overdueTotal],
-      ['Collection Rate', `${financialData.value.collectionRate}%`],
-      ['Total Invoices', financialData.value.invoiceCount]
-    ];
-    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement('a');
-    link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `financial_report_${new Date().toISOString().slice(0, 10)}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  }
+  storeExportCSV(activeTab.value);
 };
 </script>
 

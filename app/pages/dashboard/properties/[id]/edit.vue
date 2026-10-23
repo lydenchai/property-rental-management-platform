@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import { ArrowLeft, Building, Plus, CheckCircle2, AlertCircle } from '@lucide/vue';
-import type { ApiResponse } from '../../../../../shared/types/api';
+import { usePropertyStore } from '../../../../stores/property.store';
 
 definePageMeta({
   layout: 'dashboard',
@@ -12,6 +12,10 @@ definePageMeta({
 const route = useRoute();
 const router = useRouter();
 const propertyId = route.params.id as string;
+
+const propertyStore = usePropertyStore();
+const { isLoading, isSubmitting, errorMessage } = propertyStore;
+const { fetchPropertyById, updateProperty } = propertyStore;
 
 const form = ref({
   title: '',
@@ -25,9 +29,6 @@ const form = ref({
 });
 
 const newAmenity = ref('');
-const isLoading = ref(true);
-const isSubmitting = ref(false);
-const errorMessage = ref<string | null>(null);
 
 const standardAmenities = [
   'Swimming Pool',
@@ -43,29 +44,19 @@ const standardAmenities = [
 ];
 
 async function loadProperty() {
-  isLoading.value = true;
-  errorMessage.value = null;
-  try {
-    const res = await $fetch<ApiResponse<{ property: any }>>(`/api/v1/properties/${propertyId}`);
-    if (res.success && res.data?.property) {
-      const p = res.data.property;
-      form.value = {
-        title: p.title,
-        description: p.description,
-        addressLine1: p.addressLine1,
-        city: p.city,
-        state: p.state,
-        postalCode: p.postalCode,
-        country: p.country || 'US',
-        amenities: p.amenities || [],
-      };
-    } else {
-      errorMessage.value = res.error?.message || 'Property not found';
-    }
-  } catch (err: any) {
-    errorMessage.value = err?.data?.error?.message || err?.message || 'Failed to load property';
-  } finally {
-    isLoading.value = false;
+  const res = await fetchPropertyById(propertyId);
+  if (res.success && res.property) {
+    const p = res.property;
+    form.value = {
+      title: p.title,
+      description: p.description,
+      addressLine1: p.addressLine1,
+      city: p.city,
+      state: p.state,
+      postalCode: p.postalCode,
+      country: p.country || 'US',
+      amenities: p.amenities || [],
+    };
   }
 }
 
@@ -86,24 +77,9 @@ function addCustomAmenity() {
 }
 
 async function handleUpdateProperty() {
-  isSubmitting.value = true;
-  errorMessage.value = null;
-
-  try {
-    const res = await $fetch<ApiResponse<{ property: any }>>(`/api/v1/properties/${propertyId}`, {
-      method: 'PUT',
-      body: form.value,
-    });
-
-    if (res.success) {
-      router.push(`/dashboard/properties/${propertyId}`);
-    } else {
-      errorMessage.value = res.error?.message || 'Failed to update property';
-    }
-  } catch (err: any) {
-    errorMessage.value = err?.data?.error?.message || err?.message || 'Error updating property';
-  } finally {
-    isSubmitting.value = false;
+  const res = await updateProperty(propertyId, form.value);
+  if (res.success) {
+    router.push(`/dashboard/properties/${propertyId}`);
   }
 }
 

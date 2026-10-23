@@ -14,8 +14,9 @@ import {
   ExternalLink
 } from '@lucide/vue';
 import PropertyMap from '../../../../components/common/PropertyMap.vue';
-import type { ApiResponse } from '../../../../../shared/types/api';
 import AppTableCard from '../../../../components/common/AppTableCard.vue';
+import { usePropertyStore } from '../../../../stores/property.store';
+import type { PropertyDetail, UnitItem as Unit } from '~~/shared/types';
 
 definePageMeta({
   layout: 'dashboard',
@@ -25,41 +26,25 @@ definePageMeta({
 
 const route = useRoute();
 const propertyId = route.params.id as string;
+const propertyStore = usePropertyStore();
 
-interface Unit {
-  id: string;
-  propertyId: string;
-  unitNumber: string;
-  floor: number;
-  sizeSqFt: number;
-  bedrooms: number;
-  bathrooms: number;
-  rentAmount: number;
-  depositAmount: number;
-  status: string;
-  createdAt: string;
-}
+const {
+  currentProperty: property,
+  isLoading,
+  isSubmittingUnit,
+  isDeleting,
+  errorMessage,
+} = propertyStore;
 
-interface PropertyDetail {
-  id: string;
-  title: string;
-  description: string;
-  addressLine1: string;
-  city: string;
-  state: string;
-  postalCode: string;
-  country: string;
-  amenities: string[];
-  units: Unit[];
-  unitsCount: number;
-  availableUnitsCount: number;
-  latitude?: number;
-  longitude?: number;
-}
+const {
+  fetchPropertyById,
+  createUnit,
+  updateUnit,
+  deleteUnit,
+} = propertyStore;
 
-const property = ref<PropertyDetail | null>(null);
-const isLoading = ref(true);
-const errorMessage = ref<string | null>(null);
+const loadProperty = () => fetchPropertyById(propertyId);
+
 const successMessage = ref<string | null>(null);
 
 // Units pagination state
@@ -75,7 +60,6 @@ const paginatedUnits = computed(() => {
 // Unit modal state
 const isUnitModalOpen = ref(false);
 const editingUnitId = ref<string | null>(null);
-const isSubmittingUnit = ref(false);
 
 const unitForm = ref({
   unitNumber: '',
@@ -90,24 +74,6 @@ const unitForm = ref({
 
 // Delete confirmation modal state
 const unitToDelete = ref<Unit | null>(null);
-const isDeleting = ref(false);
-
-async function loadProperty() {
-  isLoading.value = true;
-  errorMessage.value = null;
-  try {
-    const res = await $fetch<ApiResponse<{ property: PropertyDetail }>>(`/api/v1/properties/${propertyId}`);
-    if (res.success && res.data) {
-      property.value = res.data.property;
-    } else {
-      errorMessage.value = res.error?.message || 'Property not found';
-    }
-  } catch (err: any) {
-    errorMessage.value = err?.data?.error?.message || err?.message || 'Error loading property';
-  } finally {
-    isLoading.value = false;
-  }
-}
 
 function openAddUnitModal() {
   editingUnitId.value = null;
@@ -140,41 +106,22 @@ function openEditUnitModal(unit: Unit) {
 }
 
 async function handleSaveUnit() {
-  isSubmittingUnit.value = true;
-  errorMessage.value = null;
-
-  try {
-    if (editingUnitId.value) {
-      // Update
-      const res = await $fetch<ApiResponse<{ unit: Unit }>>(`/api/v1/units/${editingUnitId.value}`, {
-        method: 'PUT',
-        body: unitForm.value,
-      });
-      if (res.success) {
-        successMessage.value = `Unit ${unitForm.value.unitNumber} updated successfully.`;
-        isUnitModalOpen.value = false;
-        await loadProperty();
-      }
-    } else {
-      // Create
-      const res = await $fetch<ApiResponse<{ unit: Unit }>>(`/api/v1/properties/${propertyId}/units`, {
-        method: 'POST',
-        body: unitForm.value,
-      });
-      if (res.success) {
-        successMessage.value = `Unit ${unitForm.value.unitNumber} added successfully.`;
-        isUnitModalOpen.value = false;
-        await loadProperty();
-      }
+  if (editingUnitId.value) {
+    const res = await updateUnit(propertyId, editingUnitId.value, unitForm.value);
+    if (res.success) {
+      successMessage.value = `Unit ${unitForm.value.unitNumber} updated successfully.`;
+      isUnitModalOpen.value = false;
     }
-    setTimeout(() => {
-      successMessage.value = null;
-    }, 3500);
-  } catch (err: any) {
-    errorMessage.value = err?.data?.error?.message || err?.message || 'Failed to save unit';
-  } finally {
-    isSubmittingUnit.value = false;
+  } else {
+    const res = await createUnit(propertyId, unitForm.value);
+    if (res.success) {
+      successMessage.value = `Unit ${unitForm.value.unitNumber} added successfully.`;
+      isUnitModalOpen.value = false;
+    }
   }
+  setTimeout(() => {
+    successMessage.value = null;
+  }, 3500);
 }
 
 function confirmDeleteUnit(unit: Unit) {
@@ -183,23 +130,13 @@ function confirmDeleteUnit(unit: Unit) {
 
 async function executeDeleteUnit() {
   if (!unitToDelete.value) return;
-  isDeleting.value = true;
-  try {
-    const res = await $fetch<ApiResponse<any>>(`/api/v1/units/${unitToDelete.value.id}`, {
-      method: 'DELETE',
-    });
-    if (res.success) {
-      successMessage.value = `Unit ${unitToDelete.value.unitNumber} removed.`;
-      unitToDelete.value = null;
-      await loadProperty();
-      setTimeout(() => {
-        successMessage.value = null;
-      }, 3500);
-    }
-  } catch (err: any) {
-    errorMessage.value = err?.data?.error?.message || err?.message || 'Failed to delete unit';
-  } finally {
-    isDeleting.value = false;
+  const res = await deleteUnit(propertyId, unitToDelete.value.id);
+  if (res.success) {
+    successMessage.value = `Unit ${unitToDelete.value.unitNumber} removed.`;
+    unitToDelete.value = null;
+    setTimeout(() => {
+      successMessage.value = null;
+    }, 3500);
   }
 }
 

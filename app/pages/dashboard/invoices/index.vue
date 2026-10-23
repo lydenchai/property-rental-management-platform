@@ -15,7 +15,8 @@ import {
   Printer, 
 } from '@lucide/vue';
 import { useAuth } from '../../../composables/useAuth';
-import type { ApiResponse } from '../../../../shared/types/api';
+import { useInvoiceStore } from '../../../stores/invoice.store';
+import type { InvoiceItem } from '~~/shared/types';
 import AppTableCard from '../../../components/common/AppTableCard.vue';
 
 definePageMeta({
@@ -25,58 +26,30 @@ definePageMeta({
 });
 
 const { isLandlord, isTenant, isAdmin } = useAuth();
+const invoiceStore = useInvoiceStore();
 
-interface InvoiceItem {
-  id: string;
-  leaseId: string;
-  tenantId: string;
-  invoiceNumber: string;
-  amountDue: number;
-  amountPaid: number;
-  issueDate: string;
-  dueDate: string;
-  status: string;
-  notes?: string | null;
-  createdAt: string;
-  lease?: {
-    id: string;
-    unitId: string;
-    landlordId: string;
-    unit?: {
-      id: string;
-      unitNumber: string;
-      property?: {
-        id: string;
-        title: string;
-        city: string;
-        state: string;
-      };
-    };
-    landlord?: {
-      id: string;
-      fullName: string;
-      email: string;
-    };
-  };
-  tenant?: {
-    id: string;
-    fullName: string;
-    email: string;
-    phone: string | null;
-  };
-  payments?: Array<{
-    id: string;
-    amount: number;
-    method: string;
-    referenceNumber: string | null;
-    paidAt: string;
-    receiptUrl: string | null;
-  }>;
-}
+const {
+  invoices,
+  isLoading,
+  isGenerating,
+  isPaying,
+  isLoadingReceipt,
+  receiptData,
+  errorMessage,
+  totalInvoiced,
+  totalCollected,
+  totalOutstanding,
+  overdueCount,
+} = invoiceStore;
 
-const invoices = ref<InvoiceItem[]>([]);
-const isLoading = ref(true);
-const errorMessage = ref<string | null>(null);
+const {
+  fetchInvoices,
+  loadInvoices,
+  generateInvoice,
+  recordPayment,
+  viewReceipt,
+} = invoiceStore;
+
 const successMessage = ref<string | null>(null);
 
 // Filters
@@ -85,7 +58,6 @@ const searchQuery = ref('');
 
 // Generate Invoice Modal
 const isGenerateModalOpen = ref(false);
-const isGenerating = ref(false);
 const generateForm = ref({
   leaseId: 'lease-skyline-101a',
   dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
@@ -95,50 +67,11 @@ const generateForm = ref({
 
 // Pay / Record Payment Modal
 const invoiceToPay = ref<InvoiceItem | null>(null);
-const isPaying = ref(false);
 const paymentForm = ref({
   amount: 0,
   method: 'BANK_TRANSFER',
   referenceNumber: '',
   notes: '',
-});
-
-// Digital Receipt Modal
-const receiptData = ref<any | null>(null);
-const isLoadingReceipt = ref(false);
-
-async function loadInvoices() {
-  isLoading.value = true;
-  errorMessage.value = null;
-  try {
-    const res = await $fetch<ApiResponse<{ invoices: InvoiceItem[] }>>('/api/v1/invoices');
-    if (res.success && res.data) {
-      invoices.value = res.data.invoices;
-    } else {
-      errorMessage.value = res.error?.message || 'Failed to load invoices';
-    }
-  } catch (err: any) {
-    errorMessage.value = err?.data?.error?.message || err?.message || 'Error loading invoices';
-  } finally {
-    isLoading.value = false;
-  }
-}
-
-// Stats metrics
-const totalInvoiced = computed(() => {
-  return invoices.value.reduce((acc, inv) => acc + Number(inv.amountDue), 0);
-});
-
-const totalCollected = computed(() => {
-  return invoices.value.reduce((acc, inv) => acc + Number(inv.amountPaid), 0);
-});
-
-const totalOutstanding = computed(() => {
-  return Math.max(0, totalInvoiced.value - totalCollected.value);
-});
-
-const overdueCount = computed(() => {
-  return invoices.value.filter((i) => i.status === 'OVERDUE').length;
 });
 
 // Filtered invoices
@@ -172,31 +105,17 @@ watch([activeTab, searchQuery], () => {
 });
 
 async function executeGenerateInvoice() {
-  isGenerating.value = true;
-  errorMessage.value = null;
-  try {
-    const res = await $fetch<ApiResponse<{ invoice: InvoiceItem; message: string }>>('/api/v1/invoices', {
-      method: 'POST',
-      body: {
-        ...generateForm.value,
-        dueDate: new Date(generateForm.value.dueDate!).toISOString(),
-      },
-    });
+  const res = await generateInvoice({
+    ...generateForm.value,
+    dueDate: generateForm.value.dueDate,
+  });
 
-    if (res.success) {
-      successMessage.value = res.data?.message || 'Invoice generated successfully';
-      isGenerateModalOpen.value = false;
-      await loadInvoices();
-      setTimeout(() => {
-        successMessage.value = null;
-      }, 4000);
-    } else {
-      errorMessage.value = res.error?.message || 'Failed to generate invoice';
-    }
-  } catch (err: any) {
-    errorMessage.value = err?.data?.error?.message || err?.message || 'Error generating invoice';
-  } finally {
-    isGenerating.value = false;
+  if (res.success) {
+    successMessage.value = res.message || 'Invoice generated successfully';
+    isGenerateModalOpen.value = false;
+    setTimeout(() => {
+      successMessage.value = null;
+    }, 4000);
   }
 }
 
@@ -213,56 +132,25 @@ function openPayModal(inv: InvoiceItem) {
 
 async function executeRecordPayment() {
   if (!invoiceToPay.value) return;
-  isPaying.value = true;
-  errorMessage.value = null;
-  try {
-    const res = await $fetch<ApiResponse<{ payment: any; invoice: InvoiceItem; receiptNumber: string; message: string }>>('/api/v1/payments', {
-      method: 'POST',
-      body: {
-        invoiceId: invoiceToPay.value.id,
-        amount: Number(paymentForm.value.amount),
-        method: paymentForm.value.method,
-        referenceNumber: paymentForm.value.referenceNumber || undefined,
-        notes: paymentForm.value.notes || undefined,
-      },
-    });
+  const res = await recordPayment({
+    invoiceId: invoiceToPay.value.id,
+    amount: Number(paymentForm.value.amount),
+    method: paymentForm.value.method,
+    referenceNumber: paymentForm.value.referenceNumber || undefined,
+    notes: paymentForm.value.notes || undefined,
+  });
 
-    if (res.success) {
-      successMessage.value = res.data?.message || 'Payment recorded successfully';
-      const paymentId = res.data?.payment?.id;
-      invoiceToPay.value = null;
-      await loadInvoices();
+  if (res.success) {
+    successMessage.value = res.message || 'Payment recorded successfully';
+    const paymentId = res.payment?.id;
+    invoiceToPay.value = null;
 
-      if (paymentId) {
-        await viewReceipt(paymentId);
-      }
-      setTimeout(() => {
-        successMessage.value = null;
-      }, 4000);
-    } else {
-      errorMessage.value = res.error?.message || 'Failed to record payment';
+    if (paymentId) {
+      await viewReceipt(paymentId);
     }
-  } catch (err: any) {
-    errorMessage.value = err?.data?.error?.message || err?.message || 'Error processing payment';
-  } finally {
-    isPaying.value = false;
-  }
-}
-
-async function viewReceipt(paymentId: string) {
-  isLoadingReceipt.value = true;
-  errorMessage.value = null;
-  try {
-    const res = await $fetch<ApiResponse<{ receipt: any }>>(`/api/v1/payments/${paymentId}/receipt`);
-    if (res.success && res.data) {
-      receiptData.value = res.data.receipt;
-    } else {
-      errorMessage.value = res.error?.message || 'Failed to load receipt';
-    }
-  } catch (err: any) {
-    errorMessage.value = err?.data?.error?.message || err?.message || 'Error fetching receipt';
-  } finally {
-    isLoadingReceipt.value = false;
+    setTimeout(() => {
+      successMessage.value = null;
+    }, 4000);
   }
 }
 

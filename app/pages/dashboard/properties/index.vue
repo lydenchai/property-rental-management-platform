@@ -13,8 +13,8 @@ import {
   CheckCircle2,
   AlertCircle
 } from '@lucide/vue';
-import { useAuth } from '../../../composables/useAuth';
-import type { ApiResponse } from '../../../../shared/types/api';
+import { usePropertyStore } from '../../../stores/property.store';
+import type { PropertyItem } from '~~/shared/types';
 import AppTableCard from '../../../components/common/AppTableCard.vue';
 
 definePageMeta({
@@ -23,56 +23,23 @@ definePageMeta({
   title: 'Property Portfolio',
 });
 
-const { user, isAdmin } = useAuth();
+const propertyStore = usePropertyStore();
+const { 
+  properties, 
+  isLoading, 
+  errorMessage, 
+  totalProperties, 
+  totalUnits, 
+  totalAvailable, 
+  occupancyRate 
+} = propertyStore;
 
-interface PropertyItem {
-  id: string;
-  landlordId: string;
-  title: string;
-  description: string;
-  addressLine1: string;
-  city: string;
-  state: string;
-  postalCode: string;
-  unitsCount: number;
-  availableUnitsCount: number;
-  minRent: number;
-  maxRent: number;
-  createdAt: string;
-}
-
-const properties = ref<PropertyItem[]>([]);
-const isLoading = ref<boolean>(true);
-const errorMessage = ref<string | null>(null);
 const successMessage = ref<string | null>(null);
 const searchQuery = ref('');
 
 // Delete confirmation modal state
 const propertyToDelete = ref<PropertyItem | null>(null);
 const isDeleting = ref(false);
-
-async function loadProperties() {
-  isLoading.value = true;
-  errorMessage.value = null;
-  try {
-    // If Landlord (non-admin), only query landlord's properties
-    const params = new URLSearchParams();
-    if (!isAdmin.value && user.value?.id) {
-      params.append('landlordId', user.value.id);
-    }
-    const url = `/api/v1/properties${params.toString() ? `?${params.toString()}` : ''}`;
-    const res = await $fetch<ApiResponse<{ properties: PropertyItem[] }>>(url);
-    if (res.success && res.data) {
-      properties.value = res.data.properties;
-    } else {
-      errorMessage.value = res.error?.message || 'Failed to fetch properties';
-    }
-  } catch (err: any) {
-    errorMessage.value = err?.data?.error?.message || err?.message || 'Failed to load properties';
-  } finally {
-    isLoading.value = false;
-  }
-}
 
 const filteredProperties = computed(() => {
   if (!searchQuery.value.trim()) return properties.value;
@@ -98,16 +65,6 @@ watch(searchQuery, () => {
   currentPage.value = 1;
 });
 
-// Summary stats
-const totalProperties = computed(() => properties.value.length);
-const totalUnits = computed(() => properties.value.reduce((acc, p) => acc + (p.unitsCount || 0), 0));
-const totalAvailable = computed(() => properties.value.reduce((acc, p) => acc + (p.availableUnitsCount || 0), 0));
-const occupancyRate = computed(() => {
-  if (totalUnits.value === 0) return '0%';
-  const occupied = totalUnits.value - totalAvailable.value;
-  return `${Math.round((occupied / totalUnits.value) * 100)}%`;
-});
-
 function confirmDelete(property: PropertyItem) {
   propertyToDelete.value = property;
 }
@@ -115,27 +72,19 @@ function confirmDelete(property: PropertyItem) {
 async function executeDelete() {
   if (!propertyToDelete.value) return;
   isDeleting.value = true;
-  try {
-    const res = await $fetch<ApiResponse<any>>(`/api/v1/properties/${propertyToDelete.value.id}`, {
-      method: 'DELETE',
-    });
-    if (res.success) {
-      successMessage.value = `Property "${propertyToDelete.value.title}" and its units have been deleted.`;
-      propertyToDelete.value = null;
-      await loadProperties();
-      setTimeout(() => {
-        successMessage.value = null;
-      }, 3500);
-    }
-  } catch (err: any) {
-    errorMessage.value = err?.data?.error?.message || err?.message || 'Failed to delete property';
-  } finally {
-    isDeleting.value = false;
+  const res = await propertyStore.deleteProperty(propertyToDelete.value.id);
+  if (res.success) {
+    successMessage.value = `Property "${propertyToDelete.value.title}" and its units have been deleted.`;
+    propertyToDelete.value = null;
+    setTimeout(() => {
+      successMessage.value = null;
+    }, 3500);
   }
+  isDeleting.value = false;
 }
 
 onMounted(() => {
-  loadProperties();
+  propertyStore.fetchProperties();
 });
 </script>
 

@@ -17,6 +17,7 @@ import {
   RefreshCw
 } from '@lucide/vue';
 import { useAuth } from '../../composables/useAuth';
+import { useDashboardStore } from '../../stores/dashboard.store';
 
 definePageMeta({
   layout: 'dashboard',
@@ -25,23 +26,9 @@ definePageMeta({
 });
 
 const { user, userRole, isAdmin, isLandlord, isTenant, isTechnician } = useAuth();
-
-const metrics = ref<any>(null);
-const isLoading = ref(true);
-
-const fetchMetrics = async () => {
-  isLoading.value = true;
-  try {
-    const res = await $fetch<any>('/api/v1/dashboard/metrics');
-    if (res?.success) {
-      metrics.value = res.data;
-    }
-  } catch (err) {
-    console.error('Failed to load metrics:', err);
-  } finally {
-    isLoading.value = false;
-  }
-};
+const dashboardStore = useDashboardStore();
+const { metrics, isLoading, errorMessage } = dashboardStore;
+const { fetchMetrics } = dashboardStore;
 
 onMounted(() => {
   fetchMetrics();

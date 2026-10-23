@@ -13,7 +13,7 @@ import {
   Clock
 } from '@lucide/vue';
 import { useAuth } from '../../../composables/useAuth';
-import type { ApiResponse } from '../../../../shared/types/api';
+import type { UserAccount } from '~~/shared/types';
 import AppTableCard from '../../../components/common/AppTableCard.vue';
 
 definePageMeta({
@@ -23,21 +23,27 @@ definePageMeta({
 });
 
 const { isAdmin } = useAuth();
+const userStore = useUserStore();
 
-interface UserAccount {
-  id: string;
-  email: string;
-  fullName: string;
-  phone: string | null;
-  role: string;
-  status: string;
-  emailVerifiedAt: string | null;
-  createdAt: string;
-}
+const {
+  users,
+  isLoading,
+  isToggling,
+  errorMessage,
+  totalUsers,
+  adminCount,
+  landlordCount,
+  tenantCount,
+  techCount,
+  suspendedCount,
+} = userStore;
 
-const users = ref<UserAccount[]>([]);
-const isLoading = ref(true);
-const errorMessage = ref<string | null>(null);
+const {
+  fetchUsers,
+  loadUsers,
+  updateUserStatus,
+} = userStore;
+
 const successMessage = ref<string | null>(null);
 
 // Filters
@@ -47,32 +53,6 @@ const searchQuery = ref('');
 
 // Status change modal
 const userToToggle = ref<UserAccount | null>(null);
-const isToggling = ref(false);
-
-async function loadUsers() {
-  isLoading.value = true;
-  errorMessage.value = null;
-  try {
-    const res = await $fetch<ApiResponse<{ users: UserAccount[] }>>('/api/v1/admin/users');
-    if (res.success && res.data) {
-      users.value = res.data.users;
-    } else {
-      errorMessage.value = res.error?.message || 'Failed to load users';
-    }
-  } catch (err: any) {
-    errorMessage.value = err?.data?.error?.message || err?.message || 'Error loading user accounts';
-  } finally {
-    isLoading.value = false;
-  }
-}
-
-// Metrics
-const totalUsers = computed(() => users.value.length);
-const adminCount = computed(() => users.value.filter((u) => u.role === 'ADMIN').length);
-const landlordCount = computed(() => users.value.filter((u) => u.role === 'LANDLORD').length);
-const tenantCount = computed(() => users.value.filter((u) => u.role === 'TENANT').length);
-const techCount = computed(() => users.value.filter((u) => u.role === 'TECHNICIAN').length);
-const suspendedCount = computed(() => users.value.filter((u) => u.status === 'SUSPENDED').length);
 
 const filteredUsers = computed(() => {
   return users.value.filter((u) => {
@@ -108,30 +88,16 @@ watch([roleFilter, statusFilter, searchQuery], () => {
 
 async function executeToggleStatus() {
   if (!userToToggle.value) return;
-  isToggling.value = true;
-  errorMessage.value = null;
 
   const newStatus = userToToggle.value.status === 'ACTIVE' ? 'SUSPENDED' : 'ACTIVE';
-  try {
-    const res = await $fetch<ApiResponse<{ user: UserAccount; message: string }>>(`/api/v1/admin/users/${userToToggle.value.id}/status`, {
-      method: 'PATCH',
-      body: { status: newStatus },
-    });
+  const res = await updateUserStatus(userToToggle.value.id, newStatus);
 
-    if (res.success) {
-      successMessage.value = res.data?.message || 'User status updated successfully';
-      userToToggle.value = null;
-      await loadUsers();
-      setTimeout(() => {
-        successMessage.value = null;
-      }, 4000);
-    } else {
-      errorMessage.value = res.error?.message || 'Failed to update user status';
-    }
-  } catch (err: any) {
-    errorMessage.value = err?.data?.error?.message || err?.message || 'Error updating user status';
-  } finally {
-    isToggling.value = false;
+  if (res.success) {
+    successMessage.value = res.message || 'User status updated successfully';
+    userToToggle.value = null;
+    setTimeout(() => {
+      successMessage.value = null;
+    }, 4000);
   }
 }
 
