@@ -138,6 +138,12 @@ function getPropertyThumbnail(property: Property): string {
 }
 
 onMounted(() => {
+  const route = useRoute();
+  if (route.query.city) selectedCity.value = String(route.query.city);
+  if (route.query.search) searchKeyword.value = String(route.query.search);
+  if (route.query.minRent) minPrice.value = Number(route.query.minRent) || '';
+  if (route.query.maxRent) maxPrice.value = Number(route.query.maxRent) || '';
+  if (route.query.bedrooms) selectedBeds.value = Number(route.query.bedrooms) || '';
   fetchProperties();
 });
 </script>
@@ -644,14 +650,14 @@ onMounted(() => {
 }
 
 .is-active-card {
-  border-color: #2563eb !important;
-  background: var(--bg-surface-hover) !important;
-  box-shadow: 0 0 0 1px #2563eb;
+  border-color: var(--primary) !important;
+  background: var(--bg-surface) !important;
+  box-shadow: 0 0 0 1px var(--primary);
 }
 
 .rent-highlight {
-  color: #10b981 !important;
-  font-weight: 700;
+  color: var(--accent-emerald) !important;
+  font-weight: 800;
 }
 
 .properties-grid {
@@ -665,20 +671,23 @@ onMounted(() => {
   flex-direction: column;
   padding: 0 !important;
   background: var(--bg-surface);
+  border: 1px solid var(--border-default);
   border-radius: var(--radius-md);
   overflow: hidden;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  transition: border-color 0.2s cubic-bezier(0.16, 1, 0.3, 1), transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   cursor: pointer;
 }
 
 .property-card:hover {
+  border-color: var(--primary);
+  transform: translateY(-3px);
   box-shadow: none;
 }
 
 .card-hero-media {
   position: relative;
   width: 100%;
-  height: 180px;
+  height: 195px;
   background: #0f172a;
   overflow: hidden;
 }
@@ -687,11 +696,11 @@ onMounted(() => {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: transform 0.25s ease;
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .property-card:hover .card-hero-img {
-  transform: scale(1.03);
+  transform: scale(1.04);
 }
 
 .card-hero-overlay {
@@ -706,21 +715,21 @@ onMounted(() => {
 }
 
 .city-pill {
-  font-size: 0.7rem;
+  font-size: 0.72rem;
   font-weight: 600;
-  background: rgba(15, 23, 42, 0.75);
+  background: #18181b;
   color: #ffffff;
-  padding: 2px 7px;
-  border-radius: 4px;
-  backdrop-filter: blur(2px);
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  padding: 3px 8px;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  letter-spacing: 0.02em;
 }
 
 .property-card-content {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  padding: 1.25rem 1.25rem;
+  padding: 1.25rem;
   flex: 1;
 }
 
@@ -743,7 +752,7 @@ onMounted(() => {
 }
 
 .property-title a:hover {
-  color: #818cf8;
+  color: var(--primary);
 }
 
 .property-location {

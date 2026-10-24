@@ -232,9 +232,27 @@ function changeStyle(styleId: string, fromUser: boolean = true) {
   if (fromUser) isUserStyleChoice.value = true;
   selectedStyle.value = styleId;
   const target = MAP_STYLES.find(s => s.id === styleId);
-  if (mapInstance && target) {
+  if (!mapInstance || !target) return;
+
+  try {
     isLoading.value = true;
-    mapInstance.setStyle(target.url);
+    if (typeof mapInstance.isStyleLoaded === 'function' && !mapInstance.isStyleLoaded()) {
+      mapInstance.once('style.load', () => {
+        try {
+          if (mapInstance && selectedStyle.value === styleId) {
+            mapInstance.setStyle(target.url);
+          }
+        } catch (err) {
+          console.warn('Explorer map deferred style update caught:', err);
+          isLoading.value = false;
+        }
+      });
+    } else {
+      mapInstance.setStyle(target.url);
+    }
+  } catch (err) {
+    console.warn('Explorer map style change caught:', err);
+    isLoading.value = false;
   }
 }
 
@@ -522,7 +540,7 @@ onUnmounted(() => {
   position: absolute;
   inset: 0;
   z-index: 10;
-  background: rgba(15, 23, 42, 0.75);
+  background: rgba(15, 23, 42, 0.85);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -530,7 +548,6 @@ onUnmounted(() => {
   gap: 10px;
   font-size: 0.85rem;
   color: #94a3b8;
-  backdrop-filter: blur(2px);
 }
 
 .map-spinner {

@@ -882,12 +882,15 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  border-radius: var(--radius-md, 8px);
-  background: var(--bg-surface, #ffffff);
-  transition: border-color 0.15s ease;
+  border-radius: var(--radius-md);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  transition: border-color 0.2s cubic-bezier(0.16, 1, 0.3, 1), transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .unit-card:hover {
+  border-color: var(--primary);
+  transform: translateY(-2px);
   box-shadow: none;
 }
 
@@ -914,33 +917,32 @@ onMounted(() => {
   position: absolute;
   top: 10px;
   left: 10px;
-  background: rgba(15, 23, 42, 0.75);
+  background: #18181b;
   color: #ffffff;
   padding: 3px 8px;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   font-size: 0.72rem;
   font-weight: 500;
   display: flex;
   align-items: center;
   gap: 4px;
-  backdrop-filter: blur(2px);
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.12);
 }
 
 .expand-gallery-btn {
   position: absolute;
   top: 10px;
   right: 10px;
-  background: rgba(15, 23, 42, 0.75);
+  background: #18181b;
   color: #ffffff;
   padding: 3px 8px;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   font-size: 0.72rem;
   font-weight: 500;
   display: flex;
   align-items: center;
   gap: 4px;
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   cursor: pointer;
   opacity: 0;
   transform: translateY(-3px);
@@ -956,21 +958,21 @@ onMounted(() => {
   position: absolute;
   bottom: 8px;
   left: 10px;
-  background: rgba(15, 23, 42, 0.75);
+  background: #18181b;
   color: #f8fafc;
   padding: 2px 8px;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   font-size: 0.7rem;
   font-weight: 500;
-  backdrop-filter: blur(2px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
 }
 
 .unit-card-thumbs {
   display: flex;
   gap: 6px;
-  padding: 8px 12px 12px 0;
-  background: var(--bg-surface, #141c2e);
-  border-bottom: 1px solid var(--border-subtle, #1e293b);
+  padding: 8px 12px;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border-subtle);
 }
 
 .unit-mini-thumb {
@@ -981,7 +983,7 @@ onMounted(() => {
   border: 2px solid transparent;
   padding: 0;
   cursor: pointer;
-  background: var(--bg-subtle, #1e293b);
+  background: var(--bg-subtle);
   transition: all 0.15s ease;
   flex-shrink: 0;
 }
@@ -1000,7 +1002,7 @@ onMounted(() => {
 }
 
 .unit-mini-thumb.active {
-  border-color: #38bdf8;
+  border-color: var(--primary);
   transform: scale(1.05);
 }
 
@@ -1008,6 +1010,7 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   gap: 0.85rem;
+  padding: 1.25rem;
   flex: 1;
 }
 

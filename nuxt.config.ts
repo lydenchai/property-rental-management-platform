@@ -40,7 +40,7 @@ export default defineNuxtConfig({
       ],
       script: [
         {
-          innerHTML: `(function(){try{var t=localStorage.getItem('rentease-theme');if(t==='dark'||(!t&&window.matchMedia('(prefers-color-scheme:dark)').matches)){document.documentElement.classList.add('dark');document.documentElement.classList.remove('light');}else{document.documentElement.classList.add('light');document.documentElement.classList.remove('dark');}}catch(e){}})();`,
+          innerHTML: `(function(){try{var m=document.cookie.match(/(?:^|; )rentease-theme=([^;]*)/);var t=m?decodeURIComponent(m[1]):localStorage.getItem('rentease-theme');if(t==='light'){document.documentElement.classList.add('light');document.documentElement.classList.remove('dark');}else if(t==='dark'){document.documentElement.classList.add('dark');document.documentElement.classList.remove('light');}else if(window.matchMedia('(prefers-color-scheme: dark)').matches){document.documentElement.classList.add('dark');document.documentElement.classList.remove('light');}else{document.documentElement.classList.add('light');document.documentElement.classList.remove('dark');}}catch(e){}})();`,
         },
       ],
     },

@@ -514,7 +514,7 @@ onMounted(() => {
   gap: 1rem;
   padding: 1.25rem;
   background: var(--bg-surface);
-  border: 1px solid var(--border-subtle);
+  border: 1px solid var(--border-default);
   border-radius: var(--radius-md);
 }
 
@@ -666,14 +666,15 @@ onMounted(() => {
   gap: 1rem;
   padding: 1.25rem;
   background: var(--bg-surface);
-  border: 1px solid var(--border-subtle);
+  border: 1px solid var(--border-default);
   border-radius: var(--radius-md);
-  transition: background-color 0.15s ease, border-color 0.15s ease;
+  transition: border-color 0.2s cubic-bezier(0.16, 1, 0.3, 1), transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.15s ease;
 }
 
 .workflow-card:hover {
   background: var(--bg-surface-hover);
-  border-color: var(--border-default);
+  border-color: var(--primary);
+  transform: translateY(-2px);
 }
 
 .wf-icon {
@@ -706,10 +707,11 @@ onMounted(() => {
   margin-left: auto;
   color: var(--text-dim);
   flex-shrink: 0;
-  transition: color 0.15s ease;
+  transition: color 0.15s ease, transform 0.15s ease;
 }
 
 .workflow-card:hover .wf-arrow {
-  color: var(--text-main);
+  color: var(--primary);
+  transform: translateX(3px);
 }
 </style>

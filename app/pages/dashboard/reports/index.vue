@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import {
-  BarChart3,
   Key,
   CreditCard,
   Building,
@@ -408,7 +407,7 @@ const exportCSV = () => {
 }
 
 .tab-btn.active {
-  color: #818cf8;
+  color: var(--primary);
   background: var(--primary-subtle);
   border-color: rgba(99, 102, 241, 0.2);
   font-weight: 600;
@@ -430,6 +429,9 @@ const exportCSV = () => {
   padding: 1.25rem;
   display: flex;
   flex-direction: column;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  background: var(--bg-surface);
 }
 
 .stat-header {
@@ -445,6 +447,10 @@ const exportCSV = () => {
   text-transform: uppercase;
   color: var(--text-dim);
   letter-spacing: 0.05em;
+}
+
+:lang(km) .stat-label {
+  letter-spacing: normal;
 }
 
 .stat-val {

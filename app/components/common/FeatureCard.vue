@@ -43,51 +43,37 @@ withDefaults(defineProps<Props>(), {
 
 <style scoped>
 .feature-card {
-  background: #ffffff;
-  border: 1px solid #edf2f7;
-  border-radius: 1.25rem;
-  padding: 2.25rem 2rem;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  padding: 1.75rem 1.5rem;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   text-align: left;
-  box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.03), 0 2px 6px -1px rgba(15, 23, 42, 0.02);
-  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1),
-    box-shadow 0.22s cubic-bezier(0.16, 1, 0.3, 1),
-    border-color 0.22s ease;
+  box-shadow: none;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 0.2s ease;
   text-decoration: none;
   position: relative;
   height: 100%;
 }
 
-:root.dark .feature-card,
-html.dark .feature-card {
-  background: #121214;
-  border-color: #27272a;
-  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.35);
-}
-
 .feature-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 12px 30px -4px rgba(15, 23, 42, 0.08), 0 4px 10px -2px rgba(15, 23, 42, 0.03);
-  border-color: #cbd5e1;
-}
-
-:root.dark .feature-card:hover,
-html.dark .feature-card:hover {
-  border-color: #3f3f46;
-  box-shadow: 0 12px 32px -4px rgba(0, 0, 0, 0.6);
+  transform: translateY(-2px);
+  border-color: var(--primary);
+  box-shadow: none;
 }
 
 /* Icon Box Styling */
 .feature-card-icon-box {
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-sm);
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1.25rem;
   flex-shrink: 0;
   transition: transform 0.2s ease;
 }
@@ -173,44 +159,32 @@ html.dark .icon-theme-rose {
 .feature-card-title {
   font-size: 1.125rem;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--text-main);
   letter-spacing: -0.015em;
   line-height: 1.35;
   margin: 0;
 }
 
-:root.dark .feature-card-title,
-html.dark .feature-card-title {
-  color: #ffffff;
+:lang(km) .feature-card-title {
+  letter-spacing: normal;
+  line-height: 1.4;
 }
 
 .feature-card-badge {
   font-size: 0.6875rem;
   font-weight: 600;
   padding: 0.15rem 0.5rem;
-  border-radius: 9999px;
-  background: #f1f5f9;
-  color: #475569;
-  border: 1px solid #e2e8f0;
-}
-
-:root.dark .feature-card-badge,
-html.dark .feature-card-badge {
-  background: #18181b;
-  color: #a1a1aa;
-  border-color: #27272a;
+  border-radius: var(--radius-full);
+  background: var(--bg-subtle);
+  color: var(--text-muted);
+  border: 1px solid var(--border-subtle);
 }
 
 .feature-card-desc {
   font-size: 0.875rem;
-  color: #64748b;
+  color: var(--text-muted);
   line-height: 1.625;
   margin: 0;
-}
-
-:root.dark .feature-card-desc,
-html.dark .feature-card-desc {
-  color: #a1a1aa;
 }
 
 .feature-card-content {

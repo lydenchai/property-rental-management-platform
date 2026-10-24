@@ -55,7 +55,7 @@ async function loadProperty() {
       city: p.city,
       state: p.state,
       postalCode: p.postalCode,
-      country: p.country || 'US',
+      country: p.country || 'KH',
       amenities: p.amenities || [],
     };
   }

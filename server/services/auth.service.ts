@@ -1,4 +1,5 @@
 import { userRepo } from '../repositories/user.repo';
+import { auditLogRepository } from '../repositories/audit-log.repo';
 import { hashPassword, verifyPassword, generateSessionId } from '../utils/session';
 import { RegisterInput, LoginInput } from '../../shared/schemas/auth.schema';
 import { badRequestError, unauthorizedError, forbiddenError } from '../utils/errors';
@@ -38,6 +39,26 @@ export class AuthService {
       userAgent: metadata.userAgent,
       expiresAt,
     });
+
+    if (input.termsAccepted) {
+      try {
+        await auditLogRepository.log({
+          userId: user.id,
+          action: 'CONSENT_TERMS_ACCEPTED',
+          entityType: 'User',
+          entityId: user.id,
+          newValues: {
+            termsVersion: input.termsVersion || 'v1.0-2026',
+            acceptedAt: new Date().toISOString(),
+            ipAddress: metadata.ipAddress,
+            userAgent: metadata.userAgent,
+          },
+        });
+      } catch (err) {
+        // Non-fatal if audit log logging encounters transient issue
+        console.warn('Failed to record terms consent in audit log:', err);
+      }
+    }
 
     return {
       user,

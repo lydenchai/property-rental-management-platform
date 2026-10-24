@@ -22,7 +22,7 @@ const form = ref({
   state: '',
   postalCode: '',
   country: 'KH',
-  amenities: [],
+  amenities: [] as string[],
 });
 
 const newAmenity = ref('');
@@ -40,7 +40,7 @@ const standardAmenities = [
   'Central Air Conditioning',
 ];
 
-function toggleAmenity(item) {
+function toggleAmenity(item: string) {
   if (form.value.amenities.includes(item)) {
     form.value.amenities = form.value.amenities.filter((a) => a !== item);
   } else {

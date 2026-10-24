@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue';
-import { ShieldCheck, Building, Key, Wrench, Check } from '@lucide/vue';
+import { ShieldCheck, Building, Key, Wrench, Check, Eye, EyeOff } from '@lucide/vue';
 import { useAuth } from '../composables/useAuth';
 
 definePageMeta({
@@ -14,6 +14,7 @@ const route = useRoute();
 
 const email = ref('');
 const password = ref('');
+const showPassword = ref(false);
 
 const demoAccounts = [
   { roleKey: 'auth.demo_admin', email: 'admin@rentease.com', pass: 'RentEase123!', icon: ShieldCheck },
@@ -63,8 +64,25 @@ async function handleLogin() {
         <div class="password-label-wrapper">
           <label for="login-password" class="form-label">{{ t('auth.password') }}</label>
         </div>
-        <input id="login-password" v-model="password" type="password" :placeholder="t('auth.password_placeholder')"
-          required class="input-field" />
+        <div class="password-input-wrap">
+          <input
+            id="login-password"
+            v-model="password"
+            :type="showPassword ? 'text' : 'password'"
+            :placeholder="t('auth.password_placeholder')"
+            required
+            class="input-field password-input"
+          />
+          <button
+            type="button"
+            class="password-toggle-btn"
+            @click="showPassword = !showPassword"
+            :aria-label="showPassword ? 'Hide password' : 'Show password'"
+          >
+            <EyeOff v-if="showPassword" :size="15" />
+            <Eye v-else :size="15" />
+          </button>
+        </div>
       </div>
 
       <button type="submit" :disabled="isLoading" class="btn-primary btn-block">
@@ -120,6 +138,36 @@ async function handleLogin() {
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+
+.password-input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.password-input {
+  width: 100%;
+  padding-right: 2.5rem;
+}
+
+.password-toggle-btn {
+  position: absolute;
+  right: 0.75rem;
+  background: transparent;
+  border: none;
+  color: var(--text-dim);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.25rem;
+  border-radius: var(--radius-sm);
+  transition: color 0.15s ease;
+}
+
+.password-toggle-btn:hover {
+  color: var(--text-main);
 }
 
 .btn-block {

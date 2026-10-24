@@ -5,11 +5,8 @@ import {
   Plus,
   MapPin,
   Layers,
-  DollarSign,
-  ExternalLink,
   Edit3,
   Trash2,
-  Search,
   CheckCircle2,
   AlertCircle,
   Calendar
@@ -400,27 +397,31 @@ onMounted(() => {
 }
 
 .stat-card {
-  padding: 0.85rem 1.15rem;
+  padding: 1rem 1.25rem;
   background: var(--bg-surface);
-  border: 1px solid var(--border-subtle);
+  border: 1px solid var(--border-default);
   border-radius: var(--radius-md);
   display: flex;
   flex-direction: column;
 }
 
 .stat-label {
-  font-size: 0.7rem;
-  font-weight: 600;
+  font-size: 0.72rem;
+  font-weight: 700;
   text-transform: uppercase;
   color: var(--text-dim);
   letter-spacing: 0.05em;
 }
 
+:lang(km) .stat-label {
+  letter-spacing: normal;
+}
+
 .stat-value {
-  font-size: 1.5rem;
-  font-weight: 700;
+  font-size: 1.6rem;
+  font-weight: 800;
   color: var(--text-main);
-  margin: 0.15rem 0;
+  margin: 0.2rem 0;
 }
 
 .stat-desc {

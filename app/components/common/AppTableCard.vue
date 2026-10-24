@@ -128,7 +128,7 @@ function onSearchInput(event: Event) {
 <style scoped>
 .table-card-shell {
   background: var(--bg-surface);
-  border: 1px solid var(--border-subtle);
+  border: 1px solid var(--border-default);
   border-radius: var(--radius-md);
   overflow: hidden;
   box-shadow: none;

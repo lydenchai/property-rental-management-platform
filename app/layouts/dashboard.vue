@@ -38,6 +38,29 @@ const formattedRole = computed(() => {
   return (userRole.value && roleTitles.value[userRole.value]) || userRole.value || '';
 });
 
+const pageTitles = computed<Record<string, string>>(() => ({
+  '/dashboard': t('common.overview'),
+  '/dashboard/properties/create': t('properties.create_title'),
+  '/dashboard/properties': t('common.properties_units'),
+  '/dashboard/applications': t('nav.applications'),
+  '/dashboard/leases': t('nav.leases'),
+  '/dashboard/invoices': t('nav.invoices'),
+  '/dashboard/maintenance': t('nav.maintenance'),
+  '/dashboard/reports': t('nav.reports'),
+  '/dashboard/users': t('nav.users'),
+  '/dashboard/audit-logs': t('nav.audit_logs'),
+}));
+
+const currentTitle = computed(() => {
+  if (route.path === '/dashboard') return t('common.overview');
+  for (const [prefix, title] of Object.entries(pageTitles.value)) {
+    if (prefix !== '/dashboard' && route.path.startsWith(prefix)) {
+      return title;
+    }
+  }
+  return (route.meta.title as string) || t('nav.dashboard');
+});
+
 watch(() => route.path, () => {
   isMobileNavOpen.value = false;
 });
@@ -167,7 +190,7 @@ watch(() => route.path, () => {
             <Menu :size="18" />
           </button>
           <div class="topbar-title">
-            <h2>{{ route.meta.title || 'Dashboard' }}</h2>
+            <h2>{{ currentTitle }}</h2>
           </div>
         </div>
 
@@ -511,8 +534,7 @@ watch(() => route.path, () => {
   .sidebar-backdrop {
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.5);
-    backdrop-filter: blur(2px);
+    background: rgba(0, 0, 0, 0.6);
     z-index: 25;
   }
 

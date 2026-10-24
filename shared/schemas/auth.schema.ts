@@ -15,6 +15,8 @@ export const RegisterInputSchema = z.object({
   fullName: z.string().min(2, 'Full name must be at least 2 characters').max(100).trim(),
   phone: z.string().optional().nullable(),
   role: z.enum(['LANDLORD', 'TENANT']).default('TENANT'),
+  termsAccepted: z.boolean().optional(),
+  termsVersion: z.string().optional(),
 });
 
 export type RegisterInput = z.infer<typeof RegisterInputSchema>;

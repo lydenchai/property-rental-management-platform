@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { Building2, ArrowLeft } from '@lucide/vue';
 import ThemeToggle from '../components/common/ThemeToggle.vue';
+import LanguageSwitcher from '../components/common/LanguageSwitcher.vue';
+
+const { t } = useI18n();
 </script>
 
 <template>
@@ -14,7 +17,8 @@ import ThemeToggle from '../components/common/ThemeToggle.vue';
           <span class="brand-name">Rent<span class="brand-accent">Ease</span></span>
         </NuxtLink>
 
-        <div class="auth-theme-box">
+        <div class="auth-actions-box">
+          <LanguageSwitcher />
           <ThemeToggle />
         </div>
       </div>
@@ -26,7 +30,7 @@ import ThemeToggle from '../components/common/ThemeToggle.vue';
       <div class="auth-footer">
         <NuxtLink to="/" class="back-link">
           <ArrowLeft :size="14" />
-          <span>Return to Homepage</span>
+          <span>{{ t('auth.back_to_home') }}</span>
         </NuxtLink>
       </div>
     </div>
@@ -57,6 +61,12 @@ import ThemeToggle from '../components/common/ThemeToggle.vue';
   align-items: center;
   justify-content: space-between;
   padding: 0 0.25rem;
+}
+
+.auth-actions-box {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .brand {
