@@ -1,16 +1,16 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue';
-import { 
-  Building2, 
-  LayoutDashboard, 
-  Building, 
-  ClipboardList, 
-  Search, 
-  FileSignature, 
-  FileText, 
-  CreditCard, 
-  Wrench, 
-  Users, 
+import {
+  Building2,
+  LayoutDashboard,
+  Building,
+  ClipboardList,
+  Search,
+  FileSignature,
+  FileText,
+  CreditCard,
+  Wrench,
+  Users,
   ShieldCheck,
   LogOut,
   BarChart3,
@@ -19,20 +19,46 @@ import {
 } from '@lucide/vue';
 import { useAuth } from '../composables/useAuth';
 import ThemeToggle from '../components/common/ThemeToggle.vue';
+import LanguageSwitcher from '../components/common/LanguageSwitcher.vue';
+import AppToastContainer from '../components/common/AppToastContainer.vue';
 
+const { t } = useI18n();
 const { user, userRole, logout, isAdmin, isLandlord, isTenant, isTechnician } = useAuth();
 const route = useRoute();
 const isMobileNavOpen = ref(false);
 
-const roleTitles: Record<string, string> = {
-  ADMIN: 'System Admin',
-  LANDLORD: 'Landlord',
-  TENANT: 'Tenant',
-  TECHNICIAN: 'Technician',
-};
+const roleTitles = computed<Record<string, string>>(() => ({
+  ADMIN: t('users.roles.admin'),
+  LANDLORD: t('users.roles.landlord'),
+  TENANT: t('users.roles.tenant'),
+  TECHNICIAN: t('users.roles.technician'),
+}));
 
 const formattedRole = computed(() => {
-  return (userRole.value && roleTitles[userRole.value]) || userRole.value || '';
+  return (userRole.value && roleTitles.value[userRole.value]) || userRole.value || '';
+});
+
+const pageTitles = computed<Record<string, string>>(() => ({
+  '/dashboard': t('common.overview'),
+  '/dashboard/properties/create': t('properties.create_title'),
+  '/dashboard/properties': t('common.properties_units'),
+  '/dashboard/applications': t('nav.applications'),
+  '/dashboard/leases': t('nav.leases'),
+  '/dashboard/invoices': t('nav.invoices'),
+  '/dashboard/maintenance': t('nav.maintenance'),
+  '/dashboard/reports': t('nav.reports'),
+  '/dashboard/users': t('nav.users'),
+  '/dashboard/audit-logs': t('nav.audit_logs'),
+}));
+
+const currentTitle = computed(() => {
+  if (route.path === '/dashboard') return t('common.overview');
+  for (const [prefix, title] of Object.entries(pageTitles.value)) {
+    if (prefix !== '/dashboard' && route.path.startsWith(prefix)) {
+      return title;
+    }
+  }
+  return (route.meta.title as string) || t('nav.dashboard');
 });
 
 watch(() => route.path, () => {
@@ -43,12 +69,7 @@ watch(() => route.path, () => {
 <template>
   <div class="dashboard-shell">
     <!-- Mobile backdrop -->
-    <div 
-      v-if="isMobileNavOpen" 
-      class="sidebar-backdrop" 
-      @click="isMobileNavOpen = false" 
-      aria-hidden="true"
-    />
+    <div v-if="isMobileNavOpen" class="sidebar-backdrop" @click="isMobileNavOpen = false" aria-hidden="true" />
 
     <!-- Sidebar -->
     <aside :class="['sidebar', { 'mobile-open': isMobileNavOpen }]">
@@ -59,82 +80,87 @@ watch(() => route.path, () => {
           </div>
           <span class="brand-name">Rent<span class="brand-accent">Ease</span></span>
         </NuxtLink>
-        <button 
-          class="mobile-close-btn" 
-          @click="isMobileNavOpen = false" 
-          aria-label="Close Navigation"
-        >
+        <button class="mobile-close-btn" @click="isMobileNavOpen = false" aria-label="Close Navigation">
           <X :size="18" />
         </button>
       </div>
 
       <nav class="sidebar-nav">
-        <div class="nav-section-title">Main</div>
+        <div class="nav-section-title">{{ t('nav.sections.main') }}</div>
         <NuxtLink to="/dashboard" class="nav-item" :class="{ active: route.path === '/dashboard' }">
           <LayoutDashboard :size="16" class="nav-icon" />
-          <span>Overview</span>
+          <span>{{ t('common.overview') }}</span>
         </NuxtLink>
 
         <!-- Landlord & Admin Links -->
         <template v-if="isLandlord || isAdmin">
-          <div class="nav-section-title">Properties</div>
-          <NuxtLink to="/dashboard/properties" class="nav-item" :class="{ active: route.path.startsWith('/dashboard/properties') }">
+          <div class="nav-section-title">{{ t('nav.sections.properties') }}</div>
+          <NuxtLink to="/dashboard/properties" class="nav-item"
+            :class="{ active: route.path.startsWith('/dashboard/properties') }">
             <Building :size="16" class="nav-icon" />
-            <span>Properties & Units</span>
+            <span>{{ t('common.properties_units') }}</span>
           </NuxtLink>
-          <NuxtLink to="/dashboard/applications" class="nav-item" :class="{ active: route.path.startsWith('/dashboard/applications') }">
+          <NuxtLink to="/dashboard/applications" class="nav-item"
+            :class="{ active: route.path.startsWith('/dashboard/applications') }">
             <ClipboardList :size="16" class="nav-icon" />
-            <span>Applications</span>
+            <span>{{ t('nav.applications') }}</span>
           </NuxtLink>
         </template>
 
         <!-- Tenant Links -->
         <template v-if="isTenant">
-          <div class="nav-section-title">Leasing</div>
+          <div class="nav-section-title">{{ t('nav.sections.leasing') }}</div>
           <NuxtLink to="/properties" class="nav-item">
             <Search :size="16" class="nav-icon" />
-            <span>Browse Units</span>
+            <span>{{ t('dashboard.metrics.browse_units') }}</span>
           </NuxtLink>
-          <NuxtLink to="/dashboard/applications" class="nav-item" :class="{ active: route.path.startsWith('/dashboard/applications') }">
+          <NuxtLink to="/dashboard/applications" class="nav-item"
+            :class="{ active: route.path.startsWith('/dashboard/applications') }">
             <FileSignature :size="16" class="nav-icon" />
-            <span>My Applications</span>
+            <span>{{ t('applications.my_applications') }}</span>
           </NuxtLink>
         </template>
 
         <!-- Common Leases & Invoices -->
         <template v-if="!isTechnician">
-          <div class="nav-section-title">Finances</div>
-          <NuxtLink to="/dashboard/leases" class="nav-item" :class="{ active: route.path.startsWith('/dashboard/leases') }">
+          <div class="nav-section-title">{{ t('nav.sections.finances') }}</div>
+          <NuxtLink to="/dashboard/leases" class="nav-item"
+            :class="{ active: route.path.startsWith('/dashboard/leases') }">
             <FileText :size="16" class="nav-icon" />
-            <span>Leases</span>
+            <span>{{ t('nav.leases') }}</span>
           </NuxtLink>
-          <NuxtLink to="/dashboard/invoices" class="nav-item" :class="{ active: route.path.startsWith('/dashboard/invoices') }">
+          <NuxtLink to="/dashboard/invoices" class="nav-item"
+            :class="{ active: route.path.startsWith('/dashboard/invoices') }">
             <CreditCard :size="16" class="nav-icon" />
-            <span>Invoices & Payments</span>
+            <span>{{ t('nav.invoices') }}</span>
           </NuxtLink>
-          <NuxtLink v-if="isLandlord || isAdmin" to="/dashboard/reports" class="nav-item" :class="{ active: route.path.startsWith('/dashboard/reports') }">
+          <NuxtLink v-if="isLandlord || isAdmin" to="/dashboard/reports" class="nav-item"
+            :class="{ active: route.path.startsWith('/dashboard/reports') }">
             <BarChart3 :size="16" class="nav-icon" />
-            <span>Reports & Analytics</span>
+            <span>{{ t('nav.reports') }}</span>
           </NuxtLink>
         </template>
 
         <!-- Maintenance (All Roles) -->
-        <div class="nav-section-title">Operations</div>
-        <NuxtLink to="/dashboard/maintenance" class="nav-item" :class="{ active: route.path.startsWith('/dashboard/maintenance') }">
+        <div class="nav-section-title">{{ t('nav.sections.operations') }}</div>
+        <NuxtLink to="/dashboard/maintenance" class="nav-item"
+          :class="{ active: route.path.startsWith('/dashboard/maintenance') }">
           <Wrench :size="16" class="nav-icon" />
-          <span>Maintenance</span>
+          <span>{{ t('nav.maintenance') }}</span>
         </NuxtLink>
 
         <!-- Admin Only -->
         <template v-if="isAdmin">
-          <div class="nav-section-title">System Admin</div>
-          <NuxtLink to="/dashboard/users" class="nav-item" :class="{ active: route.path.startsWith('/dashboard/users') }">
+          <div class="nav-section-title">{{ t('nav.sections.system_admin') }}</div>
+          <NuxtLink to="/dashboard/users" class="nav-item"
+            :class="{ active: route.path.startsWith('/dashboard/users') }">
             <Users :size="16" class="nav-icon" />
-            <span>User Management</span>
+            <span>{{ t('nav.users') }}</span>
           </NuxtLink>
-          <NuxtLink to="/dashboard/audit-logs" class="nav-item" :class="{ active: route.path.startsWith('/dashboard/audit-logs') }">
+          <NuxtLink to="/dashboard/audit-logs" class="nav-item"
+            :class="{ active: route.path.startsWith('/dashboard/audit-logs') }">
             <ShieldCheck :size="16" class="nav-icon" />
-            <span>Audit Logs</span>
+            <span>{{ t('nav.audit_logs') }}</span>
           </NuxtLink>
         </template>
       </nav>
@@ -148,7 +174,7 @@ watch(() => route.path, () => {
             <span class="user-display-name" :title="user?.fullName">{{ user?.fullName }}</span>
             <span class="user-role-label">{{ formattedRole }}</span>
           </div>
-          <button @click="logout" class="logout-icon-action" title="Sign Out" aria-label="Sign Out">
+          <button @click="logout" class="logout-icon-action" :title="t('common.sign_out')" :aria-label="t('common.sign_out')">
             <LogOut :size="15" />
           </button>
         </div>
@@ -159,19 +185,17 @@ watch(() => route.path, () => {
     <div class="dashboard-body">
       <header class="topbar">
         <div class="topbar-left">
-          <button 
-            class="mobile-toggle-btn" 
-            @click="isMobileNavOpen = !isMobileNavOpen"
-            aria-label="Toggle navigation drawer"
-          >
+          <button class="mobile-toggle-btn" @click="isMobileNavOpen = !isMobileNavOpen"
+            aria-label="Toggle navigation drawer">
             <Menu :size="18" />
           </button>
           <div class="topbar-title">
-            <h2>{{ route.meta.title || 'Dashboard' }}</h2>
+            <h2>{{ currentTitle }}</h2>
           </div>
         </div>
 
         <div class="topbar-actions">
+          <LanguageSwitcher />
           <ThemeToggle />
           <NotificationBell />
         </div>
@@ -181,6 +205,9 @@ watch(() => route.path, () => {
         <slot />
       </main>
     </div>
+
+    <!-- Global Toast Notifications -->
+    <AppToastContainer />
   </div>
 </template>
 
@@ -507,8 +534,7 @@ watch(() => route.path, () => {
   .sidebar-backdrop {
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.5);
-    backdrop-filter: blur(2px);
+    background: rgba(0, 0, 0, 0.6);
     z-index: 25;
   }
 

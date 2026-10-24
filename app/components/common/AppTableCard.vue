@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import { Search, FileText } from '@lucide/vue';
+import { Search, FileText, X } from '@lucide/vue';
 import AppPagination from './AppPagination.vue';
 
 interface Props {
@@ -71,13 +71,12 @@ function onSearchInput(event: Event) {
         <!-- Search Input -->
         <div v-if="showSearch" class="table-search-box">
           <Search :size="15" class="search-box-icon" />
-          <input
-            type="text"
-            :value="search"
-            @input="onSearchInput"
-            :placeholder="searchPlaceholder"
-            class="table-search-control"
-          />
+          <input type="text" :value="search" @input="onSearchInput" :placeholder="searchPlaceholder"
+            class="table-search-control" />
+          <button v-if="search" type="button" class="search-clear-btn" @click="emit('update:search', '')"
+            :aria-label="$t('common.clear')">
+            <X :size="13" />
+          </button>
         </div>
 
         <!-- Custom filters / tabs slot -->
@@ -94,7 +93,7 @@ function onSearchInput(event: Event) {
     <div v-if="isLoading" class="table-card-loading">
       <slot name="loading">
         <div class="loading-spinner"></div>
-        <p class="loading-label">Loading records...</p>
+        <p class="loading-label">{{ $t('common.loading') }}</p>
       </slot>
     </div>
 
@@ -119,16 +118,9 @@ function onSearchInput(event: Event) {
       </div>
 
       <!-- Integrated Pagination Footer -->
-      <AppPagination
-        v-if="showPagination && totalItems > 0"
-        :current-page="currentPage"
-        :page-size="pageSize"
-        :total-items="totalItems"
-        :page-size-options="pageSizeOptions"
-        :item-name="itemName"
-        @update:current-page="emit('update:currentPage', $event)"
-        @update:page-size="emit('update:pageSize', $event)"
-      />
+      <AppPagination v-if="showPagination && totalItems > 0" :current-page="currentPage" :page-size="pageSize"
+        :total-items="totalItems" :page-size-options="pageSizeOptions" :item-name="itemName"
+        @update:current-page="emit('update:currentPage', $event)" @update:page-size="emit('update:pageSize', $event)" />
     </div>
   </div>
 </template>
@@ -136,7 +128,7 @@ function onSearchInput(event: Event) {
 <style scoped>
 .table-card-shell {
   background: var(--bg-surface);
-  border: 1px solid var(--border-subtle);
+  border: 1px solid var(--border-default);
   border-radius: var(--radius-md);
   overflow: hidden;
   box-shadow: none;
@@ -208,7 +200,7 @@ function onSearchInput(event: Event) {
 
 .table-search-control {
   width: 100%;
-  padding: 0.45rem 0.75rem 0.45rem 2.2rem;
+  padding: 0.45rem 2rem 0.45rem 2.2rem;
   font-size: 0.825rem;
   background: var(--bg-primary);
   border: 1px solid var(--border-subtle);
@@ -225,6 +217,27 @@ function onSearchInput(event: Event) {
 
 .table-search-control::placeholder {
   color: var(--text-dim);
+}
+
+.search-clear-btn {
+  position: absolute;
+  right: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  background: transparent;
+  border: none;
+  color: var(--text-dim);
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.search-clear-btn:hover {
+  background: var(--bg-hover);
+  color: var(--text-main);
 }
 
 /* Loading State */

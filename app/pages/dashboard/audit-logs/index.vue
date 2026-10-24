@@ -1,21 +1,22 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue';
-import { 
-  ShieldCheck, 
-  History, 
-  User, 
-  Calendar, 
-  Filter, 
-  Search, 
-  AlertCircle, 
-  CheckCircle2, 
-  FileText, 
-  X, 
+import {
+  ShieldCheck,
+  History,
+  User,
+  Calendar,
+  Filter,
+  Search,
+  AlertCircle,
+  CheckCircle2,
+  FileText,
+  X,
   Terminal,
   Activity
 } from '@lucide/vue';
 import { useAuth } from '../../../composables/useAuth';
-import type { ApiResponse } from '../../../../shared/types/api';
+import { useAuditLogStore } from '../../../stores/audit-log.store';
+import type { AuditLogItem } from '~~/shared/types';
 import AppTableCard from '../../../components/common/AppTableCard.vue';
 
 definePageMeta({
@@ -24,30 +25,21 @@ definePageMeta({
   title: 'System Audit Logs',
 });
 
+const { t } = useI18n();
 const { isAdmin } = useAuth();
+const auditLogStore = useAuditLogStore();
 
-interface AuditLogItem {
-  id: string;
-  userId: string | null;
-  action: string;
-  entityType: string;
-  entityId: string;
-  oldValues?: any | null;
-  newValues?: any | null;
-  ipAddress?: string | null;
-  userAgent?: string | null;
-  createdAt: string;
-  user?: {
-    id: string;
-    fullName: string;
-    email: string;
-    role: string;
-  };
-}
+const {
+  logs,
+  isLoading,
+  errorMessage,
+  totalLogs,
+} = auditLogStore;
 
-const logs = ref<AuditLogItem[]>([]);
-const isLoading = ref(true);
-const errorMessage = ref<string | null>(null);
+const {
+  fetchAuditLogs,
+  loadAuditLogs,
+} = auditLogStore;
 
 // Filters
 const actionFilter = ref('ALL');
@@ -56,23 +48,6 @@ const searchQuery = ref('');
 
 // Payload modal
 const selectedLog = ref<AuditLogItem | null>(null);
-
-async function loadAuditLogs() {
-  isLoading.value = true;
-  errorMessage.value = null;
-  try {
-    const res = await $fetch<ApiResponse<{ logs: AuditLogItem[] }>>('/api/v1/admin/audit-logs');
-    if (res.success && res.data) {
-      logs.value = res.data.logs;
-    } else {
-      errorMessage.value = res.error?.message || 'Failed to load audit logs';
-    }
-  } catch (err: any) {
-    errorMessage.value = err?.data?.error?.message || err?.message || 'Error fetching audit logs';
-  } finally {
-    isLoading.value = false;
-  }
-}
 
 const filteredLogs = computed(() => {
   return logs.value.filter((log) => {
@@ -109,6 +84,14 @@ watch([actionFilter, entityFilter, searchQuery], () => {
   currentPage.value = 1;
 });
 
+function getActionBadgeClass(action: string): string {
+  if (action.startsWith('AUTH')) return 'badge-landlord';
+  if (action.includes('LEASE') || action.includes('APPLICATION')) return 'badge-info';
+  if (action.includes('PAYMENT') || action.includes('INVOICE')) return 'badge-success';
+  if (action.includes('MAINTENANCE')) return 'badge-warning';
+  return 'badge-subtle';
+}
+
 onMounted(() => {
   loadAuditLogs();
 });
@@ -119,14 +102,14 @@ onMounted(() => {
     <!-- Top Bar -->
     <div class="page-top-bar">
       <div>
-        <h1>System Audit Logs</h1>
+        <h1>{{ t('audit_logs.title') }}</h1>
         <p class="subtitle">
-          Cryptographically auditable transaction ledger recording security, administrative, leasing, and billing events.
+          {{ t('audit_logs.subtitle') }}
         </p>
       </div>
       <div class="admin-shield-badge">
         <ShieldCheck :size="15" />
-        <span>Admin Governance Log</span>
+        <span>{{ t('audit_logs.admin_badge') }}</span>
       </div>
     </div>
 
@@ -136,25 +119,17 @@ onMounted(() => {
     </div>
 
     <!-- Audit Logs Table using shared AppTableCard -->
-    <AppTableCard
-      v-model:search="searchQuery"
-      search-placeholder="Search by action, user, entity ID, or IP..."
-      :is-loading="isLoading"
-      :is-empty="filteredLogs.length === 0"
-      empty-title="No audit log entries found"
-      empty-description="System events will appear here as transactions and administrative actions are performed."
-      :empty-icon="History"
-      v-model:current-page="currentPage"
-      v-model:page-size="pageSize"
-      :total-items="filteredLogs.length"
-      item-name="logs"
-    >
+    <AppTableCard v-model:search="searchQuery" :search-placeholder="t('audit_logs.search_placeholder')"
+      :is-loading="isLoading" :is-empty="filteredLogs.length === 0" :empty-title="t('audit_logs.empty_title')"
+      :empty-description="t('audit_logs.empty_desc')"
+      :empty-icon="History" v-model:current-page="currentPage" v-model:page-size="pageSize"
+      :total-items="filteredLogs.length" :item-name="t('common.records')">
       <template #toolbar-start>
         <div class="filter-controls">
           <div class="select-wrap">
             <Filter :size="13" class="filter-icon" />
             <select v-model="actionFilter" class="filter-select">
-              <option value="ALL">All Actions</option>
+              <option value="ALL">{{ t('audit_logs.filter_all_actions') }}</option>
               <option value="AUTH_LOGIN">Login Events</option>
               <option value="USER_STATUS_CHANGE">User Status Changes</option>
               <option value="APPLICATION_APPROVED">Application Approvals</option>
@@ -167,7 +142,7 @@ onMounted(() => {
 
           <div class="select-wrap">
             <select v-model="entityFilter" class="filter-select">
-              <option value="ALL">All Entities</option>
+              <option value="ALL">{{ t('audit_logs.filter_all_entities') }}</option>
               <option value="User">User</option>
               <option value="RentalApplication">Rental Application</option>
               <option value="Lease">Lease Contract</option>
@@ -180,65 +155,57 @@ onMounted(() => {
       </template>
 
       <table class="data-table">
-          <thead>
-            <tr>
-              <th>Timestamp (UTC)</th>
-              <th>Acting User</th>
-              <th>Event Action</th>
-              <th>Entity</th>
-              <th>Entity Reference</th>
-              <th>IP Address</th>
-              <th class="text-right">Payload</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="log in paginatedLogs" :key="log.id">
-              <td>
-                <div class="timestamp-cell font-mono text-xs">
-                  <span>{{ new Date(log.createdAt).toLocaleDateString() }}</span>
-                  <span class="text-dim">{{ new Date(log.createdAt).toLocaleTimeString() }}</span>
-                </div>
-              </td>
-              <td>
-                <div class="user-cell">
-                  <span class="font-semibold">{{ log.user?.fullName || 'System Event' }}</span>
-                  <span class="text-dim text-xs">{{ log.user?.email || 'N/A' }}</span>
-                </div>
-              </td>
-              <td>
-                <span
-                  class="action-badge font-mono"
-                  :class="{
-                    'action-auth': log.action.startsWith('AUTH'),
-                    'action-lease': log.action.includes('LEASE') || log.action.includes('APPLICATION'),
-                    'action-payment': log.action.includes('PAYMENT'),
-                    'action-maint': log.action.includes('MAINTENANCE'),
-                  }"
-                >
-                  {{ log.action }}
-                </span>
-              </td>
-              <td>
-                <span class="entity-badge">{{ log.entityType }}</span>
-              </td>
-              <td>
-                <span class="font-mono text-xs text-dim">{{ log.entityId }}</span>
-              </td>
-              <td>
-                <span class="font-mono text-xs text-dim">{{ log.ipAddress || '127.0.0.1' }}</span>
-              </td>
-              <td class="text-right">
-                <button
-                  @click="selectedLog = log"
-                  class="btn-secondary btn-sm"
-                  title="View Payload Diffs"
-                >
-                  <FileText :size="13" />
-                  <span>Inspect</span>
-                </button>
-              </td>
-            </tr>
-          </tbody>
+        <thead>
+          <tr>
+            <th>{{ t('audit_logs.col_timestamp') }}</th>
+            <th>{{ t('audit_logs.col_user') }}</th>
+            <th>{{ t('audit_logs.col_action') }}</th>
+            <th>{{ t('audit_logs.col_entity') }}</th>
+            <th>{{ t('audit_logs.col_entity_ref') }}</th>
+            <th>{{ t('audit_logs.col_ip') }}</th>
+            <th class="text-right">{{ t('audit_logs.col_payload') }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="log in paginatedLogs" :key="log.id">
+            <td>
+              <div class="timestamp-cell font-mono">
+                <span class="timestamp-date">{{ new Date(log.createdAt).toLocaleDateString() }}</span>
+                <span class="timestamp-time text-dim">{{ new Date(log.createdAt).toLocaleTimeString() }}</span>
+              </div>
+            </td>
+            <td>
+              <div class="user-cell">
+                <span class="user-name">{{ log.user?.fullName || 'System Event' }}</span>
+                <span class="user-email text-dim font-mono">{{ log.user?.email || 'N/A' }}</span>
+              </div>
+            </td>
+            <td>
+              <span class="badge badge-pill font-mono badge-action" :class="getActionBadgeClass(log.action)">
+                <span class="badge-dot"></span>
+                <span>{{ log.action }}</span>
+              </span>
+            </td>
+            <td>
+              <span class="badge badge-pill badge-subtle">
+                <span class="badge-dot"></span>
+                <span>{{ log.entityType }}</span>
+              </span>
+            </td>
+            <td>
+              <span class="font-mono entity-ref">{{ log.entityId }}</span>
+            </td>
+            <td>
+              <span class="font-mono ip-cell">{{ log.ipAddress || '127.0.0.1' }}</span>
+            </td>
+            <td class="text-right">
+              <button @click="selectedLog = log" class="btn-secondary btn-inspect" :title="t('audit_logs.inspect')">
+                <FileText :size="14" />
+                <span>{{ t('audit_logs.inspect') }}</span>
+              </button>
+            </td>
+          </tr>
+        </tbody>
       </table>
     </AppTableCard>
 
@@ -248,37 +215,53 @@ onMounted(() => {
         <div class="modal-header">
           <div class="modal-title-row">
             <Terminal :size="16" class="text-indigo" />
-            <h3>Audit Record Inspection</h3>
+            <h3>{{ t('audit_logs.modal_title') }}</h3>
           </div>
           <button @click="selectedLog = null" class="modal-close">&times;</button>
         </div>
 
         <div class="modal-body">
           <div class="contract-summary">
-            <div><strong>Log ID:</strong> <span class="font-mono">{{ selectedLog.id }}</span></div>
-            <div><strong>Action:</strong> <span class="font-mono font-semibold">{{ selectedLog.action }}</span></div>
-            <div><strong>Target Entity:</strong> {{ selectedLog.entityType }} (ID: <span class="font-mono">{{ selectedLog.entityId }}</span>)</div>
-            <div><strong>Acting User:</strong> {{ selectedLog.user?.fullName }} ({{ selectedLog.user?.email }})</div>
-            <div><strong>Timestamp:</strong> {{ new Date(selectedLog.createdAt).toUTCString() }}</div>
-            <div><strong>Client IP:</strong> <span class="font-mono">{{ selectedLog.ipAddress || '127.0.0.1' }}</span></div>
-            <div v-if="selectedLog.userAgent"><strong>User Agent:</strong> <span class="text-xs text-dim">{{ selectedLog.userAgent }}</span></div>
+            <div><strong>{{ t('audit_logs.log_id') }}:</strong> <span class="font-mono text-dim">{{ selectedLog.id }}</span></div>
+            <div class="modal-badge-row">
+              <strong>{{ t('audit_logs.action') }}:</strong> 
+              <span class="badge badge-pill font-mono badge-action" :class="getActionBadgeClass(selectedLog.action)">
+                <span class="badge-dot"></span>
+                <span>{{ selectedLog.action }}</span>
+              </span>
+            </div>
+            <div class="modal-badge-row">
+              <strong>{{ t('audit_logs.target_entity') }}:</strong> 
+              <span class="badge badge-pill badge-subtle">
+                <span class="badge-dot"></span>
+                <span>{{ selectedLog.entityType }}</span>
+              </span>
+              <span class="text-xs text-dim font-mono ml-1">(ID: {{ selectedLog.entityId }})</span>
+            </div>
+            <div><strong>{{ t('audit_logs.acting_user') }}:</strong> {{ selectedLog.user?.fullName }} ({{ selectedLog.user?.email }})</div>
+            <div><strong>{{ t('audit_logs.timestamp') }}:</strong> {{ new Date(selectedLog.createdAt).toUTCString() }}</div>
+            <div><strong>{{ t('audit_logs.client_ip') }}:</strong> <span class="font-mono">{{ selectedLog.ipAddress || '127.0.0.1' }}</span>
+            </div>
+            <div v-if="selectedLog.userAgent"><strong>{{ t('audit_logs.user_agent') }}:</strong> <span class="text-xs text-dim">{{
+              selectedLog.userAgent }}</span></div>
           </div>
 
           <div class="payload-diff-grid">
             <div class="payload-box">
-              <span class="payload-title">Previous State (Old Values):</span>
+              <span class="payload-title">{{ t('audit_logs.old_values') }}:</span>
               <pre class="json-code">{{ selectedLog.oldValues ? JSON.stringify(selectedLog.oldValues, null, 2) : 'null (initial state)' }}</pre>
             </div>
 
             <div class="payload-box">
-              <span class="payload-title">Mutated State (New Values):</span>
-              <pre class="json-code text-emerald">{{ selectedLog.newValues ? JSON.stringify(selectedLog.newValues, null, 2) : 'null' }}</pre>
+              <span class="payload-title">{{ t('audit_logs.new_values') }}:</span>
+              <pre class="json-code text-emerald">{{ selectedLog.newValues ? JSON.stringify(selectedLog.newValues, null, 2)
+                : 'null' }}</pre>
             </div>
           </div>
 
           <div class="modal-actions">
             <button @click="selectedLog = null" class="btn-secondary">
-              Close
+              {{ t('common.close') }}
             </button>
           </div>
         </div>
@@ -360,13 +343,19 @@ onMounted(() => {
 }
 
 .filter-select {
-  background: var(--bg-input);
-  border: 1px solid var(--border-default);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
   border-radius: var(--radius-sm);
   color: var(--text-main);
-  font-size: 0.8rem;
-  padding: 0.45rem 0.75rem 0.45rem 1.8rem;
+  font-size: 0.825rem;
+  padding: 0.45rem 0.85rem 0.45rem 1.8rem;
   cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.filter-select:hover {
+  border-color: var(--border-default);
+  background: var(--bg-surface-hover);
 }
 
 .filter-select:focus {
@@ -407,45 +396,56 @@ onMounted(() => {
 .user-cell {
   display: flex;
   flex-direction: column;
+  gap: 0.15rem;
 }
 
-.action-badge {
-  display: inline-block;
-  font-size: 0.7rem;
-  font-weight: 700;
-  padding: 0.15rem 0.45rem;
-  border-radius: var(--radius-sm);
-  background: rgba(148, 163, 184, 0.1);
+.timestamp-date {
+  font-size: 0.85rem;
+  font-weight: 500;
   color: var(--text-main);
 }
 
-.action-badge.action-auth {
-  background: rgba(59, 130, 246, 0.12);
-  color: #60a5fa;
-}
-
-.action-badge.action-lease {
-  background: rgba(99, 102, 241, 0.12);
-  color: var(--primary);
-}
-
-.action-badge.action-payment {
-  background: var(--accent-emerald-subtle);
-  color: #34d399;
-}
-
-.action-badge.action-maint {
-  background: rgba(245, 158, 11, 0.12);
-  color: #fbbf24;
-}
-
-.entity-badge {
-  font-size: 0.75rem;
+.timestamp-time {
+  font-size: 0.775rem;
   color: var(--text-dim);
-  background: var(--bg-canvas);
-  border: 1px solid var(--border-subtle);
-  padding: 0.1rem 0.4rem;
-  border-radius: var(--radius-sm);
+}
+
+.user-name {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.user-email {
+  font-size: 0.775rem;
+  color: var(--text-dim);
+}
+
+.badge-action {
+  text-transform: none !important;
+  font-size: 0.775rem;
+  letter-spacing: 0.02em;
+}
+
+.modal-badge-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.entity-ref,
+.ip-cell {
+  font-size: 0.825rem;
+  color: var(--text-muted);
+}
+
+.btn-inspect {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.38rem 0.75rem;
+  font-size: 0.825rem;
+  font-weight: 500;
 }
 
 .text-right {
@@ -467,7 +467,11 @@ onMounted(() => {
 }
 
 .text-xs {
-  font-size: 0.75rem;
+  font-size: 0.775rem;
+}
+
+.text-sm {
+  font-size: 0.875rem;
 }
 
 .text-dim {
@@ -480,6 +484,18 @@ onMounted(() => {
 
 .text-indigo {
   color: var(--primary);
+}
+
+.data-table th {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  padding: 0.85rem 1.25rem;
+}
+
+.data-table td {
+  font-size: 0.875rem;
+  padding: 0.95rem 1.25rem;
 }
 
 /* Modal */
@@ -566,19 +582,20 @@ onMounted(() => {
 }
 
 .payload-title {
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   font-weight: 700;
   text-transform: uppercase;
   color: var(--text-dim);
+  letter-spacing: 0.04em;
 }
 
 .json-code {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  font-size: 0.75rem;
-  line-height: 1.4;
+  font-size: 0.825rem;
+  line-height: 1.5;
   white-space: pre-wrap;
   color: var(--text-muted);
-  max-height: 180px;
+  max-height: 220px;
   overflow-y: auto;
 }
 
@@ -624,7 +641,9 @@ onMounted(() => {
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 @media (max-width: 640px) {

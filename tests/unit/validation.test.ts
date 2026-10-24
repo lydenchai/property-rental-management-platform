@@ -8,7 +8,7 @@ describe('Auth Validation Schemas', () => {
     const input = {
       email: 'landlord@rentease.com',
       password: 'SecurePassword123',
-      fullName: 'John Doe',
+      fullName: 'Lyden',
       phone: '+1234567890',
       role: 'LANDLORD',
     };
@@ -20,7 +20,7 @@ describe('Auth Validation Schemas', () => {
     const input = {
       email: 'test@rentease.com',
       password: 'weak',
-      fullName: 'John Doe',
+      fullName: 'Lyden',
       role: 'TENANT',
     };
     const result = RegisterInputSchema.safeParse(input);

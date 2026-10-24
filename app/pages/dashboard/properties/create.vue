@@ -1,15 +1,18 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { ArrowLeft, Building, Plus, X, CheckCircle2, AlertCircle } from '@lucide/vue';
-import type { ApiResponse } from '../../../../shared/types/api';
-
+import { usePropertyStore } from '../../../stores/property.store';
 definePageMeta({
   layout: 'dashboard',
   middleware: 'auth',
   title: 'Add New Property',
 });
 
+const { t } = useI18n();
 const router = useRouter();
+const propertyStore = usePropertyStore();
+const { isSubmitting, errorMessage } = propertyStore;
+const { createProperty } = propertyStore;
 
 const form = ref({
   title: '',
@@ -23,8 +26,6 @@ const form = ref({
 });
 
 const newAmenity = ref('');
-const isSubmitting = ref(false);
-const errorMessage = ref<string | null>(null);
 
 const standardAmenities = [
   'Swimming Pool',
@@ -55,25 +56,19 @@ function addCustomAmenity() {
   }
 }
 
+const toast = useToast();
+
 async function handleCreateProperty() {
-  isSubmitting.value = true;
-  errorMessage.value = null;
-
   try {
-    const res = await $fetch<ApiResponse<{ property: any }>>('/api/v1/properties', {
-      method: 'POST',
-      body: form.value,
-    });
-
-    if (res.success && res.data?.property) {
-      router.push(`/dashboard/properties/${res.data.property.id}`);
+    const res = await createProperty(form.value);
+    if (res.success && res.property) {
+      toast.success(`Property "${res.property.title}" has been successfully created.`);
+      router.push(`/dashboard/properties/${res.property.id}`);
     } else {
-      errorMessage.value = res.error?.message || 'Failed to create property';
+      toast.error(res.error || errorMessage.value || 'Failed to create property.');
     }
   } catch (err: any) {
-    errorMessage.value = err?.data?.error?.message || err?.message || 'Error creating property';
-  } finally {
-    isSubmitting.value = false;
+    toast.error(err?.data?.error?.message || err?.message || 'Failed to create property.');
   }
 }
 </script>
@@ -83,7 +78,7 @@ async function handleCreateProperty() {
     <div class="top-nav-bar">
       <NuxtLink to="/dashboard/properties" class="back-link">
         <ArrowLeft :size="15" />
-        <span>Back to Properties</span>
+        <span>{{ t('properties.back_to_properties') }}</span>
       </NuxtLink>
     </div>
 
@@ -93,8 +88,8 @@ async function handleCreateProperty() {
           <Building :size="20" />
         </div>
         <div>
-          <h2>Add New Property</h2>
-          <p class="subtitle">Register a new residential complex, building, or multi-family rental asset.</p>
+          <h2>{{ t('properties.create_property_title') }}</h2>
+          <p class="subtitle">{{ t('properties.create_property_subtitle') }}</p>
         </div>
       </div>
 
@@ -106,127 +101,81 @@ async function handleCreateProperty() {
       <form @submit.prevent="handleCreateProperty" class="create-form">
         <!-- Basic Info Section -->
         <div class="form-section">
-          <h3 class="section-title">Property Details</h3>
-          
+          <h3 class="section-title">{{ t('properties.property_details') }}</h3>
+
           <div class="form-group">
-            <label for="prop-title" class="form-label">Property Title *</label>
-            <input
-              id="prop-title"
-              v-model="form.title"
-              type="text"
-              placeholder="e.g. Skyline Heights Luxury Apartments"
-              required
-              class="input-field"
-            />
+            <label for="prop-title" class="form-label">{{ t('properties.property_title_label') }}</label>
+            <input id="prop-title" v-model="form.title" type="text" :placeholder="t('properties.property_title_placeholder')"
+              required class="input-field" />
           </div>
 
           <div class="form-group">
-            <label for="prop-desc" class="form-label">Description *</label>
-            <textarea
-              id="prop-desc"
-              v-model="form.description"
-              rows="4"
-              placeholder="Provide a detailed overview of the property location, building lifestyle, and community features..."
-              required
-              class="input-field textarea-field"
-            ></textarea>
+            <label for="prop-desc" class="form-label">{{ t('properties.description_label') }}</label>
+            <textarea id="prop-desc" v-model="form.description" rows="4"
+              :placeholder="t('properties.description_placeholder')"
+              required class="input-field textarea-field"></textarea>
           </div>
         </div>
 
         <!-- Location Section -->
         <div class="form-section">
-          <h3 class="section-title">Address & Location</h3>
+          <h3 class="section-title">{{ t('properties.address_location') }}</h3>
 
           <div class="form-group">
-            <label for="prop-addr" class="form-label">Street Address *</label>
-            <input
-              id="prop-addr"
-              v-model="form.addressLine1"
-              type="text"
-              placeholder="e.g. #45 Street 288, Sangkat BKK1"
-              required
-              class="input-field"
-            />
+            <label for="prop-addr" class="form-label">{{ t('properties.street_address_label') }}</label>
+            <input id="prop-addr" v-model="form.addressLine1" type="text"
+              :placeholder="t('properties.street_address_placeholder')" required class="input-field" />
           </div>
 
           <div class="grid-3">
             <div class="form-group">
-              <label for="prop-city" class="form-label">City *</label>
-              <input
-                id="prop-city"
-                v-model="form.city"
-                type="text"
-                placeholder="e.g. Phnom Penh"
-                required
-                class="input-field"
-              />
+              <label for="prop-city" class="form-label">{{ t('properties.city_label') }}</label>
+              <input id="prop-city" v-model="form.city" type="text" :placeholder="t('properties.city_placeholder')" required
+                class="input-field" />
             </div>
 
             <div class="form-group">
-              <label for="prop-state" class="form-label">State / Region *</label>
-              <input
-                id="prop-state"
-                v-model="form.state"
-                type="text"
-                placeholder="e.g. Phnom Penh"
-                required
-                class="input-field"
-              />
+              <label for="prop-state" class="form-label">{{ t('properties.state_region_label') }}</label>
+              <input id="prop-state" v-model="form.state" type="text" :placeholder="t('properties.city_placeholder')" required
+                class="input-field" />
             </div>
 
             <div class="form-group">
-              <label for="prop-zip" class="form-label">Postal / Zip Code *</label>
-              <input
-                id="prop-zip"
-                v-model="form.postalCode"
-                type="text"
-                placeholder="e.g. 120102"
-                required
-                class="input-field"
-              />
+              <label for="prop-zip" class="form-label">{{ t('properties.postal_code_label') }}</label>
+              <input id="prop-zip" v-model="form.postalCode" type="text" placeholder="e.g. 120102" required
+                class="input-field" />
             </div>
           </div>
         </div>
 
         <!-- Amenities Section -->
         <div class="form-section">
-          <h3 class="section-title">Amenities & Features</h3>
-          <p class="section-hint">Select the amenities provided across the property grounds.</p>
+          <h3 class="section-title">{{ t('properties.amenities_features') }}</h3>
+          <p class="section-hint">{{ t('properties.amenities_hint') }}</p>
 
           <div class="amenities-picker">
-            <button
-              v-for="item in standardAmenities"
-              :key="item"
-              type="button"
-              @click="toggleAmenity(item)"
-              class="amenity-chip"
-              :class="{ selected: form.amenities.includes(item) }"
-            >
+            <button v-for="item in standardAmenities" :key="item" type="button" @click="toggleAmenity(item)"
+              class="amenity-chip" :class="{ selected: form.amenities.includes(item) }">
               <span>{{ item }}</span>
             </button>
           </div>
 
           <div class="custom-amenity-row mt-3">
-            <input
-              v-model="newAmenity"
-              type="text"
-              placeholder="Add custom amenity..."
-              class="input-field input-sm"
-              @keydown.enter.prevent="addCustomAmenity"
-            />
+            <input v-model="newAmenity" type="text" :placeholder="t('properties.add_custom_amenity')" class="input-field input-sm"
+              @keydown.enter.prevent="addCustomAmenity" />
             <button type="button" @click="addCustomAmenity" class="btn-secondary btn-sm">
               <Plus :size="14" />
-              <span>Add</span>
+              <span>{{ t('properties.add') }}</span>
             </button>
           </div>
         </div>
 
         <div class="form-actions">
           <NuxtLink to="/dashboard/properties" class="btn-secondary">
-            Cancel
+            {{ t('common.cancel') }}
           </NuxtLink>
           <button type="submit" :disabled="isSubmitting" class="btn-primary">
-            <span>{{ isSubmitting ? 'Creating Property...' : 'Save & Continue to Units' }}</span>
+            <span>{{ isSubmitting ? t('properties.creating_property') : t('properties.save_continue_units') }}</span>
           </button>
         </div>
       </form>

@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue';
-import { 
-  MapPin, 
-  Navigation, 
-  ExternalLink, 
-  RefreshCw, 
-  Layers, 
-  Maximize2, 
+import {
+  MapPin,
+  Navigation,
+  ExternalLink,
+  RefreshCw,
+  Layers,
+  Maximize2,
   Minimize2,
   Copy,
   Check
@@ -143,7 +143,7 @@ async function initMap() {
     isLoading.value = true;
     mapError.value = null;
 
-    const maplibregl = (await import('maplibre-gl')).default;
+    const maplibregl = (await import('maplibre-gl') as any).default;
 
     // Clean up previous instance
     if (mapInstance) {
@@ -152,7 +152,7 @@ async function initMap() {
       markerInstance = null;
     }
 
-    const currentStyleUrl = MAP_STYLES.find(s => s.id === selectedStyle.value)?.url 
+    const currentStyleUrl = MAP_STYLES.find(s => s.id === selectedStyle.value)?.url
       || 'https://tiles.openfreemap.org/styles/bright';
 
     const map = new maplibregl.Map({
@@ -218,9 +218,27 @@ function changeStyle(styleId: string, fromUser: boolean = true) {
   if (fromUser) isUserStyleChoice.value = true;
   selectedStyle.value = styleId;
   const target = MAP_STYLES.find(s => s.id === styleId);
-  if (mapInstance && target) {
+  if (!mapInstance || !target) return;
+
+  try {
     isLoading.value = true;
-    mapInstance.setStyle(target.url);
+    if (typeof mapInstance.isStyleLoaded === 'function' && !mapInstance.isStyleLoaded()) {
+      mapInstance.once('style.load', () => {
+        try {
+          if (mapInstance && selectedStyle.value === styleId) {
+            mapInstance.setStyle(target.url);
+          }
+        } catch (err) {
+          console.warn('MapLibre deferred style update caught:', err);
+          isLoading.value = false;
+        }
+      });
+    } else {
+      mapInstance.setStyle(target.url);
+    }
+  } catch (err) {
+    console.warn('MapLibre style change caught:', err);
+    isLoading.value = false;
   }
 }
 
@@ -299,13 +317,8 @@ onUnmounted(() => {
           <MapPin :size="16" class="pin-icon" />
           <span class="map-title-text">Location & Neighborhood</span>
         </div>
-        <button 
-          v-if="formattedCoords" 
-          type="button" 
-          @click="copyCoordinates" 
-          class="coord-badge" 
-          title="Click to copy latitude and longitude"
-        >
+        <button v-if="formattedCoords" type="button" @click="copyCoordinates" class="coord-badge"
+          title="Click to copy latitude and longitude">
           <span>{{ formattedCoords }}</span>
           <Check v-if="copiedCoords" :size="12" class="text-emerald-400" />
           <Copy v-else :size="11" class="text-slate-400" />
@@ -315,14 +328,8 @@ onUnmounted(() => {
       <div class="map-header-actions">
         <!-- Style Switcher Pills -->
         <div class="style-switcher">
-          <button
-            v-for="st in MAP_STYLES"
-            :key="st.id"
-            type="button"
-            @click="changeStyle(st.id)"
-            :class="['style-pill-btn', { active: selectedStyle === st.id }]"
-            :title="`Switch map style to ${st.name}`"
-          >
+          <button v-for="st in MAP_STYLES" :key="st.id" type="button" @click="changeStyle(st.id)"
+            :class="['style-pill-btn', { active: selectedStyle === st.id }]" :title="`Switch map style to ${st.name}`">
             {{ st.name }}
           </button>
         </div>
@@ -557,7 +564,7 @@ onUnmounted(() => {
   position: absolute;
   inset: 0;
   z-index: 10;
-  background: rgba(15, 23, 42, 0.75);
+  background: rgba(15, 23, 42, 0.85);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -565,7 +572,6 @@ onUnmounted(() => {
   gap: 10px;
   font-size: 0.85rem;
   color: #94a3b8;
-  backdrop-filter: blur(2px);
 }
 
 .map-spinner {
@@ -842,4 +848,3 @@ html.dark .popup-link:hover {
   color: #7dd3fc;
 }
 </style>
-

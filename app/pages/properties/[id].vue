@@ -1,29 +1,25 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
-import { 
-  Building, 
-  MapPin, 
-  ArrowLeft, 
-  Check, 
-  Bed, 
-  Bath, 
-  Maximize2, 
-  DollarSign, 
-  ShieldAlert, 
+import { ref, onMounted } from 'vue';
+import {
+  MapPin,
+  ArrowLeft,
+  Check,
+  Bed,
+  Bath,
+  Maximize2,
   CheckCircle2,
   FileSignature,
   LayoutGrid,
   List,
   Image as ImageIcon,
-  Eye,
-  Navigation,
   AlertCircle
 } from '@lucide/vue';
 import PropertyMap from '../../components/common/PropertyMap.vue';
-import UnitGalleryModal from '../../components/units/UnitGalleryModal.vue';
+import UnitGalleryModal, { type UnitDetail } from '../../components/units/UnitGalleryModal.vue';
 import { useAuth } from '../../composables/useAuth';
 import type { ApiResponse } from '../../../shared/types/api';
 
+const { t } = useI18n();
 const route = useRoute();
 const router = useRouter();
 const propertyId = route.params.id as string;
@@ -89,9 +85,12 @@ function closeGalleryModal() {
   selectedUnitForGallery.value = null;
 }
 
-function handleApplyFromGallery(unit: Unit) {
+function handleApplyFromGallery(unit?: UnitDetail) {
+  const target = selectedUnitForGallery.value;
   closeGalleryModal();
-  openApplyModal(unit);
+  if (target) {
+    openApplyModal(target);
+  }
 }
 
 function setCardThumbnail(unitId: string, index: number) {
@@ -101,14 +100,19 @@ function setCardThumbnail(unitId: string, index: number) {
 function getCardActiveImage(unit: Unit): string {
   const selectedIdx = activeCardThumbnails.value[unit.id] ?? 0;
   if (unit.images && unit.images.length > 0) {
-    return unit.images[selectedIdx] || unit.images[0];
+    return unit.images[selectedIdx] || unit.images[0]!;
   }
   return 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=1200&q=80';
 }
 
 function getRoomLabel(index: number): string {
-  const labels = ['Living Area', 'Master Bedroom', 'Modern Kitchen', 'Bathroom & Balcony'];
-  return labels[index % labels.length];
+  const labels = [
+    t('gallery.living_area'),
+    t('gallery.master_bedroom'),
+    t('gallery.modern_kitchen'),
+    t('gallery.bathroom_balcony')
+  ];
+  return labels[index % labels.length]!;
 }
 
 // Apply modal state
@@ -156,7 +160,7 @@ function openApplyModal(unit: Unit) {
   const dateStr = d.toISOString().split('T')[0];
 
   applyForm.value = {
-    desiredMoveInDate: dateStr,
+    desiredMoveInDate: dateStr as any,
     proposedRent: unit.rentAmount,
     employmentDetails: '',
     notes: '',
@@ -192,6 +196,26 @@ async function submitApplication() {
   }
 }
 
+function formatUnitStatus(status: string) {
+  switch (status) {
+    case 'AVAILABLE': return t('properties.status.vacant');
+    case 'OCCUPIED': return t('properties.status.occupied');
+    case 'RESERVED': return t('properties.status.reserved');
+    case 'MAINTENANCE': return t('properties.status.maintenance');
+    default: return status ? status.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase()) : 'Unknown';
+  }
+}
+
+function getUnitBadgeClass(status: string) {
+  switch (status) {
+    case 'AVAILABLE': return 'badge-success';
+    case 'OCCUPIED': return 'badge-warning';
+    case 'RESERVED': return 'badge-info';
+    case 'MAINTENANCE': return 'badge-danger';
+    default: return 'badge-subtle';
+  }
+}
+
 onMounted(() => {
   fetchProperty();
 });
@@ -203,7 +227,7 @@ onMounted(() => {
     <div class="nav-back-bar">
       <NuxtLink to="/properties" class="back-btn">
         <ArrowLeft :size="16" />
-        <span>Back to All Properties</span>
+        <span>{{ t('properties.back_to_all_properties') }}</span>
       </NuxtLink>
     </div>
 
@@ -215,7 +239,7 @@ onMounted(() => {
     <!-- Loading State -->
     <div v-if="isLoading" class="loading-state">
       <div class="loading-spinner"></div>
-      <p>Loading property details...</p>
+      <p>{{ t('properties.loading_property_details') }}</p>
     </div>
 
     <div v-else-if="property" class="property-content-layout">
@@ -223,38 +247,37 @@ onMounted(() => {
       <section class="property-overview card-flat">
         <div class="overview-header">
           <div class="title-block">
-            <span class="property-type-pill">Residential Complex</span>
+            <span class="property-type-pill">{{ t('properties.residential_complex') }}</span>
             <h1>{{ property.title }}</h1>
             <div class="address-row">
               <MapPin :size="15" class="loc-icon" />
-              <span>{{ property.addressLine1 }}, {{ property.city }}, {{ property.state }} {{ property.postalCode }}, {{ property.country }}</span>
+              <span>{{ property.addressLine1 }}, {{ property.city }}, {{ property.state }} {{ property.postalCode }}, {{
+                property.country }}</span>
             </div>
           </div>
 
           <div class="units-badge-block">
-            <span v-if="property.availableUnitsCount > 0" class="badge badge-success">
-              {{ property.availableUnitsCount }} of {{ property.unitsCount }} Units Available
+            <span v-if="property.availableUnitsCount > 0" class="badge badge-pill badge-success">
+              <span class="badge-dot"></span>
+              <span>{{ t('properties.units_available_ratio', { available: property.availableUnitsCount, total: property.unitsCount }) }}</span>
             </span>
-            <span v-else class="badge badge-warning">
-              All Units Currently Leased
+            <span v-else class="badge badge-pill badge-warning">
+              <span class="badge-dot"></span>
+              <span>{{ t('properties.all_units_leased') }}</span>
             </span>
           </div>
         </div>
 
         <div class="overview-description">
-          <h3>About This Property</h3>
+          <h3>{{ t('properties.about_property') }}</h3>
           <p>{{ property.description }}</p>
         </div>
 
         <!-- Amenities -->
         <div v-if="property.amenities?.length" class="amenities-section">
-          <h3>Included Amenities & Features</h3>
+          <h3>{{ t('properties.included_amenities') }}</h3>
           <div class="amenities-grid">
-            <div
-              v-for="amenity in property.amenities"
-              :key="amenity"
-              class="amenity-item"
-            >
+            <div v-for="amenity in property.amenities" :key="amenity" class="amenity-item">
               <Check :size="14" class="amenity-check" />
               <span>{{ amenity }}</span>
             </div>
@@ -265,16 +288,11 @@ onMounted(() => {
       <!-- Location & Neighborhood Map (OpenFreeMap) -->
       <section class="location-map-section">
         <ClientOnly>
-          <PropertyMap
-            :latitude="property.latitude ?? 11.5516"
-            :longitude="property.longitude ?? 104.9224"
-            :title="property.title"
-            :address="property.addressLine1"
-            :city="property.city"
-          />
+          <PropertyMap :latitude="property.latitude ?? 11.5516" :longitude="property.longitude ?? 104.9224"
+            :title="property.title" :address="property.addressLine1" :city="property.city" />
           <template #fallback>
             <div class="map-placeholder card-flat">
-              <p>Loading OpenFreeMap vector tiles...</p>
+              <p>{{ t('common.please_wait') }}</p>
             </div>
           </template>
         </ClientOnly>
@@ -284,53 +302,37 @@ onMounted(() => {
       <section class="units-section">
         <div class="section-title-row">
           <div>
-            <h2>Units & Floor Plans</h2>
-            <p class="section-desc">Review individual unit room photos, specifications, pricing, and current leasing availability.</p>
+            <h2>{{ t('properties.units_floor_plans') }}</h2>
+            <p class="section-desc">{{ t('properties.units_floor_plans_desc') }}</p>
           </div>
           <div class="view-toggle-bar">
-            <button
-              type="button"
-              @click="unitViewMode = 'grid'"
-              :class="['toggle-btn', { active: unitViewMode === 'grid' }]"
-              title="Visual cards with photo galleries"
-            >
+            <button type="button" @click="unitViewMode = 'grid'"
+              :class="['toggle-btn', { active: unitViewMode === 'grid' }]" :title="t('properties.visual_cards')">
               <LayoutGrid :size="14" />
-              <span>Visual Cards</span>
+              <span>{{ t('properties.visual_cards') }}</span>
             </button>
-            <button
-              type="button"
-              @click="unitViewMode = 'table'"
-              :class="['toggle-btn', { active: unitViewMode === 'table' }]"
-              title="Compact table view"
-            >
+            <button type="button" @click="unitViewMode = 'table'"
+              :class="['toggle-btn', { active: unitViewMode === 'table' }]" :title="t('properties.table_view')">
               <List :size="14" />
-              <span>Table View</span>
+              <span>{{ t('properties.table_view') }}</span>
             </button>
           </div>
         </div>
 
         <div v-if="!property.units || property.units.length === 0" class="empty-units card-flat">
-          <p>No individual units have been listed for this property yet.</p>
+          <p>{{ t('properties.no_units_listed') }}</p>
         </div>
 
         <!-- Visual Cards Grid View -->
         <div v-else-if="unitViewMode === 'grid'" class="unit-cards-grid">
-          <div 
-            v-for="unit in property.units" 
-            :key="unit.id" 
-            class="unit-card card-flat"
-          >
+          <div v-for="unit in property.units" :key="unit.id" class="unit-card card-flat">
             <!-- Card Image & Hero Thumbnail -->
             <div class="unit-card-media">
-              <img 
-                :src="getCardActiveImage(unit)" 
-                :alt="`Unit ${unit.unitNumber}`" 
-                class="unit-card-hero-img"
-                @click="openGalleryModal(unit, activeCardThumbnails[unit.id] ?? 0)"
-              />
+              <img :src="getCardActiveImage(unit)" :alt="`Unit ${unit.unitNumber}`" class="unit-card-hero-img"
+                @click="openGalleryModal(unit, activeCardThumbnails[unit.id] ?? 0)" />
               <div class="unit-media-badge">
                 <ImageIcon :size="12" />
-                <span>{{ unit.images?.length || 1 }} Photos</span>
+                <span>{{ t('properties.photos_count', { count: unit.images?.length || 1 }) }}</span>
               </div>
               <div class="room-indicator">
                 {{ getRoomLabel(activeCardThumbnails[unit.id] ?? 0) }}
@@ -339,15 +341,10 @@ onMounted(() => {
 
             <!-- Thumbnail Strip under Card Hero -->
             <div v-if="unit.images && unit.images.length > 1" class="unit-card-thumbs">
-              <button
-                v-for="(img, idx) in unit.images.slice(0, 4)"
-                :key="idx"
-                type="button"
-                @mouseenter="setCardThumbnail(unit.id, idx)"
-                @click="openGalleryModal(unit, idx)"
+              <button v-for="(img, idx) in unit.images.slice(0, 4)" :key="idx" type="button"
+                @mouseenter="setCardThumbnail(unit.id, idx)" @click="openGalleryModal(unit, idx)"
                 :class="['unit-mini-thumb', { active: (activeCardThumbnails[unit.id] ?? 0) === idx }]"
-                :title="`View ${getRoomLabel(idx)}`"
-              >
+                :title="`View ${getRoomLabel(idx)}`">
                 <img :src="img" :alt="`Thumbnail ${idx + 1}`" />
               </button>
             </div>
@@ -356,17 +353,12 @@ onMounted(() => {
             <div class="unit-card-body">
               <div class="unit-card-header">
                 <div>
-                  <h3 class="unit-number-title">Unit {{ unit.unitNumber }}</h3>
-                  <span class="unit-floor-text">Level {{ unit.floor }}</span>
+                  <h3 class="unit-number-title">{{ t('properties.unit_label', { number: unit.unitNumber }) }}</h3>
+                  <span class="unit-floor-text">{{ t('properties.level', { floor: unit.floor }) }}</span>
                 </div>
-                <span
-                  :class="[
-                    'badge',
-                    unit.status === 'AVAILABLE' ? 'badge-success' :
-                    unit.status === 'OCCUPIED' ? 'badge-warning' : 'badge-danger'
-                  ]"
-                >
-                  {{ unit.status }}
+                <span :class="['badge badge-pill', getUnitBadgeClass(unit.status)]">
+                  <span class="badge-dot"></span>
+                  <span>{{ formatUnitStatus(unit.status) }}</span>
                 </span>
               </div>
 
@@ -374,35 +366,32 @@ onMounted(() => {
               <div class="unit-card-specs">
                 <div class="spec-item">
                   <Maximize2 :size="13" class="spec-icon" />
-                  <span>{{ unit.sizeSqFt }} sq m</span>
+                  <span>{{ t('properties.sq_m', { size: unit.sizeSqFt }) }}</span>
                 </div>
                 <div class="spec-item">
                   <Bed :size="13" class="spec-icon" />
-                  <span>{{ unit.bedrooms === 0 ? 'Studio' : `${unit.bedrooms} Bed` }}</span>
+                  <span>{{ unit.bedrooms === 0 ? t('properties.studio') : t('properties.bed_short', { count: unit.bedrooms }) }}</span>
                 </div>
                 <div class="spec-item">
                   <Bath :size="13" class="spec-icon" />
-                  <span>{{ unit.bathrooms }} Bath</span>
+                  <span>{{ t('properties.bath_short', { count: unit.bathrooms }) }}</span>
                 </div>
               </div>
 
               <!-- Price and Actions -->
               <div class="unit-card-footer">
                 <div class="unit-pricing">
-                  <div class="unit-price-amount">${{ unit.rentAmount.toLocaleString() }} <span class="unit-price-period">/ mo</span></div>
-                  <div class="unit-deposit-text">Deposit: ${{ unit.depositAmount.toLocaleString() }}</div>
+                  <div class="unit-price-amount">${{ unit.rentAmount.toLocaleString() }} <span
+                      class="unit-price-period">{{ t('properties.per_month_short') }}</span></div>
+                  <div class="unit-deposit-text">{{ t('properties.deposit') }}: ${{ unit.depositAmount.toLocaleString() }}</div>
                 </div>
 
                 <div class="unit-actions">
-                  <button
-                    v-if="unit.status === 'AVAILABLE'"
-                    @click="openApplyModal(unit)"
-                    class="btn-primary btn-sm"
-                  >
+                  <button v-if="unit.status === 'AVAILABLE'" @click="openApplyModal(unit)" class="btn-primary btn-sm">
                     <FileSignature :size="13" />
-                    <span>Apply</span>
+                    <span>{{ t('properties.apply') }}</span>
                   </button>
-                  <span v-else class="unavailable-text">Unavailable</span>
+                  <span v-else class="unavailable-text">{{ t('properties.unavailable') }}</span>
                 </div>
               </div>
             </div>
@@ -414,74 +403,56 @@ onMounted(() => {
           <table class="data-table">
             <thead>
               <tr>
-                <th style="width: 80px;">Preview</th>
-                <th>Unit #</th>
-                <th>Floor</th>
-                <th>Floor Area</th>
-                <th>Bedrooms / Bath</th>
-                <th>Monthly Rent</th>
-                <th>Security Deposit</th>
-                <th>Status</th>
-                <th>Action</th>
+                <th style="width: 80px;">{{ t('properties.preview') }}</th>
+                <th>{{ t('properties.col_unit_number') }}</th>
+                <th>{{ t('properties.col_floor') }}</th>
+                <th>{{ t('properties.floor_area') }}</th>
+                <th>{{ t('properties.col_bedrooms_bath') }}</th>
+                <th>{{ t('properties.col_monthly_rent') }}</th>
+                <th>{{ t('properties.security_deposit_label') }}</th>
+                <th>{{ t('common.status') }}</th>
+                <th>{{ t('common.actions') }}</th>
               </tr>
             </thead>
             <tbody>
               <tr v-for="unit in property.units" :key="unit.id">
                 <td>
-                  <button 
-                    type="button" 
-                    class="table-unit-thumb-btn"
-                    @click="openGalleryModal(unit, 0)"
-                    title="Open photo gallery"
-                  >
-                    <img 
-                      :src="unit.images?.[0] || 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=400&q=80'" 
-                      :alt="`Unit ${unit.unitNumber}`" 
-                    />
+                  <button type="button" class="table-unit-thumb-btn" @click="openGalleryModal(unit, 0)"
+                    :title="t('properties.photos')">
+                    <img
+                      :src="unit.images?.[0] || 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=400&q=80'"
+                      :alt="`Unit ${unit.unitNumber}`" />
                     <span class="table-thumb-count">{{ unit.images?.length || 1 }}</span>
                   </button>
                 </td>
-                <td class="font-medium">Unit {{ unit.unitNumber }}</td>
-                <td>Level {{ unit.floor }}</td>
-                <td>{{ unit.sizeSqFt }} sq m</td>
+                <td class="font-medium">{{ t('properties.unit_label', { number: unit.unitNumber }) }}</td>
+                <td>{{ t('properties.level', { floor: unit.floor }) }}</td>
+                <td>{{ t('properties.sq_m', { size: unit.sizeSqFt }) }}</td>
                 <td>
                   <span class="spec-text">
-                    {{ unit.bedrooms === 0 ? 'Studio' : `${unit.bedrooms} Bed` }} / {{ unit.bathrooms }} Bath
+                    {{ unit.bedrooms === 0 ? t('properties.studio') : t('properties.bed_short', { count: unit.bedrooms }) }} / {{ t('properties.bath_short', { count: unit.bathrooms }) }}
                   </span>
                 </td>
-                <td class="rent-cell">${{ unit.rentAmount.toLocaleString() }} / mo</td>
+                <td class="rent-cell">${{ unit.rentAmount.toLocaleString() }} {{ t('properties.per_month_short') }}</td>
                 <td>${{ unit.depositAmount.toLocaleString() }}</td>
                 <td>
-                  <span
-                    :class="[
-                      'badge',
-                      unit.status === 'AVAILABLE' ? 'badge-success' :
-                      unit.status === 'OCCUPIED' ? 'badge-warning' : 'badge-danger'
-                    ]"
-                  >
-                    {{ unit.status }}
+                  <span :class="['badge badge-pill', getUnitBadgeClass(unit.status)]">
+                    <span class="badge-dot"></span>
+                    <span>{{ formatUnitStatus(unit.status) }}</span>
                   </span>
                 </td>
                 <td>
                   <div class="flex items-center gap-1.5">
-                    <button
-                      type="button"
-                      @click="openGalleryModal(unit, 0)"
-                      class="btn-secondary btn-sm"
-                      title="View Photos"
-                    >
+                    <button type="button" @click="openGalleryModal(unit, 0)" class="btn-secondary btn-sm"
+                      :title="t('properties.photos')">
                       <ImageIcon :size="13" />
-                      <span>Photos</span>
+                      <span>{{ t('properties.photos') }}</span>
                     </button>
-                    <button
-                      v-if="unit.status === 'AVAILABLE'"
-                      @click="openApplyModal(unit)"
-                      class="btn-primary btn-sm"
-                    >
+                    <button v-if="unit.status === 'AVAILABLE'" @click="openApplyModal(unit)" class="btn-primary btn-sm">
                       <FileSignature :size="13" />
-                      <span>Apply</span>
+                      <span>{{ t('properties.apply') }}</span>
                     </button>
-                    <span v-else class="unavailable-text">Unavailable</span>
+                    <span v-else class="unavailable-text">{{ t('properties.unavailable') }}</span>
                   </div>
                 </td>
               </tr>
@@ -495,7 +466,7 @@ onMounted(() => {
     <div v-if="selectedUnitForApply" class="modal-backdrop">
       <div class="modal-card card-flat">
         <div class="modal-header">
-          <h3>Apply for Unit {{ selectedUnitForApply.unitNumber }}</h3>
+          <h3>{{ t('properties.apply_for_unit', { number: selectedUnitForApply.unitNumber }) }}</h3>
           <button @click="selectedUnitForApply = null" class="modal-close">&times;</button>
         </div>
 
@@ -507,10 +478,10 @@ onMounted(() => {
             </div>
             <div class="modal-actions mt-3">
               <NuxtLink to="/dashboard/applications" class="btn-primary">
-                <span>View My Applications</span>
+                <span>{{ t('properties.view_my_applications') }}</span>
               </NuxtLink>
               <button @click="selectedUnitForApply = null" class="btn-secondary">
-                Close
+                {{ t('common.close') }}
               </button>
             </div>
           </div>
@@ -523,62 +494,47 @@ onMounted(() => {
           </div>
 
           <div class="unit-summary-pill">
-            <div><strong>Unit:</strong> Unit {{ selectedUnitForApply.unitNumber }} ({{ property.title }})</div>
-            <div><strong>Base Rent:</strong> ${{ selectedUnitForApply.rentAmount.toLocaleString() }}/mo &bull; <strong>Deposit:</strong> ${{ selectedUnitForApply.depositAmount.toLocaleString() }}</div>
-            <div><strong>Specs:</strong> {{ selectedUnitForApply.bedrooms === 0 ? 'Studio' : `${selectedUnitForApply.bedrooms} Bed` }} / {{ selectedUnitForApply.bathrooms }} Bath ({{ selectedUnitForApply.sizeSqFt }} sq m)</div>
+            <div><strong>{{ t('properties.unit_singular') }}:</strong> {{ t('properties.unit_label', { number: selectedUnitForApply.unitNumber }) }} ({{ property?.title }})</div>
+            <div><strong>{{ t('properties.col_monthly_rent') }}:</strong> ${{ selectedUnitForApply.rentAmount.toLocaleString() }}{{ t('properties.per_month_short') }} &bull;
+              <strong>{{ t('properties.col_deposit') }}:</strong> ${{ selectedUnitForApply.depositAmount.toLocaleString() }}
+            </div>
+            <div><strong>{{ t('properties.col_size') }}:</strong> {{ selectedUnitForApply.bedrooms === 0 ? t('properties.studio') :
+              t('properties.bed_short', { count: selectedUnitForApply.bedrooms }) }} / {{ t('properties.bath_short', { count: selectedUnitForApply.bathrooms }) }} ({{
+                t('properties.sq_m', { size: selectedUnitForApply.sizeSqFt }) }})</div>
           </div>
 
           <div class="grid-2">
             <div class="form-group">
-              <label class="form-label">Desired Move-in Date *</label>
-              <input
-                v-model="applyForm.desiredMoveInDate"
-                type="date"
-                required
-                class="input-field"
-              />
+              <label class="form-label">{{ t('properties.desired_move_in') }}</label>
+              <input v-model="applyForm.desiredMoveInDate" type="date" required class="input-field" />
             </div>
 
             <div class="form-group">
-              <label class="form-label">Proposed Monthly Rent ($) *</label>
-              <input
-                v-model.number="applyForm.proposedRent"
-                type="number"
-                min="1"
-                required
-                class="input-field"
-              />
+              <label class="form-label">{{ t('properties.proposed_monthly_rent') }}</label>
+              <input v-model.number="applyForm.proposedRent" type="number" min="1" required class="input-field" />
             </div>
           </div>
 
           <div class="form-group">
-            <label class="form-label">Employment & Income Credentials *</label>
-            <textarea
-              v-model="applyForm.employmentDetails"
-              rows="3"
-              placeholder="e.g. Current employer, job title, annual/monthly gross income, duration of employment..."
-              required
-              class="input-field"
-            ></textarea>
+            <label class="form-label">{{ t('properties.employment_income_credentials') }}</label>
+            <textarea v-model="applyForm.employmentDetails" rows="3"
+              :placeholder="t('properties.employment_placeholder')"
+              required class="input-field"></textarea>
           </div>
 
           <div class="form-group">
-            <label class="form-label">Additional Notes (Optional)</label>
-            <input
-              v-model="applyForm.notes"
-              type="text"
-              placeholder="e.g. Preferred lease duration, vehicle details, co-occupants..."
-              class="input-field"
-            />
+            <label class="form-label">{{ t('properties.additional_notes_optional') }}</label>
+            <input v-model="applyForm.notes" type="text"
+              :placeholder="t('properties.additional_notes_placeholder')" class="input-field" />
           </div>
 
           <div class="modal-actions">
             <button type="button" @click="selectedUnitForApply = null" class="btn-secondary">
-              Cancel
+              {{ t('common.cancel') }}
             </button>
             <button type="submit" :disabled="isSubmittingApply" class="btn-primary">
               <FileSignature :size="14" />
-              <span>{{ isSubmittingApply ? 'Submitting Application...' : 'Submit Application' }}</span>
+              <span>{{ isSubmittingApply ? t('properties.submitting_application') : t('properties.submit_application') }}</span>
             </button>
           </div>
         </form>
@@ -586,13 +542,8 @@ onMounted(() => {
     </div>
 
     <!-- Unit Photo Gallery Modal -->
-    <UnitGalleryModal
-      v-if="selectedUnitForGallery"
-      :unit="selectedUnitForGallery"
-      :initial-index="initialGalleryIndex"
-      @close="closeGalleryModal"
-      @apply="handleApplyFromGallery"
-    />
+    <UnitGalleryModal v-if="selectedUnitForGallery" :unit="selectedUnitForGallery" :initial-index="initialGalleryIndex"
+      @close="closeGalleryModal" @apply="handleApplyFromGallery" />
   </div>
 </template>
 
@@ -789,7 +740,9 @@ onMounted(() => {
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* Modal styles */
@@ -929,12 +882,15 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  border-radius: var(--radius-md, 8px);
-  background: var(--bg-surface, #ffffff);
-  transition: border-color 0.15s ease;
+  border-radius: var(--radius-md);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  transition: border-color 0.2s cubic-bezier(0.16, 1, 0.3, 1), transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .unit-card:hover {
+  border-color: var(--primary);
+  transform: translateY(-2px);
   box-shadow: none;
 }
 
@@ -961,33 +917,32 @@ onMounted(() => {
   position: absolute;
   top: 10px;
   left: 10px;
-  background: rgba(15, 23, 42, 0.75);
+  background: #18181b;
   color: #ffffff;
   padding: 3px 8px;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   font-size: 0.72rem;
   font-weight: 500;
   display: flex;
   align-items: center;
   gap: 4px;
-  backdrop-filter: blur(2px);
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.12);
 }
 
 .expand-gallery-btn {
   position: absolute;
   top: 10px;
   right: 10px;
-  background: rgba(15, 23, 42, 0.75);
+  background: #18181b;
   color: #ffffff;
   padding: 3px 8px;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   font-size: 0.72rem;
   font-weight: 500;
   display: flex;
   align-items: center;
   gap: 4px;
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   cursor: pointer;
   opacity: 0;
   transform: translateY(-3px);
@@ -1003,21 +958,21 @@ onMounted(() => {
   position: absolute;
   bottom: 8px;
   left: 10px;
-  background: rgba(15, 23, 42, 0.75);
+  background: #18181b;
   color: #f8fafc;
   padding: 2px 8px;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   font-size: 0.7rem;
   font-weight: 500;
-  backdrop-filter: blur(2px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
 }
 
 .unit-card-thumbs {
   display: flex;
   gap: 6px;
-  padding: 8px 12px 12px 0;
-  background: var(--bg-surface, #141c2e);
-  border-bottom: 1px solid var(--border-subtle, #1e293b);
+  padding: 8px 12px;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border-subtle);
 }
 
 .unit-mini-thumb {
@@ -1028,7 +983,7 @@ onMounted(() => {
   border: 2px solid transparent;
   padding: 0;
   cursor: pointer;
-  background: var(--bg-subtle, #1e293b);
+  background: var(--bg-subtle);
   transition: all 0.15s ease;
   flex-shrink: 0;
 }
@@ -1047,7 +1002,7 @@ onMounted(() => {
 }
 
 .unit-mini-thumb.active {
-  border-color: #38bdf8;
+  border-color: var(--primary);
   transform: scale(1.05);
 }
 
@@ -1055,6 +1010,7 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   gap: 0.85rem;
+  padding: 1.25rem;
   flex: 1;
 }
 
@@ -1116,7 +1072,8 @@ onMounted(() => {
 .unit-price-amount {
   font-size: 1.35rem;
   font-weight: 800;
-  color: #10b981 !important; /* Luminous emerald green for high contrast on dark card */
+  color: #10b981 !important;
+  /* Luminous emerald green for high contrast on dark card */
   line-height: 1.2;
   display: flex;
   align-items: baseline;
@@ -1179,4 +1136,3 @@ onMounted(() => {
   border-radius: 2px;
 }
 </style>
-

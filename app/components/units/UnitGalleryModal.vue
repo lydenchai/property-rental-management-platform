@@ -1,19 +1,20 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue';
-import { 
-  X, 
-  ChevronLeft, 
-  ChevronRight, 
-  Bed, 
-  Bath, 
-  Maximize2, 
-  DollarSign, 
-  FileSignature, 
-  Image as ImageIcon 
+import {
+  X,
+  ChevronLeft,
+  ChevronRight,
+  Bed,
+  Bath,
+  Maximize2,
+  DollarSign,
+  FileSignature,
+  Image as ImageIcon
 } from '@lucide/vue';
 
 export interface UnitDetail {
   id: string;
+  propertyId?: string;
   unitNumber: string;
   floor: number;
   sizeSqFt: number;
@@ -39,6 +40,7 @@ const emit = defineEmits<{
   (e: 'apply', unit: UnitDetail): void;
 }>();
 
+const { t } = useI18n();
 const activeIndex = ref(props.initialIndex);
 
 const currentImages = computed(() => {
@@ -93,7 +95,12 @@ onUnmounted(() => {
 
 // Room label heuristics based on image index
 function getImageLabel(index: number): string {
-  const labels: any[] = ['Living Area', 'Master Bedroom', 'Modern Kitchen', 'Bathroom & Balcony'];
+  const labels: any[] = [
+    t('gallery.living_area'),
+    t('gallery.master_bedroom'),
+    t('gallery.modern_kitchen'),
+    t('gallery.bathroom_balcony')
+  ];
   return labels[index % labels.length];
 }
 </script>
@@ -104,52 +111,34 @@ function getImageLabel(index: number): string {
       <!-- Modal Header -->
       <div class="gallery-header">
         <div class="header-info">
-          <h3 class="unit-title">Unit {{ unit.unitNumber }} &bull; Interior Gallery</h3>
+          <h3 class="unit-title">{{ t('properties.unit_label', { number: unit.unitNumber }) }} &bull; {{ t('gallery.interior_gallery') }}</h3>
           <span class="photo-counter">
             <ImageIcon :size="13" />
-            Photo {{ activeIndex + 1 }} of {{ currentImages.length }} &mdash; {{ getImageLabel(activeIndex) }}
+            {{ t('gallery.photo_counter', { current: activeIndex + 1, total: currentImages.length, label: getImageLabel(activeIndex) }) }}
           </span>
         </div>
-        <button 
-          type="button" 
-          @click="emit('close')" 
-          class="close-button" 
-          title="Close gallery (Esc)"
-        >
+        <button type="button" @click="emit('close')" class="close-button" :title="t('gallery.close')">
           <X :size="18" />
         </button>
       </div>
 
       <!-- Main Stage -->
       <div class="gallery-stage">
-        <button 
-          v-if="currentImages.length > 1" 
-          type="button" 
-          @click="prevImage" 
-          class="nav-arrow nav-prev" 
-          title="Previous photo (Left arrow)"
-        >
+        <button v-if="currentImages.length > 1" type="button" @click="prevImage" class="nav-arrow nav-prev"
+          :title="t('common.prev_page')">
           <ChevronLeft :size="24" />
         </button>
 
         <div class="active-image-wrapper">
-          <img 
-            :src="activeImage" 
-            :alt="`Unit ${unit.unitNumber} - ${getImageLabel(activeIndex)}`"
-            class="active-image" 
-          />
+          <img :src="activeImage" :alt="`Unit ${unit.unitNumber} - ${getImageLabel(activeIndex)}`"
+            class="active-image" />
           <div class="room-tag">
             {{ getImageLabel(activeIndex) }}
           </div>
         </div>
 
-        <button 
-          v-if="currentImages.length > 1" 
-          type="button" 
-          @click="nextImage" 
-          class="nav-arrow nav-next" 
-          title="Next photo (Right arrow)"
-        >
+        <button v-if="currentImages.length > 1" type="button" @click="nextImage" class="nav-arrow nav-next"
+          :title="t('common.next_page')">
           <ChevronRight :size="24" />
         </button>
       </div>
@@ -157,13 +146,8 @@ function getImageLabel(index: number): string {
       <!-- Thumbnails Strip -->
       <div v-if="currentImages.length > 1" class="thumbnails-bar">
         <div class="thumbnails-track">
-          <button
-            v-for="(img, idx) in currentImages"
-            :key="idx"
-            type="button"
-            @click="selectIndex(idx)"
-            :class="['thumbnail-item', { active: idx === activeIndex }]"
-          >
+          <button v-for="(img, idx) in currentImages" :key="idx" type="button" @click="selectIndex(idx)"
+            :class="['thumbnail-item', { active: idx === activeIndex }]">
             <img :src="img" :alt="`Thumbnail ${idx + 1}`" />
             <span class="thumbnail-label">{{ getImageLabel(idx) }}</span>
           </button>
@@ -174,43 +158,35 @@ function getImageLabel(index: number): string {
       <div class="gallery-footer">
         <div class="unit-specs-summary">
           <div class="spec-pill">
-            <span class="text-slate-400">Level:</span>
-            <strong>Floor {{ unit.floor }}</strong>
+            <span class="text-slate-400">{{ t('properties.floor') }}:</span>
+            <strong>{{ t('properties.level', { floor: unit.floor }) }}</strong>
           </div>
           <div class="spec-pill">
             <Maximize2 :size="13" class="text-slate-400" />
-            <strong>{{ unit.sizeSqFt }} sq m</strong>
+            <strong>{{ t('properties.sq_m', { size: unit.sizeSqFt }) }}</strong>
           </div>
           <div class="spec-pill">
             <Bed :size="13" class="text-slate-400" />
-            <strong>{{ unit.bedrooms === 0 ? 'Studio' : `${unit.bedrooms} Bed` }}</strong>
+            <strong>{{ unit.bedrooms === 0 ? t('properties.studio') : t('properties.bed_short', { count: unit.bedrooms }) }}</strong>
           </div>
           <div class="spec-pill">
             <Bath :size="13" class="text-slate-400" />
-            <strong>{{ unit.bathrooms }} Bath</strong>
+            <strong>{{ t('properties.bath_short', { count: unit.bathrooms }) }}</strong>
           </div>
           <div class="spec-pill rent-pill">
             <span class="rent-amount-text">${{ unit.rentAmount.toLocaleString() }}</span>
-            <span class="text-xs text-slate-400">/ mo</span>
+            <span class="text-xs text-slate-400">{{ t('properties.per_month_short') }}</span>
           </div>
         </div>
 
         <div class="action-buttons">
-          <button 
-            type="button" 
-            @click="emit('close')" 
-            class="btn-secondary btn-sm"
-          >
-            Close
+          <button type="button" @click="emit('close')" class="btn-secondary btn-sm">
+            {{ t('common.close') }}
           </button>
-          <button
-            v-if="unit.status === 'AVAILABLE'"
-            type="button"
-            @click="emit('apply', unit)"
-            class="btn-primary btn-sm"
-          >
+          <button v-if="unit.status === 'AVAILABLE'" type="button" @click="emit('apply', unit)"
+            class="btn-primary btn-sm">
             <FileSignature :size="14" />
-            <span>Apply For This Unit</span>
+            <span>{{ t('gallery.apply_for_unit') }}</span>
           </button>
           <span v-else class="unavailable-badge">
             {{ unit.status }}
@@ -226,12 +202,11 @@ function getImageLabel(index: number): string {
   position: fixed;
   inset: 0;
   z-index: 9999;
-  background: rgba(15, 23, 42, 0.82);
+  background: rgba(0, 0, 0, 0.75);
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 16px;
-  backdrop-filter: blur(2px);
 }
 
 .gallery-modal-container {
@@ -482,9 +457,11 @@ function getImageLabel(index: number): string {
   .gallery-stage {
     height: 320px;
   }
+
   .unit-specs-summary {
     gap: 8px;
   }
+
   .thumbnail-item {
     width: 70px;
     height: 48px;

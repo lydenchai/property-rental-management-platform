@@ -119,6 +119,12 @@ npm run dev
 ```
 Visit **[http://localhost:3000](http://localhost:3000)** in your browser.
 
+To use a custom port, pass it to the Nuxt development server:
+```bash
+npm run dev -- --port 4000
+```
+Then visit **[http://localhost:4000](http://localhost:4000)**.
+
 ---
 
 ## Project Structure

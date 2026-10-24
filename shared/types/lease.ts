@@ -1,19 +1,5 @@
-import { ApplicationStatus } from "./enums/application-status.enum";
-import { LeaseStatus } from "./enums/Lease-status.enum";
+import type { LeaseStatus } from './enums/Lease-status.enum';
 
-export interface ApplicationDetail {
-  id: string;
-  unitId: string;
-  tenantId: string;
-  status: ApplicationStatus;
-  desiredMoveInDate: string;
-  proposedRent: number;
-  employmentDetails: string;
-  notes?: string | null;
-  reviewedAt?: string | null;
-  reviewReason?: string | null;
-  createdAt: string;
-}
 
 export interface LeaseDetail {
   id: string;
@@ -31,4 +17,44 @@ export interface LeaseDetail {
   landlordSignedAt?: string | null;
   termsAndConditions: string;
   createdAt: string;
+}
+
+export interface LeaseItem extends LeaseDetail {
+  unit?: {
+    id: string;
+    unitNumber: string;
+    bedrooms: number;
+    bathrooms: number;
+  };
+  property?: {
+    id: string;
+    title: string;
+    city: string;
+    state: string;
+  };
+  tenant?: {
+    id: string;
+    fullName: string;
+    email: string;
+  };
+  landlord?: {
+    id: string;
+    fullName: string;
+    email: string;
+  };
+}
+
+export interface CreateLeaseInput {
+  unitId: string;
+  tenantId: string;
+  startDate: string;
+  endDate: string;
+  rentAmount: number;
+  depositAmount: number;
+  paymentDueDay: number;
+  termsAndConditions: string;
+}
+
+export interface SignLeaseInput {
+  agreeToTerms: boolean;
 }

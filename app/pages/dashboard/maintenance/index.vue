@@ -1,23 +1,30 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue';
-import { 
-  Wrench, 
-  AlertTriangle, 
-  CheckCircle2, 
-  Clock, 
-  UserCheck, 
-  Search, 
-  Plus, 
-  Building, 
-  FileText, 
-  X, 
-  CheckCheck, 
+import {
+  Wrench,
+  AlertTriangle,
+  CheckCircle2,
+  Clock,
+  UserCheck,
+  Search,
+  Plus,
+  Building,
+  FileText,
+  X,
+  CheckCheck,
   ArrowRight,
   ShieldAlert,
   AlertCircle
 } from '@lucide/vue';
 import { useAuth } from '../../../composables/useAuth';
-import type { ApiResponse } from '../../../../shared/types/api';
+import { useMaintenanceStore } from '../../../stores/maintenance.store';
+import type {
+  MaintenanceItem,
+  CreateMaintenanceInput,
+  AssignTechnicianInput,
+  UpdateProgressInput,
+  ConfirmResolutionInput
+} from '~~/shared/types';
 import AppTableCard from '../../../components/common/AppTableCard.vue';
 
 definePageMeta({
@@ -26,53 +33,25 @@ definePageMeta({
   title: 'Maintenance Management',
 });
 
+const { t } = useI18n();
 const { user, isLandlord, isTenant, isTechnician, isAdmin } = useAuth();
 
-interface MaintenanceItem {
-  id: string;
-  unitId: string;
-  tenantId: string;
-  title: string;
-  description: string;
-  priority: string;
-  status: string;
-  requestedAt: string;
-  resolvedAt: string | null;
-  confirmedAt: string | null;
-  resolutionNotes: string | null;
-  createdAt: string;
-  unit?: {
-    id: string;
-    unitNumber: string;
-    property?: {
-      id: string;
-      title: string;
-      city: string;
-      state: string;
-    };
-  };
-  tenant?: {
-    id: string;
-    fullName: string;
-    email: string;
-    phone: string | null;
-  };
-  assignments?: Array<{
-    id: string;
-    technicianId: string;
-    assignedAt: string;
-    notes: string | null;
-    technician?: {
-      id: string;
-      fullName: string;
-      email: string;
-    };
-  }>;
-}
+const maintenanceStore = useMaintenanceStore();
+const {
+  requests,
+  isLoading,
+  isSubmitting,
+  isAssigning,
+  isUpdating,
+  isConfirming,
+  errorMessage,
+  totalCount,
+  openCount,
+  inProgressCount,
+  awaitingConfirmCount,
+  closedCount
+} = maintenanceStore;
 
-const requests = ref<MaintenanceItem[]>([]);
-const isLoading = ref(true);
-const errorMessage = ref<string | null>(null);
 const successMessage = ref<string | null>(null);
 
 // Filters
@@ -81,8 +60,7 @@ const searchQuery = ref('');
 
 // Modals
 const isCreateModalOpen = ref(false);
-const isSubmitting = ref(false);
-const createForm = ref({
+const createForm = ref<CreateMaintenanceInput>({
   unitId: 'unit-skyline-101a',
   title: '',
   description: '',
@@ -90,51 +68,24 @@ const createForm = ref({
 });
 
 const ticketToAssign = ref<MaintenanceItem | null>(null);
-const isAssigning = ref(false);
-const assignForm = ref({
+const assignForm = ref<AssignTechnicianInput>({
   technicianId: 'user-tech-01',
   notes: '',
 });
 
 const ticketToUpdate = ref<MaintenanceItem | null>(null);
-const isUpdating = ref(false);
-const updateForm = ref({
+const updateForm = ref<UpdateProgressInput>({
   status: 'RESOLVED',
   resolutionNotes: '',
 });
 
 const ticketToConfirm = ref<MaintenanceItem | null>(null);
-const isConfirming = ref(false);
-const confirmForm = ref({
+const confirmForm = ref<ConfirmResolutionInput>({
   confirmed: true,
   feedback: '',
 });
 
 const viewingTicket = ref<MaintenanceItem | null>(null);
-
-async function loadRequests() {
-  isLoading.value = true;
-  errorMessage.value = null;
-  try {
-    const res = await $fetch<ApiResponse<{ requests: MaintenanceItem[] }>>('/api/v1/maintenance');
-    if (res.success && res.data) {
-      requests.value = res.data.requests;
-    } else {
-      errorMessage.value = res.error?.message || 'Failed to load maintenance requests';
-    }
-  } catch (err: any) {
-    errorMessage.value = err?.data?.error?.message || err?.message || 'Error loading tickets';
-  } finally {
-    isLoading.value = false;
-  }
-}
-
-// Metrics
-const totalCount = computed(() => requests.value.length);
-const openCount = computed(() => requests.value.filter((r) => r.status === 'OPEN' || r.status === 'ASSIGNED').length);
-const inProgressCount = computed(() => requests.value.filter((r) => r.status === 'IN_PROGRESS').length);
-const awaitingConfirmCount = computed(() => requests.value.filter((r) => r.status === 'RESOLVED').length);
-const closedCount = computed(() => requests.value.filter((r) => r.status === 'CONFIRMED_CLOSED').length);
 
 const filteredRequests = computed(() => {
   return requests.value.filter((r) => {
@@ -168,34 +119,19 @@ watch([activeTab, searchQuery], () => {
 });
 
 async function executeCreateTicket() {
-  isSubmitting.value = true;
-  errorMessage.value = null;
-  try {
-    const res = await $fetch<ApiResponse<{ request: MaintenanceItem; message: string }>>('/api/v1/maintenance', {
-      method: 'POST',
-      body: createForm.value,
-    });
-
-    if (res.success) {
-      successMessage.value = res.data?.message || 'Maintenance ticket created successfully';
-      isCreateModalOpen.value = false;
-      createForm.value = {
-        unitId: 'unit-skyline-101a',
-        title: '',
-        description: '',
-        priority: 'MEDIUM',
-      };
-      await loadRequests();
-      setTimeout(() => {
-        successMessage.value = null;
-      }, 4000);
-    } else {
-      errorMessage.value = res.error?.message || 'Failed to create maintenance ticket';
-    }
-  } catch (err: any) {
-    errorMessage.value = err?.data?.error?.message || err?.message || 'Error creating ticket';
-  } finally {
-    isSubmitting.value = false;
+  const res = await maintenanceStore.createTicket(createForm.value) as any;
+  if (res.success) {
+    successMessage.value = res.message || 'Maintenance ticket created successfully';
+    isCreateModalOpen.value = false;
+    createForm.value = {
+      unitId: 'unit-skyline-101a',
+      title: '',
+      description: '',
+      priority: 'MEDIUM',
+    };
+    setTimeout(() => {
+      successMessage.value = null;
+    }, 4000);
   }
 }
 
@@ -209,28 +145,13 @@ function openAssignModal(ticket: MaintenanceItem) {
 
 async function executeAssign() {
   if (!ticketToAssign.value) return;
-  isAssigning.value = true;
-  errorMessage.value = null;
-  try {
-    const res = await $fetch<ApiResponse<{ request: MaintenanceItem; message: string }>>(`/api/v1/maintenance/${ticketToAssign.value.id}/assign`, {
-      method: 'POST',
-      body: assignForm.value,
-    });
-
-    if (res.success) {
-      successMessage.value = res.data?.message || 'Technician assigned successfully';
-      ticketToAssign.value = null;
-      await loadRequests();
-      setTimeout(() => {
-        successMessage.value = null;
-      }, 4000);
-    } else {
-      errorMessage.value = res.error?.message || 'Failed to assign technician';
-    }
-  } catch (err: any) {
-    errorMessage.value = err?.data?.error?.message || err?.message || 'Error assigning technician';
-  } finally {
-    isAssigning.value = false;
+  const res = await maintenanceStore.assignTechnician(ticketToAssign.value.id, assignForm.value) as any;
+  if (res.success) {
+    successMessage.value = res.message || 'Technician assigned successfully';
+    ticketToAssign.value = null;
+    setTimeout(() => {
+      successMessage.value = null;
+    }, 4000);
   }
 }
 
@@ -244,28 +165,13 @@ function openUpdateModal(ticket: MaintenanceItem) {
 
 async function executeUpdateProgress() {
   if (!ticketToUpdate.value) return;
-  isUpdating.value = true;
-  errorMessage.value = null;
-  try {
-    const res = await $fetch<ApiResponse<{ request: MaintenanceItem; message: string }>>(`/api/v1/maintenance/${ticketToUpdate.value.id}/progress`, {
-      method: 'POST',
-      body: updateForm.value,
-    });
-
-    if (res.success) {
-      successMessage.value = res.data?.message || 'Progress updated successfully';
-      ticketToUpdate.value = null;
-      await loadRequests();
-      setTimeout(() => {
-        successMessage.value = null;
-      }, 4000);
-    } else {
-      errorMessage.value = res.error?.message || 'Failed to update progress';
-    }
-  } catch (err: any) {
-    errorMessage.value = err?.data?.error?.message || err?.message || 'Error updating progress';
-  } finally {
-    isUpdating.value = false;
+  const res = await maintenanceStore.updateProgress(ticketToUpdate.value.id, updateForm.value) as any;
+  if (res.success) {
+    successMessage.value = res.message || 'Progress updated successfully';
+    ticketToUpdate.value = null;
+    setTimeout(() => {
+      successMessage.value = null;
+    }, 4000);
   }
 }
 
@@ -279,33 +185,18 @@ function openConfirmModal(ticket: MaintenanceItem) {
 
 async function executeConfirmResolution() {
   if (!ticketToConfirm.value) return;
-  isConfirming.value = true;
-  errorMessage.value = null;
-  try {
-    const res = await $fetch<ApiResponse<{ request: MaintenanceItem; message: string }>>(`/api/v1/maintenance/${ticketToConfirm.value.id}/confirm`, {
-      method: 'POST',
-      body: confirmForm.value,
-    });
-
-    if (res.success) {
-      successMessage.value = res.data?.message || 'Ticket closed and resolution confirmed';
-      ticketToConfirm.value = null;
-      await loadRequests();
-      setTimeout(() => {
-        successMessage.value = null;
-      }, 4000);
-    } else {
-      errorMessage.value = res.error?.message || 'Failed to confirm resolution';
-    }
-  } catch (err: any) {
-    errorMessage.value = err?.data?.error?.message || err?.message || 'Error confirming closure';
-  } finally {
-    isConfirming.value = false;
+  const res = await maintenanceStore.confirmResolution(ticketToConfirm.value.id, confirmForm.value) as any;
+  if (res.success) {
+    successMessage.value = res.message || 'Ticket closed and resolution confirmed';
+    ticketToConfirm.value = null;
+    setTimeout(() => {
+      successMessage.value = null;
+    }, 4000);
   }
 }
 
 onMounted(() => {
-  loadRequests();
+  maintenanceStore.fetchRequests();
 });
 </script>
 
@@ -314,18 +205,14 @@ onMounted(() => {
     <!-- Top Bar -->
     <div class="page-top-bar">
       <div>
-        <h1>Maintenance Management</h1>
+        <h1>{{ t('maintenance.title') }}</h1>
         <p class="subtitle">
-          Track end-to-end repair tickets from initial tenant reporting to dispatch, technician resolution, and closure.
+          {{ t('maintenance.subtitle') }}
         </p>
       </div>
-      <button
-        v-if="isTenant || isAdmin"
-        @click="isCreateModalOpen = true"
-        class="btn-primary"
-      >
+      <button v-if="isTenant || isAdmin" @click="isCreateModalOpen = true" class="btn-primary">
         <Plus :size="15" />
-        <span>Report Maintenance Issue</span>
+        <span>{{ t('maintenance.new_request') }}</span>
       </button>
     </div>
 
@@ -339,12 +226,9 @@ onMounted(() => {
       <AlertCircle :size="16" class="alert-icon" />
       <div class="alert-body">
         <span>{{ errorMessage }}</span>
-        <NuxtLink
-          v-if="errorMessage.toLowerCase().includes('logged in')"
-          :to="{ path: '/login', query: { redirect: $route.fullPath } }"
-          class="alert-action-btn"
-        >
-          Sign In
+        <NuxtLink v-if="errorMessage.toLowerCase().includes('logged in')"
+          :to="{ path: '/login', query: { redirect: $route.fullPath } }" class="alert-action-btn">
+          {{ t('nav.sign_in') }}
         </NuxtLink>
       </div>
     </div>
@@ -353,29 +237,29 @@ onMounted(() => {
     <div class="stats-grid">
       <div class="stat-card card-flat">
         <div class="stat-header">
-          <span class="stat-label">Open / Dispatched</span>
+          <span class="stat-label">{{ t('maintenance.open_tickets') }}</span>
           <div class="stat-icon-wrap open">
             <Clock :size="16" />
           </div>
         </div>
         <div class="stat-value font-mono">{{ openCount }}</div>
-        <div class="stat-subtext">Awaiting or assigned to technician</div>
+        <div class="stat-subtext">{{ t('maintenance.filter_assigned') }}</div>
       </div>
 
       <div class="stat-card card-flat">
         <div class="stat-header">
-          <span class="stat-label">In Progress</span>
+          <span class="stat-label">{{ t('maintenance.in_progress') }}</span>
           <div class="stat-icon-wrap in-progress">
             <Wrench :size="16" />
           </div>
         </div>
         <div class="stat-value font-mono">{{ inProgressCount }}</div>
-        <div class="stat-subtext">Active diagnostics & repairs</div>
+        <div class="stat-subtext">{{ t('dashboard.metrics.under_repair') }}</div>
       </div>
 
       <div class="stat-card card-flat">
         <div class="stat-header">
-          <span class="stat-label">Awaiting Confirmation</span>
+          <span class="stat-label">{{ t('maintenance.awaiting_confirmation') }}</span>
           <div class="stat-icon-wrap awaiting">
             <AlertTriangle :size="16" />
           </div>
@@ -383,199 +267,156 @@ onMounted(() => {
         <div class="stat-value font-mono" :class="{ 'text-amber': awaitingConfirmCount > 0 }">
           {{ awaitingConfirmCount }}
         </div>
-        <div class="stat-subtext">Repairs completed, pending tenant sign-off</div>
+        <div class="stat-subtext">{{ t('maintenance.filter_resolved') }}</div>
       </div>
 
       <div class="stat-card card-flat">
         <div class="stat-header">
-          <span class="stat-label">Confirmed Closed</span>
+          <span class="stat-label">{{ t('maintenance.closed_tickets') }}</span>
           <div class="stat-icon-wrap closed">
             <CheckCheck :size="16" />
           </div>
         </div>
         <div class="stat-value font-mono">{{ closedCount }}</div>
-        <div class="stat-subtext">Successfully settled tickets</div>
+        <div class="stat-subtext">{{ t('dashboard.metrics.verified_resolution') }}</div>
       </div>
     </div>
 
     <!-- Maintenance Tickets Table using shared AppTableCard -->
-    <AppTableCard
-      v-model:search="searchQuery"
-      search-placeholder="Search tickets, units, or technicians..."
-      :is-loading="isLoading"
-      :is-empty="filteredRequests.length === 0"
-      empty-title="No maintenance tickets found"
-      empty-description="Tickets submitted by tenants will appear here along with their workflow progress."
-      :empty-icon="Wrench"
-      v-model:current-page="currentPage"
-      v-model:page-size="pageSize"
-      :total-items="filteredRequests.length"
-      item-name="tickets"
-    >
+    <AppTableCard v-model:search="searchQuery" :search-placeholder="t('maintenance.title')"
+      :is-loading="isLoading" :is-empty="filteredRequests.length === 0" :empty-title="t('maintenance.no_requests')"
+      :empty-description="t('maintenance.no_requests_desc')"
+      :empty-icon="Wrench" v-model:current-page="currentPage" v-model:page-size="pageSize"
+      :total-items="filteredRequests.length" :item-name="t('common.records')">
       <template #toolbar-start>
-        <div class="status-tabs">
-          <button
-            class="tab-btn"
-            :class="{ active: activeTab === 'ALL' }"
-            @click="activeTab = 'ALL'"
-          >
-            All Tickets ({{ totalCount }})
+        <div class="filter-btn-group status-tabs">
+          <button type="button" class="filter-btn tab-btn" :class="{ active: activeTab === 'ALL' }" @click="activeTab = 'ALL'">
+            <span>{{ t('maintenance.filter_all') }}</span>
+            <span class="filter-count">{{ totalCount }}</span>
           </button>
-          <button
-            class="tab-btn"
-            :class="{ active: activeTab === 'OPEN' }"
-            @click="activeTab = 'OPEN'"
-          >
-            Open
+          <button type="button" class="filter-btn tab-btn" :class="{ active: activeTab === 'OPEN' }" @click="activeTab = 'OPEN'">
+            <span>{{ t('maintenance.filter_open') }}</span>
+            <span class="filter-count">{{ openCount }}</span>
           </button>
-          <button
-            class="tab-btn"
-            :class="{ active: activeTab === 'ASSIGNED' }"
-            @click="activeTab = 'ASSIGNED'"
-          >
-            Assigned
+          <button type="button" class="filter-btn tab-btn" :class="{ active: activeTab === 'ASSIGNED' }" @click="activeTab = 'ASSIGNED'">
+            <span>{{ t('maintenance.filter_assigned') }}</span>
           </button>
-          <button
-            class="tab-btn"
-            :class="{ active: activeTab === 'IN_PROGRESS' }"
-            @click="activeTab = 'IN_PROGRESS'"
-          >
-            In Progress
+          <button type="button" class="filter-btn tab-btn" :class="{ active: activeTab === 'IN_PROGRESS' }" @click="activeTab = 'IN_PROGRESS'">
+            <span>{{ t('maintenance.filter_in_progress') }}</span>
+            <span class="filter-count">{{ inProgressCount }}</span>
           </button>
-          <button
-            class="tab-btn"
-            :class="{ active: activeTab === 'RESOLVED' }"
-            @click="activeTab = 'RESOLVED'"
-          >
-            Resolved
+          <button type="button" class="filter-btn tab-btn" :class="{ active: activeTab === 'RESOLVED' }" @click="activeTab = 'RESOLVED'">
+            <span>{{ t('maintenance.filter_resolved') }}</span>
+            <span class="filter-count">{{ awaitingConfirmCount }}</span>
           </button>
-          <button
-            class="tab-btn"
-            :class="{ active: activeTab === 'CONFIRMED_CLOSED' }"
-            @click="activeTab = 'CONFIRMED_CLOSED'"
-          >
-            Closed
+          <button type="button" class="filter-btn tab-btn" :class="{ active: activeTab === 'CONFIRMED_CLOSED' }"
+            @click="activeTab = 'CONFIRMED_CLOSED'">
+            <span>{{ t('maintenance.filter_closed') }}</span>
+            <span class="filter-count">{{ closedCount }}</span>
           </button>
         </div>
       </template>
 
       <table class="data-table">
-          <thead>
-            <tr>
-              <th>Priority</th>
-              <th>Issue Title & Details</th>
-              <th>Unit & Property</th>
-              <th>Tenant</th>
-              <th>Assigned Technician</th>
-              <th>Status</th>
-              <th class="text-right">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="ticket in paginatedRequests" :key="ticket.id">
-              <td>
-                <span
-                  class="priority-badge"
-                  :class="{
-                    'p-emergency': ticket.priority === 'EMERGENCY',
-                    'p-high': ticket.priority === 'HIGH',
-                    'p-medium': ticket.priority === 'MEDIUM',
-                    'p-low': ticket.priority === 'LOW',
-                  }"
-                >
-                  {{ ticket.priority }}
-                </span>
-              </td>
-              <td>
-                <div class="ticket-title-cell">
-                  <span class="font-semibold">{{ ticket.title }}</span>
-                  <span class="text-dim text-xs desc-snippet">{{ ticket.description }}</span>
-                  <span class="text-dim text-xs">Reported: {{ new Date(ticket.requestedAt).toLocaleDateString() }}</span>
-                </div>
-              </td>
-              <td>
-                <div class="unit-cell">
-                  <span class="font-semibold">Unit {{ ticket.unit?.unitNumber || '101A' }}</span>
-                  <span class="text-dim text-xs">{{ ticket.unit?.property?.title || 'Skyline Heights' }}</span>
-                </div>
-              </td>
-              <td>
-                <div class="tenant-cell">
-                  <span>{{ ticket.tenant?.fullName || 'Sarah Jenkins' }}</span>
-                  <span class="text-dim text-xs">{{ ticket.tenant?.phone || 'tenant@example.com' }}</span>
-                </div>
-              </td>
-              <td>
-                <div v-if="ticket.assignments && ticket.assignments.length > 0" class="tech-cell">
-                  <span class="font-semibold">{{ ticket.assignments[0].technician?.fullName || 'Alex Rivers' }}</span>
-                  <span class="text-dim text-xs">Assigned {{ new Date(ticket.assignments[0].assignedAt).toLocaleDateString() }}</span>
-                </div>
-                <div v-else class="text-dim text-xs italic">
-                  Unassigned
-                </div>
-              </td>
-              <td>
-                <span
-                  class="badge"
-                  :class="{
-                    'badge-info': ticket.status === 'OPEN',
-                    'badge-primary': ticket.status === 'ASSIGNED',
-                    'badge-warning': ticket.status === 'IN_PROGRESS',
-                    'badge-success': ticket.status === 'RESOLVED',
-                    'badge-muted': ticket.status === 'CONFIRMED_CLOSED',
-                  }"
-                >
-                  {{ ticket.status.replace('_', ' ') }}
-                </span>
-              </td>
-              <td class="text-right">
-                <div class="action-btn-group">
-                  <!-- Landlord / Admin: Assign Technician -->
-                  <button
-                    v-if="(isLandlord || isAdmin) && (ticket.status === 'OPEN' || ticket.status === 'ASSIGNED')"
-                    @click="openAssignModal(ticket)"
-                    class="btn-primary btn-sm"
-                    title="Assign Technician"
-                  >
-                    <UserCheck :size="13" />
-                    <span>{{ ticket.status === 'ASSIGNED' ? 'Reassign' : 'Assign' }}</span>
-                  </button>
+        <thead>
+          <tr>
+            <th>{{ t('maintenance.col_priority') }}</th>
+            <th>{{ t('maintenance.col_ticket') }}</th>
+            <th>{{ t('maintenance.col_unit_property') }}</th>
+            <th>{{ t('maintenance.col_requester') }}</th>
+            <th>{{ t('maintenance.col_technician') }}</th>
+            <th>{{ t('maintenance.col_status') }}</th>
+            <th class="text-right">{{ t('maintenance.col_actions') }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="ticket in paginatedRequests" :key="ticket.id">
+            <td>
+              <span class="badge badge-pill" :class="{
+                'badge-danger': ticket.priority === 'EMERGENCY',
+                'badge-warning': ticket.priority === 'HIGH',
+                'badge-info': ticket.priority === 'MEDIUM',
+                'badge-subtle': ticket.priority === 'LOW',
+              }">
+                <span class="badge-dot"></span>
+                <span>{{ ticket.priority === 'EMERGENCY' ? t('dashboard.metrics.emergency_priority') : ticket.priority === 'HIGH' ? t('maintenance.priority.high') : ticket.priority === 'MEDIUM' ? t('maintenance.priority.medium') : t('maintenance.priority.low') }}</span>
+              </span>
+            </td>
+            <td>
+              <div class="ticket-title-cell">
+                <span class="font-semibold">{{ ticket.title }}</span>
+                <span class="text-dim text-xs desc-snippet">{{ ticket.description }}</span>
+                <span class="text-dim text-xs">{{ t('maintenance.col_reported') }}: {{ new Date(ticket.requestedAt).toLocaleDateString() }}</span>
+              </div>
+            </td>
+            <td>
+              <div class="unit-cell">
+                <span class="font-semibold">{{ t('dashboard.metrics.unit') }} {{ ticket.unit?.unitNumber || '101A' }}</span>
+                <span class="text-dim text-xs">{{ ticket.unit?.property?.title || 'Skyline Heights' }}</span>
+              </div>
+            </td>
+            <td>
+              <div class="tenant-cell">
+                <span>{{ ticket.tenant?.fullName || 'Sarah Jenkins' }}</span>
+                <span class="text-dim text-xs">{{ ticket.tenant?.phone || 'tenant@example.com' }}</span>
+              </div>
+            </td>
+            <td>
+              <div v-if="ticket.assignments && ticket.assignments.length > 0" class="tech-cell">
+                <span class="font-semibold">{{ ticket.assignments[0]!.technician?.fullName || 'Alex Rivers' }}</span>
+                <span class="text-dim text-xs">{{ t('maintenance.filter_assigned') }} {{ new
+                  Date(ticket.assignments[0]!.assignedAt).toLocaleDateString()
+                  }}</span>
+              </div>
+              <div v-else class="text-dim text-xs italic">
+                {{ t('common.not_available') }}
+              </div>
+            </td>
+            <td>
+              <span class="badge badge-pill" :class="{
+                'badge-info': ticket.status === 'OPEN',
+                'badge-landlord': ticket.status === 'ASSIGNED',
+                'badge-warning': ticket.status === 'IN_PROGRESS',
+                'badge-success': ticket.status === 'RESOLVED',
+                'badge-subtle': ticket.status === 'CONFIRMED_CLOSED',
+              }">
+                <span class="badge-dot"></span>
+                <span>{{ ticket.status === 'CONFIRMED_CLOSED' ? t('maintenance.status.confirmed_closed') : ticket.status === 'IN_PROGRESS' ? t('maintenance.status.in_progress') : ticket.status === 'OPEN' ? t('maintenance.status.open') : ticket.status === 'ASSIGNED' ? t('maintenance.status.assigned') : t('maintenance.status.resolved') }}</span>
+              </span>
+            </td>
+            <td class="text-right">
+              <div class="action-btn-group">
+                <!-- Landlord / Admin: Assign Technician -->
+                <button v-if="(isLandlord || isAdmin) && (ticket.status === 'OPEN' || ticket.status === 'ASSIGNED')"
+                  @click="openAssignModal(ticket)" class="btn-primary btn-sm" :title="t('maintenance.assign_technician')">
+                  <UserCheck :size="13" />
+                  <span>{{ t('maintenance.assign_technician') }}</span>
+                </button>
 
-                  <!-- Technician / Admin: Update Progress -->
-                  <button
-                    v-if="(isTechnician || isAdmin) && (ticket.status === 'ASSIGNED' || ticket.status === 'IN_PROGRESS')"
-                    @click="openUpdateModal(ticket)"
-                    class="btn-primary btn-sm"
-                    title="Update Work Progress"
-                  >
-                    <Wrench :size="13" />
-                    <span>Update</span>
-                  </button>
+                <!-- Technician / Admin: Update Progress -->
+                <button
+                  v-if="(isTechnician || isAdmin) && (ticket.status === 'ASSIGNED' || ticket.status === 'IN_PROGRESS')"
+                  @click="openUpdateModal(ticket)" class="btn-primary btn-sm" :title="t('maintenance.update_progress')">
+                  <Wrench :size="13" />
+                  <span>{{ t('maintenance.update_progress') }}</span>
+                </button>
 
-                  <!-- Tenant / Admin: Confirm Completion -->
-                  <button
-                    v-if="(isTenant || isAdmin) && ticket.status === 'RESOLVED'"
-                    @click="openConfirmModal(ticket)"
-                    class="btn-primary btn-sm btn-confirm"
-                    title="Confirm Resolution and Close"
-                  >
-                    <CheckCheck :size="13" />
-                    <span>Confirm & Close</span>
-                  </button>
+                <!-- Tenant / Admin: Confirm Completion -->
+                <button v-if="(isTenant || isAdmin) && ticket.status === 'RESOLVED'" @click="openConfirmModal(ticket)"
+                  class="btn-primary btn-sm btn-confirm" :title="t('maintenance.confirm_resolution')">
+                  <CheckCheck :size="13" />
+                  <span>{{ t('maintenance.confirm_resolution') }}</span>
+                </button>
 
-                  <!-- Details View -->
-                  <button
-                    @click="viewingTicket = ticket"
-                    class="btn-secondary btn-sm"
-                    title="View Ticket Details"
-                  >
-                    <FileText :size="13" />
-                    <span>Details</span>
-                  </button>
-                </div>
-              </td>
-            </tr>
-          </tbody>
+                <!-- Details View -->
+                <button @click="viewingTicket = ticket" class="btn-secondary btn-sm" :title="t('properties.details')">
+                  <FileText :size="13" />
+                  <span>{{ t('properties.details') }}</span>
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
       </table>
     </AppTableCard>
 
@@ -591,13 +432,8 @@ onMounted(() => {
           <div class="grid-2-col">
             <div class="form-group">
               <label class="form-label">Unit Reference ID</label>
-              <input
-                v-model="createForm.unitId"
-                type="text"
-                required
-                class="form-control"
-                placeholder="e.g. unit-skyline-101a"
-              />
+              <input v-model="createForm.unitId" type="text" required class="form-control"
+                placeholder="e.g. unit-skyline-101a" />
             </div>
             <div class="form-group">
               <label class="form-label">Urgency Priority</label>
@@ -612,35 +448,21 @@ onMounted(() => {
 
           <div class="form-group">
             <label class="form-label">Issue Headline / Title</label>
-            <input
-              v-model="createForm.title"
-              type="text"
-              required
-              class="form-control"
-              placeholder="e.g. HVAC Air Conditioning Not Cooling"
-            />
+            <input v-model="createForm.title" type="text" required class="form-control"
+              placeholder="e.g. HVAC Air Conditioning Not Cooling" />
           </div>
 
           <div class="form-group">
             <label class="form-label">Detailed Description of Defect or Problem</label>
-            <textarea
-              v-model="createForm.description"
-              rows="4"
-              required
-              class="form-control"
-              placeholder="Please provide precise details regarding where the issue is located, when it started, and any symptoms observed..."
-            ></textarea>
+            <textarea v-model="createForm.description" rows="4" required class="form-control"
+              placeholder="Please provide precise details regarding where the issue is located, when it started, and any symptoms observed..."></textarea>
           </div>
 
           <div class="modal-actions">
             <button type="button" @click="isCreateModalOpen = false" class="btn-secondary">
               Cancel
             </button>
-            <button
-              type="submit"
-              :disabled="isSubmitting"
-              class="btn-primary"
-            >
+            <button type="submit" :disabled="isSubmitting" class="btn-primary">
               <Plus :size="14" />
               <span>{{ isSubmitting ? 'Submitting...' : 'Submit Request' }}</span>
             </button>
@@ -660,7 +482,9 @@ onMounted(() => {
         <form @submit.prevent="executeAssign" class="modal-body">
           <div class="contract-summary">
             <div><strong>Ticket:</strong> {{ ticketToAssign.title }}</div>
-            <div><strong>Unit:</strong> Unit {{ ticketToAssign.unit?.unitNumber }} ({{ ticketToAssign.unit?.property?.title }})</div>
+            <div><strong>Unit:</strong> Unit {{ ticketToAssign.unit?.unitNumber }} ({{
+              ticketToAssign.unit?.property?.title
+              }})</div>
             <div><strong>Priority:</strong> {{ ticketToAssign.priority }}</div>
           </div>
 
@@ -674,23 +498,15 @@ onMounted(() => {
 
           <div class="form-group">
             <label class="form-label">Instructions / Diagnostic Notes</label>
-            <textarea
-              v-model="assignForm.notes"
-              rows="3"
-              class="form-control"
-              placeholder="Optional notes, access instructions, or tools needed..."
-            ></textarea>
+            <textarea v-model="assignForm.notes" rows="3" class="form-control"
+              placeholder="Optional notes, access instructions, or tools needed..."></textarea>
           </div>
 
           <div class="modal-actions">
             <button type="button" @click="ticketToAssign = null" class="btn-secondary">
               Cancel
             </button>
-            <button
-              type="submit"
-              :disabled="isAssigning"
-              class="btn-primary"
-            >
+            <button type="submit" :disabled="isAssigning" class="btn-primary">
               <UserCheck :size="14" />
               <span>{{ isAssigning ? 'Dispatching...' : 'Confirm Assignment' }}</span>
             </button>
@@ -723,24 +539,15 @@ onMounted(() => {
 
           <div class="form-group">
             <label class="form-label">Work Summary / Resolution Notes</label>
-            <textarea
-              v-model="updateForm.resolutionNotes"
-              rows="4"
-              required
-              class="form-control"
-              placeholder="Detail parts replaced, repairs performed, and tests conducted..."
-            ></textarea>
+            <textarea v-model="updateForm.resolutionNotes" rows="4" required class="form-control"
+              placeholder="Detail parts replaced, repairs performed, and tests conducted..."></textarea>
           </div>
 
           <div class="modal-actions">
             <button type="button" @click="ticketToUpdate = null" class="btn-secondary">
               Cancel
             </button>
-            <button
-              type="submit"
-              :disabled="isUpdating"
-              class="btn-primary"
-            >
+            <button type="submit" :disabled="isUpdating" class="btn-primary">
               <CheckCircle2 :size="14" />
               <span>{{ isUpdating ? 'Saving...' : 'Update Ticket' }}</span>
             </button>
@@ -769,23 +576,15 @@ onMounted(() => {
 
           <div class="form-group">
             <label class="form-label">Feedback / Comments (Optional)</label>
-            <input
-              v-model="confirmForm.feedback"
-              type="text"
-              class="form-control"
-              placeholder="e.g. Prompt and clean service, thank you!"
-            />
+            <input v-model="confirmForm.feedback" type="text" class="form-control"
+              placeholder="e.g. Prompt and clean service, thank you!" />
           </div>
 
           <div class="modal-actions">
             <button type="button" @click="ticketToConfirm = null" class="btn-secondary">
               Cancel
             </button>
-            <button
-              type="submit"
-              :disabled="isConfirming"
-              class="btn-primary btn-confirm"
-            >
+            <button type="submit" :disabled="isConfirming" class="btn-primary btn-confirm">
               <CheckCheck :size="14" />
               <span>{{ isConfirming ? 'Confirming...' : 'Confirm Satisfactory & Close' }}</span>
             </button>
@@ -805,12 +604,34 @@ onMounted(() => {
         <div class="modal-body">
           <div class="contract-summary">
             <div><strong>Title:</strong> {{ viewingTicket.title }}</div>
-            <div><strong>Priority:</strong> <span class="priority-badge p-medium">{{ viewingTicket.priority }}</span></div>
-            <div><strong>Status:</strong> <span class="badge badge-info">{{ viewingTicket.status }}</span></div>
-            <div><strong>Property & Unit:</strong> Unit {{ viewingTicket.unit?.unitNumber }} ({{ viewingTicket.unit?.property?.title }})</div>
+            <div><strong>Priority:</strong> 
+              <span class="badge badge-pill" :class="{
+                'badge-danger': viewingTicket.priority === 'EMERGENCY',
+                'badge-warning': viewingTicket.priority === 'HIGH',
+                'badge-info': viewingTicket.priority === 'MEDIUM',
+                'badge-subtle': viewingTicket.priority === 'LOW'
+              }">
+                <span class="badge-dot"></span>
+                <span>{{ viewingTicket.priority === 'EMERGENCY' ? 'Emergency' : viewingTicket.priority === 'HIGH' ? 'High' : viewingTicket.priority === 'MEDIUM' ? 'Medium' : 'Low' }}</span>
+              </span>
+            </div>
+            <div><strong>Status:</strong> 
+              <span class="badge badge-pill" :class="{
+                'badge-info': viewingTicket.status === 'OPEN',
+                'badge-landlord': viewingTicket.status === 'ASSIGNED',
+                'badge-warning': viewingTicket.status === 'IN_PROGRESS',
+                'badge-success': viewingTicket.status === 'RESOLVED',
+                'badge-subtle': viewingTicket.status === 'CONFIRMED_CLOSED',
+              }">
+                <span class="badge-dot"></span>
+                <span>{{ viewingTicket.status === 'CONFIRMED_CLOSED' ? 'Closed' : viewingTicket.status === 'IN_PROGRESS' ? 'In Progress' : viewingTicket.status === 'OPEN' ? 'Open' : viewingTicket.status === 'ASSIGNED' ? 'Assigned' : 'Resolved' }}</span>
+              </span>
+            </div>
+            <div><strong>Property & Unit:</strong> Unit {{ viewingTicket.unit?.unitNumber }} ({{
+              viewingTicket.unit?.property?.title }})</div>
             <div><strong>Tenant:</strong> {{ viewingTicket.tenant?.fullName }} ({{ viewingTicket.tenant?.email }})</div>
             <div v-if="viewingTicket.assignments && viewingTicket.assignments.length > 0">
-              <strong>Technician:</strong> {{ viewingTicket.assignments[0].technician?.fullName }}
+              <strong>Technician:</strong> {{ viewingTicket.assignments[0]!.technician?.fullName }}
             </div>
             <div><strong>Reported At:</strong> {{ new Date(viewingTicket.requestedAt).toLocaleString() }}</div>
             <div v-if="viewingTicket.resolvedAt">
@@ -870,8 +691,20 @@ onMounted(() => {
 /* Stats Cards */
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: 1fr;
   gap: 1rem;
+}
+
+@media (min-width: 640px) {
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .stats-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
 }
 
 .stat-card {
@@ -879,6 +712,9 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  background: var(--bg-surface);
 }
 
 .stat-header {
@@ -949,34 +785,47 @@ onMounted(() => {
   gap: 1rem;
 }
 
+.filter-btn-group,
 .status-tabs {
-  display: flex;
-  background: var(--bg-canvas);
-  padding: 0.2rem;
-  gap: 0.2rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  flex-wrap: wrap;
 }
 
+.filter-btn,
 .tab-btn {
-  background: none;
-  border: none;
-  color: var(--text-muted);
-  font-size: 0.8rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.42rem 0.85rem;
+  font-size: 0.825rem;
   font-weight: 500;
-  padding: 0.35rem 0.75rem;
+  line-height: 1.25;
+  color: var(--text-muted);
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
   border-radius: var(--radius-sm);
   cursor: pointer;
   transition: all 0.15s ease;
+  white-space: nowrap;
 }
 
+.filter-btn:hover,
 .tab-btn:hover {
   color: var(--text-main);
+  background-color: var(--bg-surface-hover);
+  border-color: var(--border-default);
 }
 
+.filter-btn.active,
 .tab-btn.active {
-  background: var(--bg-surface);
-  color: var(--text-main);
-  border: 1px solid var(--border-default);
-  box-shadow: none;
+  color: #ffffff !important;
+  background-color: var(--primary) !important;
+  border-color: var(--primary) !important;
+  font-weight: 600;
+  box-shadow: 0 1px 2px rgba(37, 99, 235, 0.2);
 }
 
 .search-wrap {
@@ -1268,7 +1117,9 @@ onMounted(() => {
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 @media (max-width: 900px) {
@@ -1278,6 +1129,7 @@ onMounted(() => {
 }
 
 @media (max-width: 640px) {
+
   .stats-grid,
   .grid-2-col {
     grid-template-columns: 1fr;

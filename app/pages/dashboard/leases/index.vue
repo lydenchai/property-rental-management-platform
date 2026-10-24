@@ -1,21 +1,22 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue';
-import { 
-  FileText, 
-  FileSignature, 
-  CheckCircle2, 
-  Clock, 
-  AlertCircle, 
-  Building, 
-  Calendar, 
-  DollarSign, 
+import {
+  FileText,
+  FileSignature,
+  CheckCircle2,
+  Clock,
+  AlertCircle,
+  Building,
+  Calendar,
+  DollarSign,
   X,
   Search,
   Slash,
   Plus
 } from '@lucide/vue';
 import { useAuth } from '../../../composables/useAuth';
-import type { ApiResponse } from '../../../../shared/types/api';
+import { useLeaseStore } from '../../../stores/lease.store';
+import type { LeaseItem } from '~~/shared/types';
 import AppTableCard from '../../../components/common/AppTableCard.vue';
 
 definePageMeta({
@@ -24,68 +25,46 @@ definePageMeta({
   title: 'Lease Agreements',
 });
 
+const { t } = useI18n();
 const { user, isLandlord, isTenant, isAdmin } = useAuth();
+const leaseStore = useLeaseStore();
 
-interface LeaseItem {
-  id: string;
-  unitId: string;
-  tenantId: string;
-  landlordId: string;
-  startDate: string;
-  endDate: string;
-  rentAmount: number;
-  depositAmount: number;
-  paymentDueDay: number;
-  status: string;
-  tenantSignedAt: string | null;
-  landlordSignedAt: string | null;
-  termsAndConditions: string;
-  createdAt: string;
-  unit?: {
-    id: string;
-    unitNumber: string;
-    bedrooms: number;
-    bathrooms: number;
-  };
-  property?: {
-    id: string;
-    title: string;
-    city: string;
-    state: string;
-  };
-  tenant?: {
-    id: string;
-    fullName: string;
-    email: string;
-  };
-  landlord?: {
-    id: string;
-    fullName: string;
-    email: string;
-  };
-}
+const {
+  leases,
+  isLoading,
+  isCreatingLease,
+  isSigning,
+  isTerminating,
+  errorMessage,
+  totalLeases,
+  activeLeases,
+  pendingLeases,
+  terminatedLeases,
+} = leaseStore;
 
-const leases = ref<LeaseItem[]>([]);
-const isLoading = ref(true);
-const errorMessage = ref<string | null>(null);
+const {
+  fetchLeases,
+  loadLeases,
+  createLease,
+  signLease,
+  terminateLease,
+} = leaseStore;
+
 const successMessage = ref<string | null>(null);
 const searchQuery = ref('');
 
 // Signing modal state
 const leaseToSign = ref<LeaseItem | null>(null);
 const agreeToTerms = ref(false);
-const isSigning = ref(false);
 
 // View terms modal state
 const viewLeaseModal = ref<LeaseItem | null>(null);
 
 // Terminate modal state
 const leaseToTerminate = ref<LeaseItem | null>(null);
-const isTerminating = ref(false);
 
 // Create lease modal state
 const isCreateLeaseOpen = ref(false);
-const isCreatingLease = ref(false);
 const createLeaseForm = ref({
   unitId: 'unit-skyline-204b',
   tenantId: 'user-tenant-01',
@@ -98,59 +77,34 @@ const createLeaseForm = ref({
 1. Rent is due on the 1st of each calendar month.
 2. Tenant agrees to observe all quiet hours and community guidelines.
 3. Security deposit is refundable within 30 days after lease termination.`,
-});
+}) as any;
+
+const toast = useToast();
 
 async function executeCreateLease() {
-  isCreatingLease.value = true;
-  errorMessage.value = null;
   try {
-    const res = await $fetch<ApiResponse<{ lease: any; message: string }>>('/api/v1/leases', {
-      method: 'POST',
-      body: {
-        ...createLeaseForm.value,
-        startDate: new Date(createLeaseForm.value.startDate!).toISOString(),
-        endDate: new Date(createLeaseForm.value.endDate!).toISOString(),
-      },
-    });
+    const res = await createLease(createLeaseForm.value!) as any;
 
     if (res.success) {
-      successMessage.value = res.data?.message || 'Lease agreement created successfully.';
+      toast.success(res.message || 'Lease agreement created successfully.');
       isCreateLeaseOpen.value = false;
-      await loadLeases();
-      setTimeout(() => {
-        successMessage.value = null;
-      }, 4000);
     } else {
-      errorMessage.value = res.error?.message || 'Failed to create lease contract';
+      toast.error(res.error || 'Failed to create lease agreement.');
     }
   } catch (err: any) {
-    errorMessage.value = err?.data?.error?.message || err?.message || 'Error generating lease contract';
-  } finally {
-    isCreatingLease.value = false;
+    toast.error(err?.message || 'Failed to create lease agreement.');
   }
 }
 
-async function loadLeases() {
-  isLoading.value = true;
-  errorMessage.value = null;
-  try {
-    const res = await $fetch<ApiResponse<{ leases: LeaseItem[] }>>('/api/v1/leases');
-    if (res.success && res.data) {
-      leases.value = res.data.leases;
-    } else {
-      errorMessage.value = res.error?.message || 'Failed to load lease agreements';
-    }
-  } catch (err: any) {
-    errorMessage.value = err?.data?.error?.message || err?.message || 'Error loading leases';
-  } finally {
-    isLoading.value = false;
-  }
-}
+const activeTab = ref<'ALL' | 'ACTIVE' | 'PENDING' | 'TERMINATED'>('ALL');
 
 const filteredLeases = computed(() => {
-  if (!searchQuery.value.trim()) return leases.value;
-  const q = searchQuery.value.toLowerCase();
   return leases.value.filter((l) => {
+    if (activeTab.value !== 'ALL' && l.status !== activeTab.value) {
+      return false;
+    }
+    if (!searchQuery.value.trim()) return true;
+    const q = searchQuery.value.toLowerCase();
     const unit = l.unit?.unitNumber?.toLowerCase() || '';
     const prop = l.property?.title?.toLowerCase() || '';
     const tenant = l.tenant?.fullName?.toLowerCase() || '';
@@ -167,7 +121,7 @@ const paginatedLeases = computed(() => {
   return filteredLeases.value.slice(start, start + pageSize.value);
 });
 
-watch(searchQuery, () => {
+watch([activeTab, searchQuery], () => {
   currentPage.value = 1;
 });
 
@@ -178,51 +132,32 @@ function openSignModal(lease: LeaseItem) {
 
 async function executeSign() {
   if (!leaseToSign.value || !agreeToTerms.value) return;
-  isSigning.value = true;
-  errorMessage.value = null;
-
   try {
-    const res = await $fetch<ApiResponse<{ message: string }>>(`/api/v1/leases/${leaseToSign.value.id}/sign`, {
-      method: 'POST',
-      body: { agreeToTerms: true },
-    });
+    const res = await signLease(leaseToSign.value.id) as any;
 
     if (res.success) {
-      successMessage.value = res.data?.message || 'Lease agreement signed successfully.';
+      toast.success(res.message || 'Lease agreement signed successfully.');
       leaseToSign.value = null;
-      await loadLeases();
-      setTimeout(() => {
-        successMessage.value = null;
-      }, 4000);
     } else {
-      errorMessage.value = res.error?.message || 'Failed to sign lease';
+      toast.error(res.error || 'Failed to sign lease agreement.');
     }
   } catch (err: any) {
-    errorMessage.value = err?.data?.error?.message || err?.message || 'Error recording signature';
-  } finally {
-    isSigning.value = false;
+    toast.error(err?.message || 'Failed to sign lease agreement.');
   }
 }
 
 async function executeTerminate() {
   if (!leaseToTerminate.value) return;
-  isTerminating.value = true;
   try {
-    const res = await $fetch<ApiResponse<{ message: string }>>(`/api/v1/leases/${leaseToTerminate.value.id}/terminate`, {
-      method: 'POST',
-    });
+    const res = await terminateLease(leaseToTerminate.value.id) as any;
     if (res.success) {
-      successMessage.value = res.data?.message || 'Lease terminated successfully.';
+      toast.success(res.message || 'Lease terminated successfully.');
       leaseToTerminate.value = null;
-      await loadLeases();
-      setTimeout(() => {
-        successMessage.value = null;
-      }, 4000);
+    } else {
+      toast.error(res.error || 'Failed to terminate lease.');
     }
   } catch (err: any) {
-    errorMessage.value = err?.data?.error?.message || err?.message || 'Error terminating lease';
-  } finally {
-    isTerminating.value = false;
+    toast.error(err?.message || 'Failed to terminate lease.');
   }
 }
 
@@ -242,14 +177,14 @@ onMounted(() => {
   <div class="leases-page">
     <div class="page-top-bar">
       <div>
-        <h1>Lease Agreements</h1>
+        <h1>{{ t('leases.title') }}</h1>
         <p class="subtitle">
-          Manage digital contracts, binding terms, dual-party signatures, and lease life cycles.
+          {{ t('leases.subtitle') }}
         </p>
       </div>
       <button v-if="isLandlord || isAdmin" @click="isCreateLeaseOpen = true" class="btn-primary">
         <Plus :size="15" />
-        <span>Create Lease Contract</span>
+        <span>{{ t('leases.new_lease') }}</span>
       </button>
     </div>
 
@@ -263,136 +198,144 @@ onMounted(() => {
       <AlertCircle :size="16" class="alert-icon" />
       <div class="alert-body">
         <span>{{ errorMessage }}</span>
-        <NuxtLink
-          v-if="errorMessage.toLowerCase().includes('logged in')"
-          :to="{ path: '/login', query: { redirect: $route.fullPath } }"
-          class="alert-action-btn"
-        >
-          Sign In
+        <NuxtLink v-if="errorMessage.toLowerCase().includes('logged in')"
+          :to="{ path: '/login', query: { redirect: $route.fullPath } }" class="alert-action-btn">
+          {{ t('nav.sign_in') }}
         </NuxtLink>
       </div>
     </div>
 
     <!-- Leases Table using shared AppTableCard -->
-    <AppTableCard
-      v-model:search="searchQuery"
-      search-placeholder="Search leases by unit, property, or tenant..."
-      :is-loading="isLoading"
-      :is-empty="filteredLeases.length === 0"
-      empty-title="No lease agreements found"
-      empty-description="Lease agreements are generated automatically when rental applications are approved by landlords."
-      :empty-icon="FileText"
-      v-model:current-page="currentPage"
-      v-model:page-size="pageSize"
-      :total-items="filteredLeases.length"
-      item-name="leases"
-    >
+    <AppTableCard v-model:search="searchQuery" :search-placeholder="t('leases.title')" :is-loading="isLoading"
+      :is-empty="filteredLeases.length === 0" :empty-title="t('leases.no_leases')"
+      :empty-description="t('leases.no_leases_desc')" :empty-icon="FileText" v-model:current-page="currentPage"
+      v-model:page-size="pageSize" :total-items="filteredLeases.length" :item-name="t('common.records')">
+      <template #toolbar-start>
+        <div class="filter-btn-group">
+          <button type="button" class="filter-btn" :class="{ active: activeTab === 'ALL' }" @click="activeTab = 'ALL'">
+            <span>{{ t('leases.filter_all') }}</span>
+            <span class="filter-count">{{ totalLeases }}</span>
+          </button>
+          <button type="button" class="filter-btn" :class="{ active: activeTab === 'ACTIVE' }"
+            @click="activeTab = 'ACTIVE'">
+            <span>{{ t('leases.filter_active') }}</span>
+            <span class="filter-count">{{ activeLeases }}</span>
+          </button>
+          <button type="button" class="filter-btn" :class="{ active: activeTab === 'PENDING' }"
+            @click="activeTab = 'PENDING'">
+            <span>{{ t('leases.filter_pending') }}</span>
+            <span class="filter-count">{{ pendingLeases }}</span>
+          </button>
+          <button type="button" class="filter-btn" :class="{ active: activeTab === 'TERMINATED' }"
+            @click="activeTab = 'TERMINATED'">
+            <span>{{ t('leases.filter_terminated') }}</span>
+            <span class="filter-count">{{ terminatedLeases }}</span>
+          </button>
+        </div>
+      </template>
+
       <table class="data-table">
-          <thead>
-            <tr>
-              <th>Property & Unit</th>
-              <th>Tenant / Landlord</th>
-              <th>Lease Term</th>
-              <th>Monthly Rent</th>
-              <th>Signatures Status</th>
-              <th>Contract Status</th>
-              <th class="text-right">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="lease in paginatedLeases" :key="lease.id">
-              <td>
-                <div class="unit-cell">
-                  <span class="font-semibold">Unit {{ lease.unit?.unitNumber || '101A' }}</span>
-                  <span class="text-dim text-xs">{{ lease.property?.title || 'Skyline Heights' }}</span>
-                </div>
-              </td>
-              <td>
-                <div class="parties-cell">
-                  <span><strong>Tenant:</strong> {{ lease.tenant?.fullName || 'Sarah Jenkins' }}</span>
-                  <span class="text-dim text-xs"><strong>Owner:</strong> {{ lease.landlord?.fullName || 'Marcus Sterling' }}</span>
-                </div>
-              </td>
-              <td>
-                <div class="date-cell">
-                  <Calendar :size="13" class="text-dim" />
-                  <span>
-                    {{ new Date(lease.startDate).toLocaleDateString() }} – {{ new Date(lease.endDate).toLocaleDateString() }}
+        <thead>
+          <tr>
+            <th>{{ t('leases.col_unit_property') }}</th>
+            <th>{{ t('leases.col_tenant') }}</th>
+            <th>{{ t('leases.col_period') }}</th>
+            <th>{{ t('leases.col_rent') }}</th>
+            <th>{{ t('leases.col_signatures') }}</th>
+            <th>{{ t('leases.col_status') }}</th>
+            <th class="text-right">{{ t('leases.col_actions') }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="lease in paginatedLeases" :key="lease.id">
+            <td>
+              <div class="unit-cell">
+                <span class="font-semibold">{{ t('dashboard.metrics.unit') }} {{ lease.unit?.unitNumber || '101A'
+                  }}</span>
+                <span class="text-dim text-xs">{{ lease.property?.title || 'Skyline Heights' }}</span>
+              </div>
+            </td>
+            <td>
+              <div class="parties-cell">
+                <span><strong>{{ t('users.roles.tenant') }}:</strong> {{ lease.tenant?.fullName || 'Sarah Jenkins'
+                  }}</span>
+                <span class="text-dim text-xs"><strong>{{ t('users.roles.landlord') }}:</strong> {{
+                  lease.landlord?.fullName
+                  || 'Marcus Sterling'
+                  }}</span>
+              </div>
+            </td>
+            <td>
+              <div class="date-cell">
+                <Calendar :size="13" class="text-dim" />
+                <span>
+                  {{ new Date(lease.startDate).toLocaleDateString() }} – {{ new Date(lease.endDate).toLocaleDateString()
+                  }}
+                </span>
+              </div>
+            </td>
+            <td class="font-semibold">
+              ${{ lease.rentAmount.toLocaleString() }} {{ t('properties.rent_per_month') }}
+            </td>
+            <td>
+              <div class="sig-status-stack">
+                <div class="sig-row">
+                  <span class="sig-label">{{ t('users.roles.tenant') }}:</span>
+                  <span v-if="lease.tenantSignedAt" class="sig-badge signed">
+                    <CheckCircle2 :size="11" />
+                    <span>{{ t('leases.status.active') }}</span>
+                  </span>
+                  <span v-else class="sig-badge pending">
+                    <Clock :size="11" />
+                    <span>{{ t('leases.status.pending') }}</span>
                   </span>
                 </div>
-              </td>
-              <td class="font-semibold">
-                ${{ lease.rentAmount.toLocaleString() }} / mo
-              </td>
-              <td>
-                <div class="sig-status-stack">
-                  <div class="sig-row">
-                    <span class="sig-label">Tenant:</span>
-                    <span v-if="lease.tenantSignedAt" class="sig-badge signed">
-                      <CheckCircle2 :size="11" />
-                      <span>Signed</span>
-                    </span>
-                    <span v-else class="sig-badge pending">
-                      <Clock :size="11" />
-                      <span>Pending</span>
-                    </span>
-                  </div>
-                  <div class="sig-row">
-                    <span class="sig-label">Landlord:</span>
-                    <span v-if="lease.landlordSignedAt" class="sig-badge signed">
-                      <CheckCircle2 :size="11" />
-                      <span>Signed</span>
-                    </span>
-                    <span v-else class="sig-badge pending">
-                      <Clock :size="11" />
-                      <span>Pending</span>
-                    </span>
-                  </div>
+                <div class="sig-row">
+                  <span class="sig-label">{{ t('users.roles.landlord') }}:</span>
+                  <span v-if="lease.landlordSignedAt" class="sig-badge signed">
+                    <CheckCircle2 :size="11" />
+                    <span>{{ t('leases.status.active') }}</span>
+                  </span>
+                  <span v-else class="sig-badge pending">
+                    <Clock :size="11" />
+                    <span>{{ t('leases.status.pending') }}</span>
+                  </span>
                 </div>
-              </td>
-              <td>
-                <span
-                  :class="[
-                    'badge',
-                    lease.status === 'ACTIVE' ? 'badge-success' :
-                    lease.status === 'PENDING_SIGNATURES' ? 'badge-warning' :
+              </div>
+            </td>
+            <td>
+              <span :class="[
+                'badge badge-pill',
+                lease.status === 'ACTIVE' ? 'badge-success' :
+                  lease.status === 'PENDING_SIGNATURES' ? 'badge-warning' :
                     lease.status === 'TERMINATED' ? 'badge-danger' : 'badge-subtle'
-                  ]"
-                >
-                  {{ lease.status }}
-                </span>
-              </td>
-              <td class="text-right">
-                <div class="action-btn-group">
-                  <button
-                    v-if="userNeedsToSign(lease)"
-                    @click="openSignModal(lease)"
-                    class="btn-primary btn-sm btn-sign"
-                  >
-                    <FileSignature :size="13" />
-                    <span>Sign Lease</span>
-                  </button>
-                  <button
-                    @click="viewLeaseModal = lease"
-                    class="btn-secondary btn-sm"
-                    title="View Full Contract Terms"
-                  >
-                    <FileText :size="13" />
-                    <span>View Terms</span>
-                  </button>
-                  <button
-                    v-if="(isLandlord || isAdmin) && lease.status === 'ACTIVE'"
-                    @click="leaseToTerminate = lease"
-                    class="btn-secondary btn-sm text-danger"
-                    title="Terminate Lease"
-                  >
-                    <Slash :size="13" />
-                    <span>Terminate</span>
-                  </button>
-                </div>
-              </td>
-            </tr>
-          </tbody>
+              ]">
+                <span class="badge-dot"></span>
+                <span>{{ lease.status === 'ACTIVE' ? t('leases.status.active') : lease.status === 'PENDING_SIGNATURES' ?
+                  t('leases.status.pending') : lease.status === 'TERMINATED' ? t('leases.status.terminated') :
+                  lease.status
+                  }}</span>
+              </span>
+            </td>
+            <td class="text-right">
+              <div class="action-btn-group">
+                <button v-if="userNeedsToSign(lease)" @click="openSignModal(lease)" class="btn-primary btn-sm btn-sign">
+                  <FileSignature :size="13" />
+                  <span>{{ t('leases.sign_agreement') }}</span>
+                </button>
+                <button @click="viewLeaseModal = lease" class="btn-secondary btn-sm" :title="t('leases.view_terms')">
+                  <FileText :size="13" />
+                  <span>{{ t('leases.view_terms') }}</span>
+                </button>
+                <button v-if="(isLandlord || isAdmin) && lease.status === 'ACTIVE'" @click="leaseToTerminate = lease"
+                  class="btn-secondary btn-sm text-danger" :title="t('leases.terminate')">
+                  <Slash :size="13" />
+                  <span>{{ t('leases.terminate') }}</span>
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
       </table>
     </AppTableCard>
 
@@ -406,10 +349,12 @@ onMounted(() => {
 
         <form @submit.prevent="executeSign" class="modal-body">
           <div class="contract-summary">
-            <div><strong>Unit:</strong> Unit {{ leaseToSign.unit?.unitNumber }} ({{ leaseToSign.property?.title }})</div>
+            <div><strong>Unit:</strong> Unit {{ leaseToSign.unit?.unitNumber }} ({{ leaseToSign.property?.title }})
+            </div>
             <div><strong>Monthly Rent:</strong> ${{ leaseToSign.rentAmount.toLocaleString() }} / month</div>
             <div><strong>Deposit:</strong> ${{ leaseToSign.depositAmount.toLocaleString() }}</div>
-            <div><strong>Term:</strong> {{ new Date(leaseToSign.startDate).toLocaleDateString() }} to {{ new Date(leaseToSign.endDate).toLocaleDateString() }}</div>
+            <div><strong>Term:</strong> {{ new Date(leaseToSign.startDate).toLocaleDateString() }} to {{ new
+              Date(leaseToSign.endDate).toLocaleDateString() }}</div>
           </div>
 
           <div class="terms-preview-box">
@@ -419,18 +364,15 @@ onMounted(() => {
 
           <label class="consent-checkbox">
             <input type="checkbox" v-model="agreeToTerms" required />
-            <span>I have read, acknowledge, and legally agree to the terms and obligations set forth in this lease agreement.</span>
+            <span>I have read, acknowledge, and legally agree to the terms and obligations set forth in this lease
+              agreement.</span>
           </label>
 
           <div class="modal-actions">
             <button type="button" @click="leaseToSign = null" class="btn-secondary">
               Cancel
             </button>
-            <button
-              type="submit"
-              :disabled="!agreeToTerms || isSigning"
-              class="btn-primary"
-            >
+            <button type="submit" :disabled="!agreeToTerms || isSigning" class="btn-primary">
               <FileSignature :size="14" />
               <span>{{ isSigning ? 'Recording Signature...' : 'Confirm Digital Signature' }}</span>
             </button>
@@ -451,8 +393,22 @@ onMounted(() => {
             <div><strong>Unit:</strong> Unit {{ viewLeaseModal.unit?.unitNumber }}</div>
             <div><strong>Tenant:</strong> {{ viewLeaseModal.tenant?.fullName }}</div>
             <div><strong>Landlord:</strong> {{ viewLeaseModal.landlord?.fullName }}</div>
-            <div><strong>Rent:</strong> ${{ viewLeaseModal.rentAmount }} / month (Due day: {{ viewLeaseModal.paymentDueDay }}st)</div>
-            <div><strong>Status:</strong> <span class="badge badge-success">{{ viewLeaseModal.status }}</span></div>
+            <div><strong>Rent:</strong> ${{ viewLeaseModal.rentAmount }} / month (Due day: {{
+              viewLeaseModal.paymentDueDay }}st)</div>
+            <div><strong>Status:</strong>
+              <span class="badge badge-pill" :class="{
+                'badge-success': viewLeaseModal.status === 'ACTIVE',
+                'badge-warning': viewLeaseModal.status === 'PENDING_SIGNATURES',
+                'badge-subtle': viewLeaseModal.status === 'TERMINATED'
+              }">
+                <span class="badge-dot"></span>
+                <span>{{ viewLeaseModal.status === 'ACTIVE' ? 'Active' : (viewLeaseModal.status === 'PENDING_SIGNATURES'
+                  ?
+                  'Pending Signatures' : (viewLeaseModal.status === 'TERMINATED' ? 'Terminated' :
+                  viewLeaseModal.status))
+                  }}</span>
+              </span>
+            </div>
           </div>
 
           <div class="terms-preview-box">
@@ -478,17 +434,15 @@ onMounted(() => {
         </div>
         <div class="modal-body">
           <p>
-            Are you sure you want to terminate the active lease for <strong>Unit {{ leaseToTerminate.unit?.unitNumber }}</strong>?
+            Are you sure you want to terminate the active lease for <strong>Unit {{ leaseToTerminate.unit?.unitNumber
+            }}</strong>?
           </p>
           <p class="text-sm text-muted">
-            Terminating this lease will set its status to TERMINATED and return the unit status to <strong>AVAILABLE</strong> for new prospective tenants.
+            Terminating this lease will set its status to TERMINATED and return the unit status to
+            <strong>AVAILABLE</strong> for new prospective tenants.
           </p>
           <div class="modal-actions">
-            <button
-              @click="executeTerminate"
-              :disabled="isTerminating"
-              class="btn-primary btn-danger-action"
-            >
+            <button @click="executeTerminate" :disabled="isTerminating" class="btn-primary btn-danger-action">
               <span>{{ isTerminating ? 'Terminating...' : 'Confirm Termination' }}</span>
             </button>
             <button @click="leaseToTerminate = null" class="btn-secondary">
@@ -511,102 +465,55 @@ onMounted(() => {
           <div class="grid-2-col">
             <div class="form-group">
               <label class="form-label">Unit Reference ID</label>
-              <input
-                v-model="createLeaseForm.unitId"
-                type="text"
-                required
-                class="form-control"
-                placeholder="e.g. unit-skyline-204b"
-              />
+              <input v-model="createLeaseForm.unitId" type="text" required class="form-control"
+                placeholder="e.g. unit-skyline-204b" />
             </div>
             <div class="form-group">
               <label class="form-label">Tenant User ID</label>
-              <input
-                v-model="createLeaseForm.tenantId"
-                type="text"
-                required
-                class="form-control"
-                placeholder="e.g. user-tenant-01"
-              />
+              <input v-model="createLeaseForm.tenantId" type="text" required class="form-control"
+                placeholder="e.g. user-tenant-01" />
             </div>
           </div>
 
           <div class="grid-2-col">
             <div class="form-group">
               <label class="form-label">Start Date</label>
-              <input
-                v-model="createLeaseForm.startDate"
-                type="date"
-                required
-                class="form-control"
-              />
+              <input v-model="createLeaseForm.startDate" type="date" required class="form-control" />
             </div>
             <div class="form-group">
               <label class="form-label">End Date</label>
-              <input
-                v-model="createLeaseForm.endDate"
-                type="date"
-                required
-                class="form-control"
-              />
+              <input v-model="createLeaseForm.endDate" type="date" required class="form-control" />
             </div>
           </div>
 
           <div class="grid-3-col">
             <div class="form-group">
               <label class="form-label">Monthly Rent ($)</label>
-              <input
-                v-model.number="createLeaseForm.rentAmount"
-                type="number"
-                min="0"
-                step="1"
-                required
-                class="form-control"
-              />
+              <input v-model.number="createLeaseForm.rentAmount" type="number" min="0" step="1" required
+                class="form-control" />
             </div>
             <div class="form-group">
               <label class="form-label">Deposit ($)</label>
-              <input
-                v-model.number="createLeaseForm.depositAmount"
-                type="number"
-                min="0"
-                step="1"
-                required
-                class="form-control"
-              />
+              <input v-model.number="createLeaseForm.depositAmount" type="number" min="0" step="1" required
+                class="form-control" />
             </div>
             <div class="form-group">
               <label class="form-label">Due Day (1-28)</label>
-              <input
-                v-model.number="createLeaseForm.paymentDueDay"
-                type="number"
-                min="1"
-                max="28"
-                required
-                class="form-control"
-              />
+              <input v-model.number="createLeaseForm.paymentDueDay" type="number" min="1" max="28" required
+                class="form-control" />
             </div>
           </div>
 
           <div class="form-group">
             <label class="form-label">Contractual Terms & Obligations</label>
-            <textarea
-              v-model="createLeaseForm.termsAndConditions"
-              rows="4"
-              required
-              class="form-control"
-            ></textarea>
+            <textarea v-model="createLeaseForm.termsAndConditions" rows="4" required class="form-control"></textarea>
           </div>
 
           <div class="modal-actions">
             <button type="button" @click="isCreateLeaseOpen = false" class="btn-secondary">
               Cancel
             </button>
-            <button
-              type="submit"
-              :disabled="isCreatingLease"
-              class="btn-primary"
-            >
+            <button type="submit" :disabled="isCreatingLease" class="btn-primary">
               <Plus :size="14" />
               <span>{{ isCreatingLease ? 'Generating Contract...' : 'Create Contract' }}</span>
             </button>
@@ -814,7 +721,9 @@ onMounted(() => {
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* Modal */
@@ -972,6 +881,7 @@ onMounted(() => {
 }
 
 @media (max-width: 640px) {
+
   .grid-2-col,
   .grid-3-col {
     grid-template-columns: 1fr;

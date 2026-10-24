@@ -1,24 +1,26 @@
 <script setup lang="ts">
 import { ref } from 'vue';
-import { ShieldCheck, Building, Key, Wrench, Check } from '@lucide/vue';
+import { ShieldCheck, Building, Key, Wrench, Check, Eye, EyeOff } from '@lucide/vue';
 import { useAuth } from '../composables/useAuth';
 
 definePageMeta({
   layout: 'auth',
 });
 
+const { t } = useI18n();
 const { login, isLoading, error } = useAuth();
 const router = useRouter();
 const route = useRoute();
 
 const email = ref('');
 const password = ref('');
+const showPassword = ref(false);
 
 const demoAccounts = [
-  { role: 'Admin', email: 'admin@rentease.com', pass: 'RentEase123!', icon: ShieldCheck },
-  { role: 'Landlord', email: 'landlord@rentease.com', pass: 'RentEase123!', icon: Building },
-  { role: 'Tenant', email: 'tenant@rentease.com', pass: 'RentEase123!', icon: Key },
-  { role: 'Technician', email: 'technician@rentease.com', pass: 'RentEase123!', icon: Wrench },
+  { roleKey: 'auth.demo_admin', email: 'admin@rentease.com', pass: 'RentEase123!', icon: ShieldCheck },
+  { roleKey: 'auth.demo_landlord', email: 'landlord@rentease.com', pass: 'RentEase123!', icon: Building },
+  { roleKey: 'auth.demo_tenant', email: 'tenant@rentease.com', pass: 'RentEase123!', icon: Key },
+  { roleKey: 'auth.demo_technician', email: 'technician@rentease.com', pass: 'RentEase123!', icon: Wrench },
 ];
 
 function fillDemo(item: typeof demoAccounts[0]) {
@@ -42,8 +44,8 @@ async function handleLogin() {
 <template>
   <div class="login-view">
     <div class="card-header">
-      <h2>Welcome Back</h2>
-      <p class="subtitle">Enter your credentials to access your portal</p>
+      <h2>{{ t('auth.welcome_back') }}</h2>
+      <p class="subtitle">{{ t('auth.credentials_prompt') }}</p>
     </div>
 
     <!-- Error Alert -->
@@ -53,60 +55,60 @@ async function handleLogin() {
 
     <form @submit.prevent="handleLogin" class="login-form">
       <div class="form-group">
-        <label for="login-email" class="form-label">Email Address</label>
-        <input
-          id="login-email"
-          v-model="email"
-          type="email"
-          placeholder="name@example.com"
-          required
-          class="input-field"
-        />
+        <label for="login-email" class="form-label">{{ t('auth.email') }}</label>
+        <input id="login-email" v-model="email" type="email" :placeholder="t('auth.email_placeholder')" required
+          class="input-field" />
       </div>
 
       <div class="form-group">
         <div class="password-label-wrapper">
-          <label for="login-password" class="form-label">Password</label>
+          <label for="login-password" class="form-label">{{ t('auth.password') }}</label>
         </div>
-        <input
-          id="login-password"
-          v-model="password"
-          type="password"
-          placeholder="••••••••"
-          required
-          class="input-field"
-        />
+        <div class="password-input-wrap">
+          <input
+            id="login-password"
+            v-model="password"
+            :type="showPassword ? 'text' : 'password'"
+            :placeholder="t('auth.password_placeholder')"
+            required
+            class="input-field password-input"
+          />
+          <button
+            type="button"
+            class="password-toggle-btn"
+            @click="showPassword = !showPassword"
+            :aria-label="showPassword ? 'Hide password' : 'Show password'"
+          >
+            <EyeOff v-if="showPassword" :size="15" />
+            <Eye v-else :size="15" />
+          </button>
+        </div>
       </div>
 
       <button type="submit" :disabled="isLoading" class="btn-primary btn-block">
-        <span v-if="isLoading">Signing in...</span>
-        <span v-else>Sign In</span>
+        <span v-if="isLoading">{{ t('auth.signing_in') }}</span>
+        <span v-else>{{ t('auth.sign_in') }}</span>
       </button>
     </form>
 
     <!-- Quick Demo Accounts -->
     <div class="demo-section">
       <div class="divider">
-        <span>Quick Demo Access</span>
+        <span>{{ t('auth.quick_demo') }}</span>
       </div>
       <div class="demo-grid">
-        <button
-          v-for="item in demoAccounts"
-          :key="item.role"
-          type="button"
-          @click="fillDemo(item)"
-          :class="['demo-chip', { 'demo-chip-active': email === item.email }]"
-        >
+        <button v-for="item in demoAccounts" :key="item.roleKey" type="button" @click="fillDemo(item)"
+          :class="['demo-chip', { 'demo-chip-active': email === item.email }]">
           <component :is="item.icon" :size="15" class="chip-icon" />
-          <span class="chip-role">{{ item.role }}</span>
+          <span class="chip-role">{{ t(item.roleKey) }}</span>
           <Check v-if="email === item.email" :size="13" class="chip-check" />
         </button>
       </div>
     </div>
 
     <div class="register-prompt">
-      <span>Don't have an account?</span>
-      <NuxtLink to="/register" class="register-link">Create one now</NuxtLink>
+      <span>{{ t('auth.dont_have_account') }}</span>
+      <NuxtLink to="/register" class="register-link">{{ t('auth.create_account_now') }}</NuxtLink>
     </div>
   </div>
 </template>
@@ -136,6 +138,36 @@ async function handleLogin() {
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+
+.password-input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.password-input {
+  width: 100%;
+  padding-right: 2.5rem;
+}
+
+.password-toggle-btn {
+  position: absolute;
+  right: 0.75rem;
+  background: transparent;
+  border: none;
+  color: var(--text-dim);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.25rem;
+  border-radius: var(--radius-sm);
+  transition: color 0.15s ease;
+}
+
+.password-toggle-btn:hover {
+  color: var(--text-main);
 }
 
 .btn-block {

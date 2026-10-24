@@ -1,8 +1,24 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
+  modules: [
+    '@nuxtjs/tailwindcss',
+    '@pinia/nuxt',
+    '@nuxtjs/google-fonts',
+    '@nuxtjs/i18n'
+  ],
+  googleFonts: {
+    download: true,
+    families: {
+      'Plus+Jakarta+Sans': [400, 500, 600, 700],
+      'Kantumruy+Pro': [300, 400, 500, 600, 700],
+      'Inter': [400, 500, 600, 700],
+    },
+  },
   devtools: { enabled: true },
-  modules: ['@nuxtjs/tailwindcss'],
+  imports: {
+    dirs: ['stores', 'stores/**'],
+  },
   css: ['~/assets/css/main.css'],
   runtimeConfig: {
     databaseUrl: process.env.DATABASE_URL,
@@ -24,9 +40,24 @@ export default defineNuxtConfig({
       ],
       script: [
         {
-          innerHTML: `(function(){try{var t=localStorage.getItem('rentease-theme');if(t==='dark'||(!t&&window.matchMedia('(prefers-color-scheme:dark)').matches)){document.documentElement.classList.add('dark');document.documentElement.classList.remove('light');}else{document.documentElement.classList.add('light');document.documentElement.classList.remove('dark');}}catch(e){}})();`,
+          innerHTML: `(function(){try{var m=document.cookie.match(/(?:^|; )rentease-theme=([^;]*)/);var t=m?decodeURIComponent(m[1]):localStorage.getItem('rentease-theme');if(t==='light'){document.documentElement.classList.add('light');document.documentElement.classList.remove('dark');}else if(t==='dark'){document.documentElement.classList.add('dark');document.documentElement.classList.remove('light');}else if(window.matchMedia('(prefers-color-scheme: dark)').matches){document.documentElement.classList.add('dark');document.documentElement.classList.remove('light');}else{document.documentElement.classList.add('light');document.documentElement.classList.remove('dark');}}catch(e){}})();`,
         },
       ],
     },
   },
+  i18n: {
+    langDir: 'locales',
+    defaultLocale: 'en',
+    strategy: 'no_prefix',
+    locales: [
+      { code: 'en', name: 'English', file: 'en.json', language: 'en-US' },
+      { code: 'km', name: 'ខ្មែរ', file: 'km.json', language: 'km-KH' }
+    ],
+    detectBrowserLanguage: {
+      useCookie: true,
+      cookieKey: 'rentease-locale',
+      redirectOn: 'root',
+      alwaysRedirect: false,
+    },
+  }
 });

@@ -1,21 +1,22 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
-import { 
-  Building, 
-  ArrowLeft, 
-  Plus, 
-  MapPin, 
-  Edit3, 
-  Trash2, 
-  CheckCircle2, 
+import {
+  Building,
+  ArrowLeft,
+  Plus,
+  MapPin,
+  Edit3,
+  Trash2,
+  CheckCircle2,
   AlertCircle,
   X,
   Layers,
   ExternalLink
 } from '@lucide/vue';
 import PropertyMap from '../../../../components/common/PropertyMap.vue';
-import type { ApiResponse } from '../../../../../shared/types/api';
 import AppTableCard from '../../../../components/common/AppTableCard.vue';
+import { usePropertyStore } from '../../../../stores/property.store';
+import type { PropertyDetail, UnitItem as Unit } from '~~/shared/types';
 
 definePageMeta({
   layout: 'dashboard',
@@ -23,43 +24,28 @@ definePageMeta({
   title: 'Property Units & Inventory',
 });
 
+const { t } = useI18n();
 const route = useRoute();
 const propertyId = route.params.id as string;
+const propertyStore = usePropertyStore();
 
-interface Unit {
-  id: string;
-  propertyId: string;
-  unitNumber: string;
-  floor: number;
-  sizeSqFt: number;
-  bedrooms: number;
-  bathrooms: number;
-  rentAmount: number;
-  depositAmount: number;
-  status: string;
-  createdAt: string;
-}
+const {
+  currentProperty: property,
+  isLoading,
+  isSubmittingUnit,
+  isDeleting,
+  errorMessage,
+} = propertyStore;
 
-interface PropertyDetail {
-  id: string;
-  title: string;
-  description: string;
-  addressLine1: string;
-  city: string;
-  state: string;
-  postalCode: string;
-  country: string;
-  amenities: string[];
-  units: Unit[];
-  unitsCount: number;
-  availableUnitsCount: number;
-  latitude?: number;
-  longitude?: number;
-}
+const {
+  fetchPropertyById,
+  createUnit,
+  updateUnit,
+  deleteUnit,
+} = propertyStore;
 
-const property = ref<PropertyDetail | null>(null);
-const isLoading = ref(true);
-const errorMessage = ref<string | null>(null);
+const loadProperty = () => fetchPropertyById(propertyId);
+
 const successMessage = ref<string | null>(null);
 
 // Units pagination state
@@ -75,7 +61,6 @@ const paginatedUnits = computed(() => {
 // Unit modal state
 const isUnitModalOpen = ref(false);
 const editingUnitId = ref<string | null>(null);
-const isSubmittingUnit = ref(false);
 
 const unitForm = ref({
   unitNumber: '',
@@ -90,24 +75,6 @@ const unitForm = ref({
 
 // Delete confirmation modal state
 const unitToDelete = ref<Unit | null>(null);
-const isDeleting = ref(false);
-
-async function loadProperty() {
-  isLoading.value = true;
-  errorMessage.value = null;
-  try {
-    const res = await $fetch<ApiResponse<{ property: PropertyDetail }>>(`/api/v1/properties/${propertyId}`);
-    if (res.success && res.data) {
-      property.value = res.data.property;
-    } else {
-      errorMessage.value = res.error?.message || 'Property not found';
-    }
-  } catch (err: any) {
-    errorMessage.value = err?.data?.error?.message || err?.message || 'Error loading property';
-  } finally {
-    isLoading.value = false;
-  }
-}
 
 function openAddUnitModal() {
   editingUnitId.value = null;
@@ -139,41 +106,49 @@ function openEditUnitModal(unit: Unit) {
   isUnitModalOpen.value = true;
 }
 
-async function handleSaveUnit() {
-  isSubmittingUnit.value = true;
-  errorMessage.value = null;
+const toast = useToast();
 
+function formatUnitStatus(status: string) {
+  switch (status) {
+    case 'AVAILABLE': return t('properties.status.vacant');
+    case 'OCCUPIED': return t('properties.status.occupied');
+    case 'RESERVED': return t('properties.status.reserved');
+    case 'MAINTENANCE': return t('properties.status.maintenance');
+    default: return status ? status.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase()) : 'Unknown';
+  }
+}
+
+function getUnitBadgeClass(status: string) {
+  switch (status) {
+    case 'AVAILABLE': return 'badge-success';
+    case 'OCCUPIED': return 'badge-warning';
+    case 'RESERVED': return 'badge-info';
+    case 'MAINTENANCE': return 'badge-danger';
+    default: return 'badge-subtle';
+  }
+}
+
+async function handleSaveUnit() {
   try {
     if (editingUnitId.value) {
-      // Update
-      const res = await $fetch<ApiResponse<{ unit: Unit }>>(`/api/v1/units/${editingUnitId.value}`, {
-        method: 'PUT',
-        body: unitForm.value,
-      });
+      const res = await updateUnit(propertyId, editingUnitId.value, unitForm.value);
       if (res.success) {
-        successMessage.value = `Unit ${unitForm.value.unitNumber} updated successfully.`;
+        toast.success(`Unit ${unitForm.value.unitNumber} updated successfully.`);
         isUnitModalOpen.value = false;
-        await loadProperty();
+      } else {
+        toast.error(res.error || 'Failed to update unit.');
       }
     } else {
-      // Create
-      const res = await $fetch<ApiResponse<{ unit: Unit }>>(`/api/v1/properties/${propertyId}/units`, {
-        method: 'POST',
-        body: unitForm.value,
-      });
+      const res = await createUnit(propertyId, unitForm.value);
       if (res.success) {
-        successMessage.value = `Unit ${unitForm.value.unitNumber} added successfully.`;
+        toast.success(`Unit ${unitForm.value.unitNumber} added successfully.`);
         isUnitModalOpen.value = false;
-        await loadProperty();
+      } else {
+        toast.error(res.error || 'Failed to add unit.');
       }
     }
-    setTimeout(() => {
-      successMessage.value = null;
-    }, 3500);
   } catch (err: any) {
-    errorMessage.value = err?.data?.error?.message || err?.message || 'Failed to save unit';
-  } finally {
-    isSubmittingUnit.value = false;
+    toast.error(err?.message || 'Failed to save unit.');
   }
 }
 
@@ -183,23 +158,16 @@ function confirmDeleteUnit(unit: Unit) {
 
 async function executeDeleteUnit() {
   if (!unitToDelete.value) return;
-  isDeleting.value = true;
   try {
-    const res = await $fetch<ApiResponse<any>>(`/api/v1/units/${unitToDelete.value.id}`, {
-      method: 'DELETE',
-    });
+    const res = await deleteUnit(propertyId, unitToDelete.value.id);
     if (res.success) {
-      successMessage.value = `Unit ${unitToDelete.value.unitNumber} removed.`;
+      toast.success(`Unit ${unitToDelete.value.unitNumber} removed.`);
       unitToDelete.value = null;
-      await loadProperty();
-      setTimeout(() => {
-        successMessage.value = null;
-      }, 3500);
+    } else {
+      toast.error(res.error || 'Failed to delete unit.');
     }
   } catch (err: any) {
-    errorMessage.value = err?.data?.error?.message || err?.message || 'Failed to delete unit';
-  } finally {
-    isDeleting.value = false;
+    toast.error(err?.message || 'Failed to delete unit.');
   }
 }
 
@@ -213,7 +181,7 @@ onMounted(() => {
     <div class="top-nav-bar">
       <NuxtLink to="/dashboard/properties" class="back-link">
         <ArrowLeft :size="15" />
-        <span>Back to Properties</span>
+        <span>{{ t('properties.back_to_properties') }}</span>
       </NuxtLink>
     </div>
 
@@ -231,14 +199,14 @@ onMounted(() => {
     <!-- Loading State -->
     <div v-if="isLoading" class="loading-state">
       <div class="loading-spinner"></div>
-      <p>Loading property and units...</p>
+      <p>{{ t('properties.loading_property_units') }}</p>
     </div>
 
     <div v-else-if="property" class="content-container">
       <!-- Property Summary Card -->
       <div class="property-summary card-flat">
         <div class="summary-main">
-          <div class="prop-badge">Residential Asset</div>
+          <div class="prop-badge">{{ t('properties.residential_asset') }}</div>
           <h2>{{ property.title }}</h2>
           <div class="location-row">
             <MapPin :size="14" class="loc-icon" />
@@ -248,21 +216,22 @@ onMounted(() => {
 
         <div class="summary-stats">
           <div class="stat-pill">
-            <span class="pill-label">Total Units</span>
+            <span class="pill-label">{{ t('properties.total_units_label') }}</span>
             <span class="pill-val">{{ property.unitsCount }}</span>
           </div>
           <div class="stat-pill">
-            <span class="pill-label">Available</span>
+            <span class="pill-label">{{ t('properties.filter_available_short') }}</span>
             <span class="pill-val text-emerald">{{ property.availableUnitsCount }}</span>
           </div>
           <div class="stat-actions">
-            <NuxtLink :to="`/properties/${property.id}`" target="_blank" class="btn-secondary btn-sm" title="View Public Listing">
+            <NuxtLink :to="`/properties/${property.id}`" target="_blank" class="btn-secondary btn-sm"
+              :title="t('properties.public_view')">
               <ExternalLink :size="13" />
-              <span>Public View</span>
+              <span>{{ t('properties.public_view') }}</span>
             </NuxtLink>
             <NuxtLink :to="`/dashboard/properties/${property.id}/edit`" class="btn-secondary btn-sm">
               <Edit3 :size="13" />
-              <span>Edit Property</span>
+              <span>{{ t('properties.edit_property_title') }}</span>
             </NuxtLink>
           </div>
         </div>
@@ -271,227 +240,167 @@ onMounted(() => {
       <!-- Property Location Map (OpenFreeMap) -->
       <div class="property-map-section">
         <ClientOnly>
-          <PropertyMap
-            :latitude="property.latitude ?? 11.5516"
-            :longitude="property.longitude ?? 104.9224"
-            :title="property.title"
-            :address="property.addressLine1"
-            :city="property.city"
-            height="340px"
-          />
+          <PropertyMap :latitude="property.latitude ?? 11.5516" :longitude="property.longitude ?? 104.9224"
+            :title="property.title" :address="property.addressLine1" :city="property.city" height="340px" />
           <template #fallback>
             <div class="map-placeholder card-flat">
-              <p>Loading OpenFreeMap vector tiles...</p>
+              <p>{{ t('common.please_wait') }}</p>
             </div>
           </template>
         </ClientOnly>
       </div>
 
       <!-- Units Management Section using shared AppTableCard -->
-      <AppTableCard
-        title="Unit Inventory"
-        subtitle="Manage pricing, floor area, and occupancy status for each individual unit."
-        :show-search="false"
-        :is-empty="!property.units || property.units.length === 0"
-        empty-title="No units configured yet"
-        empty-description="Add individual apartments or office units with their respective monthly rent and square footage."
-        :empty-icon="Layers"
-        v-model:current-page="currentUnitPage"
-        v-model:page-size="unitPageSize"
-        :total-items="property.units?.length || 0"
-        item-name="units"
-      >
+      <AppTableCard :title="t('properties.unit_inventory')"
+        :subtitle="t('properties.unit_inventory_desc')" :show-search="false"
+        :is-empty="!property.units || property.units.length === 0" :empty-title="t('properties.no_units_yet')"
+        :empty-description="t('properties.no_units_yet_desc')"
+        :empty-icon="Layers" v-model:current-page="currentUnitPage" v-model:page-size="unitPageSize"
+        :total-items="property.units?.length || 0" :item-name="t('properties.units')">
         <template #toolbar-end>
           <button @click="openAddUnitModal" class="btn-primary btn-sm">
             <Plus :size="14" />
-            <span>Add Unit</span>
+            <span>{{ t('properties.add_unit') }}</span>
           </button>
         </template>
 
         <template #empty-action>
           <button @click="openAddUnitModal" class="btn-primary mt-2">
             <Plus :size="14" />
-            <span>Add First Unit</span>
+            <span>{{ t('properties.add_first_unit') }}</span>
           </button>
         </template>
 
         <table class="data-table">
-            <thead>
-              <tr>
-                <th>Unit #</th>
-                <th>Floor</th>
-                <th>Size</th>
-                <th>Bedrooms / Bath</th>
-                <th>Monthly Rent</th>
-                <th>Deposit</th>
-                <th>Occupancy Status</th>
-                <th class="text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="unit in paginatedUnits" :key="unit.id">
-                <td class="font-semibold">Unit {{ unit.unitNumber }}</td>
-                <td>Level {{ unit.floor }}</td>
-                <td>{{ unit.sizeSqFt }} sq m</td>
-                <td>
-                  {{ unit.bedrooms === 0 ? 'Studio' : `${unit.bedrooms} Bed` }} / {{ unit.bathrooms }} Bath
-                </td>
-                <td class="font-semibold">${{ unit.rentAmount.toLocaleString() }}</td>
-                <td>${{ unit.depositAmount.toLocaleString() }}</td>
-                <td>
-                  <span
-                    :class="[
-                      'badge',
-                      unit.status === 'AVAILABLE' ? 'badge-success' :
-                      unit.status === 'OCCUPIED' ? 'badge-warning' :
-                      unit.status === 'RESERVED' ? 'badge-landlord' : 'badge-danger'
-                    ]"
-                  >
-                    {{ unit.status }}
-                  </span>
-                </td>
-                <td class="text-right">
-                  <div class="action-btn-group">
-                    <button
-                      @click="openEditUnitModal(unit)"
-                      class="btn-secondary btn-icon-sm"
-                      title="Edit Unit"
-                    >
-                      <Edit3 :size="13" />
-                      <span>Edit</span>
-                    </button>
-                    <button
-                      @click="confirmDeleteUnit(unit)"
-                      class="btn-secondary btn-icon-sm text-danger"
-                      title="Delete Unit"
-                    >
-                      <Trash2 :size="13" />
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            </tbody>
+          <thead>
+            <tr>
+              <th>{{ t('properties.col_unit_number') }}</th>
+              <th>{{ t('properties.col_floor') }}</th>
+              <th>{{ t('properties.col_size') }}</th>
+              <th>{{ t('properties.col_bedrooms_bath') }}</th>
+              <th>{{ t('properties.col_monthly_rent') }}</th>
+              <th>{{ t('properties.col_deposit') }}</th>
+              <th>{{ t('properties.col_occupancy_status') }}</th>
+              <th class="text-right">{{ t('properties.col_actions') }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="unit in paginatedUnits" :key="unit.id">
+              <td class="font-semibold">{{ t('properties.unit_label', { number: unit.unitNumber }) }}</td>
+              <td>{{ t('properties.level', { floor: unit.floor }) }}</td>
+              <td>{{ t('properties.sq_m', { size: unit.sizeSqFt }) }}</td>
+              <td>
+                {{ unit.bedrooms === 0 ? t('properties.studio') : t('properties.bed_short', { count: unit.bedrooms }) }} / {{ t('properties.bath_short', { count: unit.bathrooms }) }}
+              </td>
+              <td class="font-semibold">${{ unit.rentAmount.toLocaleString() }}</td>
+              <td>${{ unit.depositAmount.toLocaleString() }}</td>
+              <td>
+                <span :class="['badge badge-pill', getUnitBadgeClass(unit.status)]">
+                  <span class="badge-dot"></span>
+                  <span>{{ formatUnitStatus(unit.status) }}</span>
+                </span>
+              </td>
+              <td class="text-right">
+                <div class="action-btn-group">
+                  <button @click="openEditUnitModal(unit)" class="btn-secondary btn-icon-sm" :title="t('common.edit')">
+                    <Edit3 :size="13" />
+                    <span>{{ t('common.edit') }}</span>
+                  </button>
+                  <button @click="confirmDeleteUnit(unit)" class="btn-secondary btn-icon-sm text-danger"
+                    :title="t('properties.remove_unit')">
+                    <Trash2 :size="13" />
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
         </table>
       </AppTableCard>
+    </div>
+
+    <!-- Fallback when property is not found -->
+    <div v-else-if="!isLoading && !property" class="empty-detail-state card-flat">
+      <Building :size="36" class="empty-icon" />
+      <h3>{{ t('properties.property_not_found') }}</h3>
+      <p class="text-muted text-sm">{{ t('properties.property_not_found_desc') }}</p>
+      <NuxtLink to="/dashboard/properties" class="btn-primary mt-2">
+        <ArrowLeft :size="15" />
+        <span>{{ t('properties.return_to_properties') }}</span>
+      </NuxtLink>
     </div>
 
     <!-- Unit Add / Edit Modal -->
     <div v-if="isUnitModalOpen" class="modal-backdrop">
       <div class="modal-card card-flat">
         <div class="modal-header">
-          <h3>{{ editingUnitId ? 'Edit Unit' : 'Add Unit to Property' }}</h3>
+          <h3>{{ editingUnitId ? t('properties.edit_unit') : t('properties.add_unit_to_property') }}</h3>
           <button @click="isUnitModalOpen = false" class="modal-close">&times;</button>
         </div>
 
         <form @submit.prevent="handleSaveUnit" class="modal-form">
           <div class="grid-2">
             <div class="form-group">
-              <label for="u-number" class="form-label">Unit Number *</label>
-              <input
-                id="u-number"
-                v-model="unitForm.unitNumber"
-                type="text"
-                placeholder="e.g. 101A"
-                required
-                class="input-field"
-              />
+              <label for="u-number" class="form-label">{{ t('properties.unit_number_label') }}</label>
+              <input id="u-number" v-model="unitForm.unitNumber" type="text" placeholder="e.g. 101A" required
+                class="input-field" />
             </div>
 
             <div class="form-group">
-              <label for="u-floor" class="form-label">Floor Level *</label>
-              <input
-                id="u-floor"
-                v-model.number="unitForm.floor"
-                type="number"
-                min="0"
-                required
-                class="input-field"
-              />
+              <label for="u-floor" class="form-label">{{ t('properties.floor_level_label') }}</label>
+              <input id="u-floor" v-model.number="unitForm.floor" type="number" min="0" required class="input-field" />
             </div>
           </div>
 
           <div class="grid-3">
             <div class="form-group">
-              <label for="u-size" class="form-label">Area (sq m) *</label>
-              <input
-                id="u-size"
-                v-model.number="unitForm.sizeSqFt"
-                type="number"
-                min="10"
-                required
-                class="input-field"
-              />
+              <label for="u-size" class="form-label">{{ t('properties.area_sqm_label') }}</label>
+              <input id="u-size" v-model.number="unitForm.sizeSqFt" type="number" min="10" required
+                class="input-field" />
             </div>
 
             <div class="form-group">
-              <label for="u-beds" class="form-label">Bedrooms *</label>
-              <input
-                id="u-beds"
-                v-model.number="unitForm.bedrooms"
-                type="number"
-                min="0"
-                required
-                class="input-field"
-              />
+              <label for="u-beds" class="form-label">{{ t('properties.bedrooms') }} *</label>
+              <input id="u-beds" v-model.number="unitForm.bedrooms" type="number" min="0" required
+                class="input-field" />
             </div>
 
             <div class="form-group">
-              <label for="u-baths" class="form-label">Bathrooms *</label>
-              <input
-                id="u-baths"
-                v-model.number="unitForm.bathrooms"
-                type="number"
-                min="0.5"
-                step="0.5"
-                required
-                class="input-field"
-              />
+              <label for="u-baths" class="form-label">{{ t('properties.bathrooms') }} *</label>
+              <input id="u-baths" v-model.number="unitForm.bathrooms" type="number" min="0.5" step="0.5" required
+                class="input-field" />
             </div>
           </div>
 
           <div class="grid-2">
             <div class="form-group">
-              <label for="u-rent" class="form-label">Monthly Rent ($) *</label>
-              <input
-                id="u-rent"
-                v-model.number="unitForm.rentAmount"
-                type="number"
-                min="1"
-                required
-                class="input-field"
-              />
+              <label for="u-rent" class="form-label">{{ t('properties.monthly_rent_label') }}</label>
+              <input id="u-rent" v-model.number="unitForm.rentAmount" type="number" min="1" required
+                class="input-field" />
             </div>
 
             <div class="form-group">
-              <label for="u-deposit" class="form-label">Security Deposit ($) *</label>
-              <input
-                id="u-deposit"
-                v-model.number="unitForm.depositAmount"
-                type="number"
-                min="0"
-                required
-                class="input-field"
-              />
+              <label for="u-deposit" class="form-label">{{ t('properties.security_deposit_label') }}</label>
+              <input id="u-deposit" v-model.number="unitForm.depositAmount" type="number" min="0" required
+                class="input-field" />
             </div>
           </div>
 
           <div class="form-group">
-            <label for="u-status" class="form-label">Unit Status</label>
+            <label for="u-status" class="form-label">{{ t('properties.unit_status_label') }}</label>
             <select id="u-status" v-model="unitForm.status" class="input-field">
-              <option value="AVAILABLE">AVAILABLE — Ready to lease</option>
-              <option value="RESERVED">RESERVED — Application approved</option>
-              <option value="OCCUPIED">OCCUPIED — Active lease</option>
-              <option value="MAINTENANCE">MAINTENANCE — Repair in progress</option>
-              <option value="UNDER_RENOVATION">UNDER_RENOVATION</option>
+              <option value="AVAILABLE">{{ t('properties.status.vacant') }}</option>
+              <option value="RESERVED">{{ t('properties.status.reserved') }}</option>
+              <option value="OCCUPIED">{{ t('properties.status.occupied') }}</option>
+              <option value="MAINTENANCE">{{ t('properties.status.maintenance') }}</option>
             </select>
           </div>
 
           <div class="modal-actions">
             <button type="button" @click="isUnitModalOpen = false" class="btn-secondary">
-              Cancel
+              {{ t('common.cancel') }}
             </button>
             <button type="submit" :disabled="isSubmittingUnit" class="btn-primary">
-              <span>{{ isSubmittingUnit ? 'Saving...' : 'Save Unit' }}</span>
+              <span>{{ isSubmittingUnit ? t('properties.saving') : t('properties.save_unit') }}</span>
             </button>
           </div>
         </form>
@@ -502,17 +411,17 @@ onMounted(() => {
     <div v-if="unitToDelete" class="modal-backdrop">
       <div class="modal-card card-flat">
         <div class="modal-header">
-          <h3>Remove Unit</h3>
+          <h3>{{ t('properties.remove_unit') }}</h3>
           <button @click="unitToDelete = null" class="modal-close">&times;</button>
         </div>
         <div class="modal-body">
-          <p>Are you sure you want to remove <strong>Unit {{ unitToDelete.unitNumber }}</strong>?</p>
+          <p>{{ t('properties.remove_unit_confirm', { number: unitToDelete.unitNumber }) }}</p>
           <div class="modal-actions">
             <button @click="executeDeleteUnit" :disabled="isDeleting" class="btn-primary btn-danger-action">
-              <span>{{ isDeleting ? 'Removing...' : 'Confirm Remove' }}</span>
+              <span>{{ isDeleting ? t('properties.removing') : t('properties.confirm_remove') }}</span>
             </button>
             <button @click="unitToDelete = null" class="btn-secondary">
-              Cancel
+              {{ t('common.cancel') }}
             </button>
           </div>
         </div>
@@ -795,6 +704,28 @@ onMounted(() => {
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.empty-detail-state {
+  padding: 4rem 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 0.75rem;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  margin-top: 1rem;
+}
+
+.empty-detail-state h3 {
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: var(--text-main);
 }
 </style>

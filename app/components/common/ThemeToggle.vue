@@ -8,23 +8,20 @@ interface Props {
 
 defineProps<Props>();
 
+const { t } = useI18n();
 const { isDark, toggleTheme } = useTheme();
 </script>
 
 <template>
-  <button
-    type="button"
-    @click="toggleTheme"
-    class="theme-toggle-btn"
-    :title="isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'"
-    :aria-label="isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'"
-  >
+  <button type="button" @click="toggleTheme" class="theme-toggle-btn"
+    :title="isDark ? t('theme.light') : t('theme.dark')"
+    :aria-label="isDark ? t('theme.light') : t('theme.dark')">
     <div class="icon-swap-container">
       <Sun v-if="isDark" :size="16" class="toggle-icon text-amber-400" />
       <Moon v-else :size="16" class="toggle-icon text-indigo-500" />
     </div>
     <span v-if="showLabel" class="theme-label">
-      {{ isDark ? 'Light' : 'Dark' }}
+      {{ isDark ? t('theme.light') : t('theme.dark') }}
     </span>
   </button>
 </template>

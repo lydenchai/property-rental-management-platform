@@ -1,19 +1,15 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue';
-import { 
-  Users, 
-  ShieldCheck, 
-  UserCheck, 
-  UserX, 
-  Search, 
-  AlertCircle, 
-  CheckCircle2, 
-  Building, 
+import {
+  Users,
+  UserCheck,
+  UserX,
+  AlertCircle,
+  CheckCircle2,
   Filter,
-  Clock
 } from '@lucide/vue';
 import { useAuth } from '../../../composables/useAuth';
-import type { ApiResponse } from '../../../../shared/types/api';
+import type { UserAccount } from '~~/shared/types';
 import AppTableCard from '../../../components/common/AppTableCard.vue';
 
 definePageMeta({
@@ -22,22 +18,29 @@ definePageMeta({
   title: 'User Management',
 });
 
+const { t } = useI18n();
 const { isAdmin } = useAuth();
+const userStore = useUserStore();
 
-interface UserAccount {
-  id: string;
-  email: string;
-  fullName: string;
-  phone: string | null;
-  role: string;
-  status: string;
-  emailVerifiedAt: string | null;
-  createdAt: string;
-}
+const {
+  users,
+  isLoading,
+  isToggling,
+  errorMessage,
+  totalUsers,
+  adminCount,
+  landlordCount,
+  tenantCount,
+  techCount,
+  suspendedCount,
+} = userStore;
 
-const users = ref<UserAccount[]>([]);
-const isLoading = ref(true);
-const errorMessage = ref<string | null>(null);
+const {
+  fetchUsers,
+  loadUsers,
+  updateUserStatus,
+} = userStore;
+
 const successMessage = ref<string | null>(null);
 
 // Filters
@@ -47,32 +50,6 @@ const searchQuery = ref('');
 
 // Status change modal
 const userToToggle = ref<UserAccount | null>(null);
-const isToggling = ref(false);
-
-async function loadUsers() {
-  isLoading.value = true;
-  errorMessage.value = null;
-  try {
-    const res = await $fetch<ApiResponse<{ users: UserAccount[] }>>('/api/v1/admin/users');
-    if (res.success && res.data) {
-      users.value = res.data.users;
-    } else {
-      errorMessage.value = res.error?.message || 'Failed to load users';
-    }
-  } catch (err: any) {
-    errorMessage.value = err?.data?.error?.message || err?.message || 'Error loading user accounts';
-  } finally {
-    isLoading.value = false;
-  }
-}
-
-// Metrics
-const totalUsers = computed(() => users.value.length);
-const adminCount = computed(() => users.value.filter((u) => u.role === 'ADMIN').length);
-const landlordCount = computed(() => users.value.filter((u) => u.role === 'LANDLORD').length);
-const tenantCount = computed(() => users.value.filter((u) => u.role === 'TENANT').length);
-const techCount = computed(() => users.value.filter((u) => u.role === 'TECHNICIAN').length);
-const suspendedCount = computed(() => users.value.filter((u) => u.status === 'SUSPENDED').length);
 
 const filteredUsers = computed(() => {
   return users.value.filter((u) => {
@@ -108,30 +85,16 @@ watch([roleFilter, statusFilter, searchQuery], () => {
 
 async function executeToggleStatus() {
   if (!userToToggle.value) return;
-  isToggling.value = true;
-  errorMessage.value = null;
 
-  const newStatus = userToToggle.value.status === 'ACTIVE' ? 'SUSPENDED' : 'ACTIVE';
-  try {
-    const res = await $fetch<ApiResponse<{ user: UserAccount; message: string }>>(`/api/v1/admin/users/${userToToggle.value.id}/status`, {
-      method: 'PATCH',
-      body: { status: newStatus },
-    });
+  const newStatus: any = userToToggle.value.status === 'ACTIVE' ? 'SUSPENDED' : 'ACTIVE';
+  const res = await updateUserStatus(userToToggle.value.id, newStatus) as any;
 
-    if (res.success) {
-      successMessage.value = res.data?.message || 'User status updated successfully';
-      userToToggle.value = null;
-      await loadUsers();
-      setTimeout(() => {
-        successMessage.value = null;
-      }, 4000);
-    } else {
-      errorMessage.value = res.error?.message || 'Failed to update user status';
-    }
-  } catch (err: any) {
-    errorMessage.value = err?.data?.error?.message || err?.message || 'Error updating user status';
-  } finally {
-    isToggling.value = false;
+  if (res.success) {
+    successMessage.value = res.message || 'User status updated successfully';
+    userToToggle.value = null;
+    setTimeout(() => {
+      successMessage.value = null;
+    }, 4000);
   }
 }
 
@@ -145,14 +108,14 @@ onMounted(() => {
     <!-- Top Bar -->
     <div class="page-top-bar">
       <div>
-        <h1>User Account Governance</h1>
+        <h1>{{ t('users.title') }}</h1>
         <p class="subtitle">
-          Supervise registered platform accounts, role classifications, authorization statuses, and account suspension.
+          {{ t('users.subtitle') }}
         </p>
       </div>
       <div class="admin-shield-badge">
         <Users :size="15" />
-        <span>{{ totalUsers }} Total Accounts</span>
+        <span>{{ totalUsers }} {{ t('users.total_accounts') }}</span>
       </div>
     </div>
 
@@ -170,130 +133,111 @@ onMounted(() => {
     <!-- Stats Grid -->
     <div class="stats-grid">
       <div class="stat-card card-flat">
-        <span class="stat-label">Landlords</span>
+        <span class="stat-label">{{ t('users.landlords_card') }}</span>
         <div class="stat-value font-mono">{{ landlordCount }}</div>
-        <div class="stat-subtext">Property managers</div>
+        <div class="stat-subtext">{{ t('users.landlords_sub') }}</div>
       </div>
       <div class="stat-card card-flat">
-        <span class="stat-label">Tenants</span>
+        <span class="stat-label">{{ t('users.tenants_card') }}</span>
         <div class="stat-value font-mono">{{ tenantCount }}</div>
-        <div class="stat-subtext">Resident occupants</div>
+        <div class="stat-subtext">{{ t('users.tenants_sub') }}</div>
       </div>
       <div class="stat-card card-flat">
-        <span class="stat-label">Technicians</span>
+        <span class="stat-label">{{ t('users.technicians_card') }}</span>
         <div class="stat-value font-mono">{{ techCount }}</div>
-        <div class="stat-subtext">Maintenance specialists</div>
+        <div class="stat-subtext">{{ t('users.technicians_sub') }}</div>
       </div>
       <div class="stat-card card-flat">
-        <span class="stat-label">Suspended</span>
+        <span class="stat-label">{{ t('users.suspended_card') }}</span>
         <div class="stat-value font-mono" :class="{ 'text-danger': suspendedCount > 0 }">
           {{ suspendedCount }}
         </div>
-        <div class="stat-subtext">Access restricted</div>
+        <div class="stat-subtext">{{ t('users.suspended_sub') }}</div>
       </div>
     </div>
 
     <!-- Users Table using shared AppTableCard -->
-    <AppTableCard
-      v-model:search="searchQuery"
-      search-placeholder="Search by name, email, or role..."
-      :is-loading="isLoading"
-      :is-empty="filteredUsers.length === 0"
-      empty-title="No user accounts found"
-      empty-description="Users matching the specified filters will appear in this registry."
-      :empty-icon="Users"
-      v-model:current-page="currentPage"
-      v-model:page-size="pageSize"
-      :total-items="filteredUsers.length"
-      item-name="users"
-    >
+    <AppTableCard v-model:search="searchQuery" :search-placeholder="t('users.search_placeholder')"
+      :is-loading="isLoading" :is-empty="filteredUsers.length === 0" :empty-title="t('users.no_users')"
+      :empty-description="t('users.no_users_desc')" :empty-icon="Users" v-model:current-page="currentPage"
+      v-model:page-size="pageSize" :total-items="filteredUsers.length" :item-name="t('common.records')">
       <template #toolbar-start>
         <div class="filter-controls">
           <div class="select-wrap">
             <Filter :size="13" class="filter-icon" />
             <select v-model="roleFilter" class="filter-select">
-              <option value="ALL">All Roles</option>
-              <option value="ADMIN">System Admins</option>
-              <option value="LANDLORD">Landlords</option>
-              <option value="TENANT">Tenants</option>
-              <option value="TECHNICIAN">Technicians</option>
+              <option value="ALL">{{ t('users.filter_all_roles') }}</option>
+              <option value="ADMIN">{{ t('users.roles.admin') }}</option>
+              <option value="LANDLORD">{{ t('users.roles.landlord') }}</option>
+              <option value="TENANT">{{ t('users.roles.tenant') }}</option>
+              <option value="TECHNICIAN">{{ t('users.roles.technician') }}</option>
             </select>
           </div>
 
           <div class="select-wrap">
             <select v-model="statusFilter" class="filter-select">
-              <option value="ALL">All Statuses</option>
-              <option value="ACTIVE">Active</option>
-              <option value="SUSPENDED">Suspended</option>
+              <option value="ALL">{{ t('users.filter_all_statuses') }}</option>
+              <option value="ACTIVE">{{ t('common.active') }}</option>
+              <option value="SUSPENDED">{{ t('common.suspended') }}</option>
             </select>
           </div>
         </div>
       </template>
 
       <table class="data-table">
-          <thead>
-            <tr>
-              <th>User Name & Email</th>
-              <th>Phone</th>
-              <th>Assigned Role</th>
-              <th>Account Status</th>
-              <th>Registered At</th>
-              <th class="text-right">Governance Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="u in paginatedUsers" :key="u.id">
-              <td>
-                <div class="user-cell">
-                  <span class="font-semibold">{{ u.fullName }}</span>
-                  <span class="text-dim text-xs font-mono">{{ u.email }}</span>
-                </div>
-              </td>
-              <td>
-                <span class="text-xs text-dim">{{ u.phone || 'N/A' }}</span>
-              </td>
-              <td>
-                <span
-                  class="badge"
-                  :class="{
-                    'badge-admin': u.role === 'ADMIN',
-                    'badge-landlord': u.role === 'LANDLORD',
-                    'badge-tenant': u.role === 'TENANT',
-                    'badge-technician': u.role === 'TECHNICIAN',
-                  }"
-                >
-                  {{ u.role }}
-                </span>
-              </td>
-              <td>
-                <span
-                  class="status-pill"
-                  :class="{
-                    active: u.status === 'ACTIVE',
-                    suspended: u.status === 'SUSPENDED',
-                  }"
-                >
-                  <span class="dot"></span>
-                  <span>{{ u.status }}</span>
-                </span>
-              </td>
-              <td>
-                <span class="text-xs text-dim">{{ new Date(u.createdAt).toLocaleDateString() }}</span>
-              </td>
-              <td class="text-right">
-                <button
-                  v-if="u.role !== 'ADMIN'"
-                  @click="userToToggle = u"
-                  class="btn-secondary btn-sm"
-                  :class="{ 'btn-suspend': u.status === 'ACTIVE', 'btn-activate': u.status === 'SUSPENDED' }"
-                >
-                  <component :is="u.status === 'ACTIVE' ? UserX : UserCheck" :size="13" />
-                  <span>{{ u.status === 'ACTIVE' ? 'Suspend' : 'Activate' }}</span>
-                </button>
-                <span v-else class="text-xs text-dim italic">Protected</span>
-              </td>
-            </tr>
-          </tbody>
+        <thead>
+          <tr>
+            <th>{{ t('users.col_name_email') }}</th>
+            <th>{{ t('users.col_phone') }}</th>
+            <th>{{ t('users.col_role') }}</th>
+            <th>{{ t('users.col_status') }}</th>
+            <th>{{ t('users.col_registered') }}</th>
+            <th class="text-right">{{ t('users.col_actions') }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="u in paginatedUsers" :key="u.id">
+            <td>
+              <div class="user-cell">
+                <span class="font-semibold">{{ u.fullName }}</span>
+                <span class="text-dim text-xs font-mono">{{ u.email }}</span>
+              </div>
+            </td>
+            <td>
+              <span class="text-xs text-dim">{{ u.phone || 'N/A' }}</span>
+            </td>
+            <td>
+              <span class="badge badge-pill" :class="{
+                'badge-admin': u.role === 'ADMIN',
+                'badge-landlord': u.role === 'LANDLORD',
+                'badge-tenant': u.role === 'TENANT',
+                'badge-technician': u.role === 'TECHNICIAN',
+              }">
+                <span class="badge-dot"></span>
+                <span>{{ u.role === 'ADMIN' ? t('users.roles.admin') : u.role === 'LANDLORD' ? t('users.roles.landlord')
+                  :
+                  u.role === 'TENANT' ? t('users.roles.tenant') : t('users.roles.technician') }}</span>
+              </span>
+            </td>
+            <td>
+              <span class="badge badge-pill" :class="u.status === 'ACTIVE' ? 'badge-success' : 'badge-danger'">
+                <span class="badge-dot"></span>
+                <span>{{ u.status === 'ACTIVE' ? t('common.active') : t('common.suspended') }}</span>
+              </span>
+            </td>
+            <td>
+              <span class="text-xs text-dim">{{ new Date(u.createdAt).toLocaleDateString() }}</span>
+            </td>
+            <td class="text-right">
+              <button v-if="u.role !== 'ADMIN'" @click="userToToggle = u" class="btn-secondary btn-sm"
+                :class="{ 'btn-suspend': u.status === 'ACTIVE', 'btn-activate': u.status === 'SUSPENDED' }">
+                <component :is="u.status === 'ACTIVE' ? UserX : UserCheck" :size="13" />
+                <span>{{ u.status === 'ACTIVE' ? t('users.suspend') : t('users.activate') }}</span>
+              </button>
+              <span v-else class="text-xs text-dim italic">{{ t('users.protected') }}</span>
+            </td>
+          </tr>
+        </tbody>
       </table>
     </AppTableCard>
 
@@ -301,35 +245,35 @@ onMounted(() => {
     <div v-if="userToToggle" class="modal-backdrop">
       <div class="modal-card card-flat" style="max-width: 480px;">
         <div class="modal-header">
-          <h3>Confirm Status Change</h3>
+          <h3>{{ t('users.confirm_status_change') }}</h3>
           <button @click="userToToggle = null" class="modal-close">&times;</button>
         </div>
 
         <div class="modal-body">
           <p>
-            Are you sure you want to change the status of <strong>{{ userToToggle.fullName }}</strong> ({{ userToToggle.email }}) from
-            <span class="font-semibold">{{ userToToggle.status }}</span> to
-            <span class="font-semibold text-amber">{{ userToToggle.status === 'ACTIVE' ? 'SUSPENDED' : 'ACTIVE' }}</span>?
+            {{ t('users.status_prompt', {
+              name: userToToggle.fullName,
+              email: userToToggle.email,
+              from: userToToggle.status,
+              to: userToToggle.status === 'ACTIVE' ? 'SUSPENDED' : 'ACTIVE'
+            }) }}
           </p>
 
           <p v-if="userToToggle.status === 'ACTIVE'" class="text-xs text-dim">
-            Suspending this account will immediately revoke authentication access and terminate active sessions.
+            {{ t('users.suspend_warning') }}
           </p>
           <p v-else class="text-xs text-dim">
-            Activating this account will restore standard sign-in and platform access rights.
+            {{ t('users.activate_warning') }}
           </p>
 
           <div class="modal-actions">
             <button type="button" @click="userToToggle = null" class="btn-secondary">
-              Cancel
+              {{ t('common.cancel') }}
             </button>
-            <button
-              @click="executeToggleStatus"
-              :disabled="isToggling"
-              class="btn-primary"
-              :class="{ 'btn-danger': userToToggle.status === 'ACTIVE' }"
-            >
-              <span>{{ isToggling ? 'Updating...' : `Confirm ${userToToggle.status === 'ACTIVE' ? 'Suspension' : 'Activation'}` }}</span>
+            <button @click="executeToggleStatus" :disabled="isToggling" class="btn-primary"
+              :class="{ 'btn-danger': userToToggle.status === 'ACTIVE' }">
+              <span>{{ isToggling ? t('common.updating') : (userToToggle.status === 'ACTIVE' ? t('users.suspend') :
+                t('users.activate')) }}</span>
             </button>
           </div>
         </div>
@@ -378,8 +322,20 @@ onMounted(() => {
 
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: 1fr;
   gap: 1rem;
+}
+
+@media (min-width: 640px) {
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .stats-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
 }
 
 .stat-card {
@@ -387,6 +343,9 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  background: var(--bg-surface);
 }
 
 .stat-label {
@@ -441,13 +400,19 @@ onMounted(() => {
 }
 
 .filter-select {
-  background: var(--bg-input);
-  border: 1px solid var(--border-default);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
   border-radius: var(--radius-sm);
   color: var(--text-main);
-  font-size: 0.8rem;
-  padding: 0.45rem 0.75rem 0.45rem 1.8rem;
+  font-size: 0.825rem;
+  padding: 0.45rem 0.85rem 0.45rem 1.8rem;
   cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.filter-select:hover {
+  border-color: var(--border-default);
+  background: var(--bg-surface-hover);
 }
 
 .filter-select:focus {
@@ -665,7 +630,9 @@ onMounted(() => {
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 @media (max-width: 900px) {

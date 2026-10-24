@@ -1,18 +1,18 @@
 <script setup lang="ts">
-import { 
-  BarChart3, 
-  Key, 
-  CreditCard, 
-  Building, 
-  CheckCircle2, 
-  Clock, 
-  AlertTriangle, 
-  RefreshCw, 
-  Download, 
+import {
+  Key,
+  CreditCard,
+  Building,
+  CheckCircle2,
+  Clock,
+  AlertTriangle,
+  RefreshCw,
+  Download,
   Layers,
   ArrowUpRight
 } from '@lucide/vue';
 import { useAuth } from '../../../composables/useAuth';
+import { useReportStore } from '../../../stores/report.store';
 
 definePageMeta({
   layout: 'dashboard',
@@ -20,6 +20,7 @@ definePageMeta({
   title: 'Reports & Analytics',
 });
 
+const { t } = useI18n();
 const { user, isAdmin, isLandlord } = useAuth();
 const router = useRouter();
 
@@ -31,72 +32,27 @@ onMounted(() => {
 });
 
 const activeTab = ref<'occupancy' | 'financials'>('occupancy');
-const isLoading = ref(true);
-const occupancyData = ref<any>(null);
-const financialData = ref<any>(null);
-const errorMessage = ref('');
+const reportStore = useReportStore();
 
-const loadReports = async () => {
-  isLoading.value = true;
-  errorMessage.value = '';
-  try {
-    const [occRes, finRes] = await Promise.all([
-      $fetch<any>('/api/v1/reports/occupancy'),
-      $fetch<any>('/api/v1/reports/financials')
-    ]);
+const {
+  occupancyData,
+  financialData,
+  isLoading,
+  errorMessage,
+} = reportStore;
 
-    if (occRes?.success) occupancyData.value = occRes.data;
-    if (finRes?.success) financialData.value = finRes.data;
-  } catch (err: any) {
-    errorMessage.value = err.data?.message || 'Failed to load report analytics.';
-  } finally {
-    isLoading.value = false;
-  }
-};
+const {
+  loadReports,
+  fetchReports,
+  exportCSV: storeExportCSV,
+} = reportStore;
 
 onMounted(() => {
   loadReports();
 });
 
 const exportCSV = () => {
-  if (activeTab.value === 'occupancy' && occupancyData.value?.propertyBreakdown) {
-    const headers = ['Property Title', 'Address', 'Total Units', 'Occupied', 'Available', 'Maintenance', 'Occupancy Rate (%)'];
-    const rows = occupancyData.value.propertyBreakdown.map((p: any) => [
-      `"${p.title.replace(/"/g, '""')}"`,
-      `"${(p.address + ', ' + p.city).replace(/"/g, '""')}"`,
-      p.totalUnits,
-      p.occupiedUnits,
-      p.availableUnits,
-      p.maintenanceUnits,
-      p.occupancyRate
-    ]);
-    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map((r: any[]) => r.join(','))].join('\n');
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement('a');
-    link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `occupancy_report_${new Date().toISOString().slice(0, 10)}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  } else if (activeTab.value === 'financials' && financialData.value) {
-    const headers = ['Metric', 'Amount'];
-    const rows = [
-      ['Total Invoiced', financialData.value.totalInvoiced],
-      ['Total Collected', financialData.value.totalCollected],
-      ['Outstanding Balance', financialData.value.outstandingBalance],
-      ['Overdue Total', financialData.value.overdueTotal],
-      ['Collection Rate', `${financialData.value.collectionRate}%`],
-      ['Total Invoices', financialData.value.invoiceCount]
-    ];
-    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement('a');
-    link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `financial_report_${new Date().toISOString().slice(0, 10)}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  }
+  storeExportCSV(activeTab.value);
 };
 </script>
 
@@ -105,17 +61,17 @@ const exportCSV = () => {
     <!-- Header -->
     <div class="page-header">
       <div>
-        <h1 class="page-title">Portfolio Analytics & Reports</h1>
-        <p class="page-subtitle">Real-time occupancy tracking, unit allocation, and revenue collection metrics.</p>
+        <h1 class="page-title">{{ t('reports.title') }}</h1>
+        <p class="page-subtitle">{{ t('reports.subtitle') }}</p>
       </div>
       <div class="header-actions">
         <button @click="loadReports" class="btn-secondary" :disabled="isLoading">
           <RefreshCw :size="15" :class="{ 'spin-icon': isLoading }" />
-          <span>Refresh</span>
+          <span>{{ t('reports.refresh') }}</span>
         </button>
         <button @click="exportCSV" class="btn-secondary" :disabled="isLoading">
           <Download :size="15" />
-          <span>Export CSV</span>
+          <span>{{ t('reports.export_csv') }}</span>
         </button>
       </div>
     </div>
@@ -128,21 +84,13 @@ const exportCSV = () => {
 
     <!-- Tab Selector -->
     <div class="tab-bar">
-      <button 
-        class="tab-btn" 
-        :class="{ active: activeTab === 'occupancy' }"
-        @click="activeTab = 'occupancy'"
-      >
+      <button class="tab-btn" :class="{ active: activeTab === 'occupancy' }" @click="activeTab = 'occupancy'">
         <Key :size="15" />
-        <span>Occupancy & Unit Allocation</span>
+        <span>{{ t('reports.tab_occupancy') }}</span>
       </button>
-      <button 
-        class="tab-btn" 
-        :class="{ active: activeTab === 'financials' }"
-        @click="activeTab = 'financials'"
-      >
+      <button class="tab-btn" :class="{ active: activeTab === 'financials' }" @click="activeTab = 'financials'">
         <CreditCard :size="15" />
-        <span>Revenue & Collections</span>
+        <span>{{ t('reports.tab_financials') }}</span>
       </button>
     </div>
 
@@ -152,41 +100,41 @@ const exportCSV = () => {
       <div class="stats-grid">
         <div class="stat-card card-flat">
           <div class="stat-header">
-            <span class="stat-label">Total Portfolio Units</span>
+            <span class="stat-label">{{ t('reports.total_units') }}</span>
             <Building :size="16" class="text-muted" />
           </div>
           <div class="stat-val">{{ occupancyData?.totalUnits ?? 0 }}</div>
-          <div class="stat-footer text-muted">Across managed properties</div>
+          <div class="stat-footer text-muted">{{ t('reports.total_units_desc') }}</div>
         </div>
 
         <div class="stat-card card-flat">
           <div class="stat-header">
-            <span class="stat-label">Occupancy Rate</span>
+            <span class="stat-label">{{ t('reports.occupancy_rate') }}</span>
             <CheckCircle2 :size="16" class="text-emerald" />
           </div>
           <div class="stat-val text-emerald">{{ occupancyData?.occupancyRate ?? 0 }}%</div>
-          <div class="stat-footer text-emerald">{{ occupancyData?.occupiedUnits ?? 0 }} units leased</div>
+          <div class="stat-footer text-emerald">{{ occupancyData?.occupiedUnits ?? 0 }} {{ t('reports.units_leased') }}</div>
         </div>
 
         <div class="stat-card card-flat">
           <div class="stat-header">
-            <span class="stat-label">Available for Lease</span>
+            <span class="stat-label">{{ t('reports.available_lease') }}</span>
             <Layers :size="16" class="text-sky" />
           </div>
           <div class="stat-val text-sky">{{ occupancyData?.availableUnits ?? 0 }}</div>
-          <div class="stat-footer text-muted">Ready for tenants</div>
+          <div class="stat-footer text-muted">{{ t('reports.available_lease') }}</div>
         </div>
 
         <div class="stat-card card-flat">
           <div class="stat-header">
-            <span class="stat-label">In Maintenance / Reserved</span>
+            <span class="stat-label">{{ t('reports.maintenance_units') }}</span>
             <AlertTriangle :size="16" class="text-amber" />
           </div>
           <div class="stat-val text-amber">
             {{ (occupancyData?.maintenanceUnits ?? 0) + (occupancyData?.reservedUnits ?? 0) }}
           </div>
           <div class="stat-footer text-muted">
-            {{ occupancyData?.maintenanceUnits ?? 0 }} offline, {{ occupancyData?.reservedUnits ?? 0 }} reserved
+            {{ occupancyData?.maintenanceUnits ?? 0 }} {{ t('reports.offline_units') }}
           </div>
         </div>
       </div>
@@ -197,29 +145,21 @@ const exportCSV = () => {
           <h3>Unit Allocation Breakdown</h3>
           <span class="total-units-badge">{{ occupancyData.totalUnits }} Total Units</span>
         </div>
-        
+
         <!-- Multi-segment progress bar -->
         <div class="allocation-bar">
-          <div 
-            class="seg seg-occupied" 
+          <div class="seg seg-occupied"
             :style="{ width: `${(occupancyData.occupiedUnits / occupancyData.totalUnits) * 100}%` }"
-            :title="`Occupied: ${occupancyData.occupiedUnits}`"
-          ></div>
-          <div 
-            class="seg seg-reserved" 
+            :title="`Occupied: ${occupancyData.occupiedUnits}`"></div>
+          <div class="seg seg-reserved"
             :style="{ width: `${(occupancyData.reservedUnits / occupancyData.totalUnits) * 100}%` }"
-            :title="`Reserved: ${occupancyData.reservedUnits}`"
-          ></div>
-          <div 
-            class="seg seg-maintenance" 
+            :title="`Reserved: ${occupancyData.reservedUnits}`"></div>
+          <div class="seg seg-maintenance"
             :style="{ width: `${(occupancyData.maintenanceUnits / occupancyData.totalUnits) * 100}%` }"
-            :title="`Maintenance: ${occupancyData.maintenanceUnits}`"
-          ></div>
-          <div 
-            class="seg seg-available" 
+            :title="`Maintenance: ${occupancyData.maintenanceUnits}`"></div>
+          <div class="seg seg-available"
             :style="{ width: `${(occupancyData.availableUnits / occupancyData.totalUnits) * 100}%` }"
-            :title="`Available: ${occupancyData.availableUnits}`"
-          ></div>
+            :title="`Available: ${occupancyData.availableUnits}`"></div>
         </div>
 
         <!-- Legend -->
@@ -297,46 +237,46 @@ const exportCSV = () => {
       <div class="stats-grid">
         <div class="stat-card card-flat">
           <div class="stat-header">
-            <span class="stat-label">Total Invoiced</span>
+            <span class="stat-label">{{ t('reports.total_billed') }}</span>
             <CreditCard :size="16" class="text-muted" />
           </div>
           <div class="stat-val">{{ financialData?.totalInvoiced ?? '$0.00' }}</div>
-          <div class="stat-footer text-muted">{{ financialData?.invoiceCount ?? 0 }} total invoices issued</div>
+          <div class="stat-footer text-muted">{{ t('invoices.lifetime_billing') }}</div>
         </div>
 
         <div class="stat-card card-flat">
           <div class="stat-header">
-            <span class="stat-label">Revenue Collected</span>
+            <span class="stat-label">{{ t('reports.total_received') }}</span>
             <CheckCircle2 :size="16" class="text-emerald" />
           </div>
           <div class="stat-val text-emerald">{{ financialData?.totalCollected ?? '$0.00' }}</div>
-          <div class="stat-footer text-emerald">{{ financialData?.collectionRate ?? 0 }}% collection efficiency</div>
+          <div class="stat-footer text-emerald">{{ financialData?.collectionRate ?? 0 }}% {{ t('reports.collection_rate') }}</div>
         </div>
 
         <div class="stat-card card-flat">
           <div class="stat-header">
-            <span class="stat-label">Outstanding Balance</span>
+            <span class="stat-label">{{ t('reports.outstanding_balance') }}</span>
             <Clock :size="16" class="text-amber" />
           </div>
           <div class="stat-val text-amber">{{ financialData?.outstandingBalance ?? '$0.00' }}</div>
-          <div class="stat-footer text-muted">Awaiting tenant payment</div>
+          <div class="stat-footer text-muted">{{ t('invoices.unsettled_balance') }}</div>
         </div>
 
         <div class="stat-card card-flat">
           <div class="stat-header">
-            <span class="stat-label">Overdue Arrears</span>
+            <span class="stat-label">{{ t('invoices.overdue_invoices') }}</span>
             <AlertTriangle :size="16" class="text-rose" />
           </div>
           <div class="stat-val text-rose">{{ financialData?.overdueTotal ?? '$0.00' }}</div>
-          <div class="stat-footer text-rose">Past payment grace deadline</div>
+          <div class="stat-footer text-rose">{{ t('invoices.requiring_attention') }}</div>
         </div>
       </div>
 
       <!-- Collection Performance Card -->
       <div class="card-flat distribution-card" v-if="financialData">
         <div class="card-title-bar">
-          <h3>Collection Performance</h3>
-          <span class="total-units-badge">{{ financialData.collectionRate }}% Settled</span>
+          <h3>{{ t('reports.financial_summary') }}</h3>
+          <span class="total-units-badge">{{ financialData.collectionRate }}% {{ t('invoices.status.paid') }}</span>
         </div>
 
         <div class="financial-meter">
@@ -368,7 +308,8 @@ const exportCSV = () => {
           </div>
           <div class="insight-content">
             <h4>Rent Reconciliations</h4>
-            <p>Direct payments recorded automatically reconcile invoice balances and update tenant ledgers in real-time.</p>
+            <p>Direct payments recorded automatically reconcile invoice balances and update tenant ledgers in real-time.
+            </p>
             <NuxtLink to="/dashboard/invoices" class="insight-link">
               <span>View Invoices</span>
               <ArrowUpRight :size="13" />
@@ -382,7 +323,8 @@ const exportCSV = () => {
           </div>
           <div class="insight-content">
             <h4>Auto Invoicing</h4>
-            <p>Active leases generate automated recurring billing line-items each billing period according to lease terms.</p>
+            <p>Active leases generate automated recurring billing line-items each billing period according to lease
+              terms.</p>
             <NuxtLink to="/dashboard/leases" class="insight-link">
               <span>View Active Leases</span>
               <ArrowUpRight :size="13" />
@@ -465,7 +407,7 @@ const exportCSV = () => {
 }
 
 .tab-btn.active {
-  color: #818cf8;
+  color: var(--primary);
   background: var(--primary-subtle);
   border-color: rgba(99, 102, 241, 0.2);
   font-weight: 600;
@@ -487,6 +429,9 @@ const exportCSV = () => {
   padding: 1.25rem;
   display: flex;
   flex-direction: column;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  background: var(--bg-surface);
 }
 
 .stat-header {
@@ -502,6 +447,10 @@ const exportCSV = () => {
   text-transform: uppercase;
   color: var(--text-dim);
   letter-spacing: 0.05em;
+}
+
+:lang(km) .stat-label {
+  letter-spacing: normal;
 }
 
 .stat-val {
@@ -560,10 +509,21 @@ const exportCSV = () => {
   transition: width 0.3s ease;
 }
 
-.seg-occupied { background: #10b981; }
-.seg-reserved { background: #6366f1; }
-.seg-maintenance { background: #f59e0b; }
-.seg-available { background: #0284c7; }
+.seg-occupied {
+  background: #10b981;
+}
+
+.seg-reserved {
+  background: #6366f1;
+}
+
+.seg-maintenance {
+  background: #f59e0b;
+}
+
+.seg-available {
+  background: #0284c7;
+}
 
 .bar-legend {
   display: flex;
@@ -585,10 +545,21 @@ const exportCSV = () => {
   border-radius: 50%;
 }
 
-.dot-occupied { background: #10b981; }
-.dot-reserved { background: #6366f1; }
-.dot-maintenance { background: #f59e0b; }
-.dot-available { background: #0284c7; }
+.dot-occupied {
+  background: #10b981;
+}
+
+.dot-reserved {
+  background: #6366f1;
+}
+
+.dot-maintenance {
+  background: #f59e0b;
+}
+
+.dot-available {
+  background: #0284c7;
+}
 
 .table-card {
   padding: 1.25rem;
@@ -745,18 +716,48 @@ const exportCSV = () => {
   text-decoration: underline;
 }
 
-.text-emerald { color: #34d399; }
-.text-sky { color: #38bdf8; }
-.text-amber { color: #fbbf24; }
-.text-rose { color: #fb7185; }
-.text-main { color: var(--text-main); }
-.text-muted { color: var(--text-muted); }
-.font-medium { font-weight: 500; }
+.text-emerald {
+  color: #34d399;
+}
 
-.bg-indigo { background: var(--primary-subtle); color: #818cf8; border: 1px solid rgba(99, 102, 241, 0.2); }
-.bg-emerald { background: var(--accent-emerald-subtle); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.2); }
+.text-sky {
+  color: #38bdf8;
+}
 
-.loading-cell, .empty-cell {
+.text-amber {
+  color: #fbbf24;
+}
+
+.text-rose {
+  color: #fb7185;
+}
+
+.text-main {
+  color: var(--text-main);
+}
+
+.text-muted {
+  color: var(--text-muted);
+}
+
+.font-medium {
+  font-weight: 500;
+}
+
+.bg-indigo {
+  background: var(--primary-subtle);
+  color: #818cf8;
+  border: 1px solid rgba(99, 102, 241, 0.2);
+}
+
+.bg-emerald {
+  background: var(--accent-emerald-subtle);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+.loading-cell,
+.empty-cell {
   text-align: center;
   padding: 2rem !important;
   color: var(--text-dim);
@@ -767,7 +768,12 @@ const exportCSV = () => {
 }
 
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
 }
 </style>

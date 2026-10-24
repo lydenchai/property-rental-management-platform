@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, watch, nextTick } from 'vue';
-import { 
-  MapPin, 
-  Layers, 
-  Maximize2, 
-  Minimize2, 
-  RefreshCw, 
+import {
+  MapPin,
+  Layers,
+  Maximize2,
+  Minimize2,
+  RefreshCw,
   ExternalLink,
   Building,
   ArrowRight
@@ -108,7 +108,7 @@ async function initMap() {
       markersMap.clear();
     }
 
-    const currentStyleUrl = MAP_STYLES.find(s => s.id === selectedStyle.value)?.url 
+    const currentStyleUrl = MAP_STYLES.find(s => s.id === selectedStyle.value)?.url
       || 'https://tiles.openfreemap.org/styles/bright';
 
     // Default center on Phnom Penh
@@ -232,9 +232,27 @@ function changeStyle(styleId: string, fromUser: boolean = true) {
   if (fromUser) isUserStyleChoice.value = true;
   selectedStyle.value = styleId;
   const target = MAP_STYLES.find(s => s.id === styleId);
-  if (mapInstance && target) {
+  if (!mapInstance || !target) return;
+
+  try {
     isLoading.value = true;
-    mapInstance.setStyle(target.url);
+    if (typeof mapInstance.isStyleLoaded === 'function' && !mapInstance.isStyleLoaded()) {
+      mapInstance.once('style.load', () => {
+        try {
+          if (mapInstance && selectedStyle.value === styleId) {
+            mapInstance.setStyle(target.url);
+          }
+        } catch (err) {
+          console.warn('Explorer map deferred style update caught:', err);
+          isLoading.value = false;
+        }
+      });
+    } else {
+      mapInstance.setStyle(target.url);
+    }
+  } catch (err) {
+    console.warn('Explorer map style change caught:', err);
+    isLoading.value = false;
   }
 }
 
@@ -352,14 +370,8 @@ onUnmounted(() => {
       <div class="explorer-header-actions">
         <!-- Style Switcher -->
         <div class="style-switcher">
-          <button
-            v-for="st in MAP_STYLES"
-            :key="st.id"
-            type="button"
-            @click="changeStyle(st.id)"
-            :class="['style-pill', { active: selectedStyle === st.id }]"
-            :title="`OpenFreeMap style: ${st.name}`"
-          >
+          <button v-for="st in MAP_STYLES" :key="st.id" type="button" @click="changeStyle(st.id)"
+            :class="['style-pill', { active: selectedStyle === st.id }]" :title="`OpenFreeMap style: ${st.name}`">
             {{ st.name }}
           </button>
         </div>
@@ -389,7 +401,10 @@ onUnmounted(() => {
     <!-- Map Footer -->
     <div class="explorer-footer">
       <span class="attribution-text">
-        Vector map by <a href="https://openfreemap.org" target="_blank" rel="noopener noreferrer" class="text-emerald-400 font-medium">OpenFreeMap</a> &bull; &copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a> contributors
+        Vector map by <a href="https://openfreemap.org" target="_blank" rel="noopener noreferrer"
+          class="text-emerald-400 font-medium">OpenFreeMap</a> &bull; &copy; <a
+          href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a>
+        contributors
       </span>
       <span class="status-indicator">
         <span class="status-dot"></span>
@@ -525,7 +540,7 @@ onUnmounted(() => {
   position: absolute;
   inset: 0;
   z-index: 10;
-  background: rgba(15, 23, 42, 0.75);
+  background: rgba(15, 23, 42, 0.85);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -533,7 +548,6 @@ onUnmounted(() => {
   gap: 10px;
   font-size: 0.85rem;
   color: #94a3b8;
-  backdrop-filter: blur(2px);
 }
 
 .map-spinner {
@@ -546,7 +560,9 @@ onUnmounted(() => {
 }
 
 @keyframes map-spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .explorer-footer {
