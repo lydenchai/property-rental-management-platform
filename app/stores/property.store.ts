@@ -1,31 +1,34 @@
 import { reactive, toRefs, toRef, computed } from 'vue';
-import type { 
-  PropertyItem, 
-  PropertyDetail, 
-  PropertyFilterParams, 
-  CreatePropertyInput, 
-  UpdatePropertyInput, 
-  CreateUnitInput, 
-  UpdateUnitInput 
+import type {
+  PropertyItem,
+  PropertyDetail,
+  PropertyFilterParams,
+  CreatePropertyInput,
+  UpdatePropertyInput,
+  CreateUnitInput,
+  UpdateUnitInput
 } from '~~/shared/types';
 
 export function usePropertyStore() {
   const state = reactive({
     properties: [] as PropertyItem[],
     selectedProperty: null as PropertyDetail | null,
+    currentProperty: null as PropertyDetail | null,
     isLoading: false,
     isCreating: false,
     isUpdating: false,
     isDeleting: false,
+    isSubmitting: false,
+    isSubmittingUnit: false,
     error: null as any,
   });
 
   // Computed metrics
   const totalProperties = computed(() => state.properties.length);
-  const totalUnits = computed(() => 
+  const totalUnits = computed(() =>
     state.properties.reduce((acc, p) => acc + (p.unitsCount || 0), 0)
   );
-  const totalAvailable = computed(() => 
+  const totalAvailable = computed(() =>
     state.properties.reduce((acc, p) => acc + (p.availableUnitsCount || 0), 0)
   );
   const occupancyRate = computed(() => {
@@ -72,14 +75,16 @@ export function usePropertyStore() {
       const { data, error }: any = await useFetch(`/api/v1/properties/${id}`);
 
       if (data.value) {
-        state.selectedProperty = data.value.data?.property || data.value.data;
-        return state.selectedProperty;
+        const prop = data.value.data?.property || data.value.data;
+        state.selectedProperty = prop;
+        state.currentProperty = prop;
+        return { ...prop, success: true, property: prop, data: prop };
       } else {
         throw error.value || new Error('Failed to fetch property details');
       }
     } catch (err: any) {
       state.error = err?.data?.error?.message || err?.message || 'Failed to fetch property details';
-      throw err;
+      return { success: false, error: state.error };
     } finally {
       state.isLoading = false;
     }
@@ -87,6 +92,7 @@ export function usePropertyStore() {
 
   async function createProperty(input: CreatePropertyInput) {
     state.isCreating = true;
+    state.isSubmitting = true;
     state.error = null;
 
     try {
@@ -109,11 +115,13 @@ export function usePropertyStore() {
       return { success: false, error: state.error };
     } finally {
       state.isCreating = false;
+      state.isSubmitting = false;
     }
   }
 
   async function updateProperty(id: string, input: UpdatePropertyInput) {
     state.isUpdating = true;
+    state.isSubmitting = true;
     state.error = null;
 
     try {
@@ -130,6 +138,7 @@ export function usePropertyStore() {
         }
         if (state.selectedProperty && state.selectedProperty.id === id && updated) {
           state.selectedProperty = { ...state.selectedProperty, ...updated };
+          state.currentProperty = state.selectedProperty;
         }
         return { success: true, property: updated, data: data.value.data };
       } else {
@@ -140,6 +149,7 @@ export function usePropertyStore() {
       return { success: false, error: state.error };
     } finally {
       state.isUpdating = false;
+      state.isSubmitting = false;
     }
   }
 
@@ -156,6 +166,7 @@ export function usePropertyStore() {
         state.properties = state.properties.filter((p) => p.id !== id);
         if (state.selectedProperty?.id === id) {
           state.selectedProperty = null;
+          state.currentProperty = null;
         }
         return { success: true, data: data.value.data };
       } else {
@@ -171,6 +182,7 @@ export function usePropertyStore() {
 
   async function addUnit(propertyId: string, input: CreateUnitInput) {
     state.isCreating = true;
+    state.isSubmittingUnit = true;
     state.error = null;
 
     try {
@@ -187,6 +199,7 @@ export function usePropertyStore() {
           if (unit.status === 'AVAILABLE') {
             state.selectedProperty.availableUnitsCount = (state.selectedProperty.availableUnitsCount || 0) + 1;
           }
+          state.currentProperty = state.selectedProperty;
         }
         return { success: true, unit, data: data.value.data };
       } else {
@@ -197,12 +210,27 @@ export function usePropertyStore() {
       return { success: false, error: state.error };
     } finally {
       state.isCreating = false;
+      state.isSubmittingUnit = false;
     }
   }
 
-  async function updateUnit(unitId: string, input: UpdateUnitInput) {
+  async function updateUnit(...args: any[]) {
     state.isUpdating = true;
+    state.isSubmittingUnit = true;
     state.error = null;
+
+    let unitId: string;
+    let input: UpdateUnitInput;
+
+    if (args.length >= 3) {
+      // updateUnit(propertyId, unitId, input)
+      unitId = args[1];
+      input = args[2];
+    } else {
+      // updateUnit(unitId, input)
+      unitId = args[0];
+      input = args[1];
+    }
 
     try {
       const { data, error }: any = await useFetch(`/api/v1/units/${unitId}`, {
@@ -217,6 +245,7 @@ export function usePropertyStore() {
           if (idx !== -1) {
             state.selectedProperty.units[idx] = { ...state.selectedProperty.units[idx], ...updated };
           }
+          state.currentProperty = state.selectedProperty;
         }
         return { success: true, unit: updated, data: data.value.data };
       } else {
@@ -227,12 +256,15 @@ export function usePropertyStore() {
       return { success: false, error: state.error };
     } finally {
       state.isUpdating = false;
+      state.isSubmittingUnit = false;
     }
   }
 
-  async function deleteUnit(unitId: string) {
+  async function deleteUnit(...args: any[]) {
     state.isDeleting = true;
     state.error = null;
+
+    const unitId = args.length >= 2 ? args[1] : args[0];
 
     try {
       const { data, error }: any = await useFetch(`/api/v1/units/${unitId}`, {
@@ -247,6 +279,7 @@ export function usePropertyStore() {
           if (unit?.status === 'AVAILABLE') {
             state.selectedProperty.availableUnitsCount = Math.max(0, (state.selectedProperty.availableUnitsCount || 1) - 1);
           }
+          state.currentProperty = state.selectedProperty;
         }
         return { success: true, data: data.value.data };
       } else {
@@ -267,6 +300,10 @@ export function usePropertyStore() {
   return {
     state,
     ...toRefs(state),
+    selectedProperty: toRef(state, 'selectedProperty'),
+    currentProperty: toRef(state, 'selectedProperty'),
+    isSubmitting: toRef(state, 'isUpdating'),
+    isSubmittingUnit: toRef(state, 'isCreating'),
     errorMessage: toRef(state, 'error'),
     totalProperties,
     totalUnits,
@@ -278,6 +315,7 @@ export function usePropertyStore() {
     updateProperty,
     deleteProperty,
     addUnit,
+    createUnit: addUnit,
     updateUnit,
     deleteUnit,
     clearError,

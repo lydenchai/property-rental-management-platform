@@ -42,7 +42,7 @@ export function useUserStore() {
       }
     } catch (err: any) {
       state.error = err?.data?.error?.message || err?.message || 'Failed to fetch user directory';
-      throw err;
+      return [];
     } finally {
       state.isLoading = false;
     }
@@ -92,8 +92,10 @@ export function useUserStore() {
     landlordCount,
     tenantCount,
     technicianCount,
+    techCount: technicianCount,
     activeUsersCount,
     suspendedUsersCount,
+    suspendedCount: suspendedUsersCount,
     fetchUsers,
     loadUsers: fetchUsers,
     updateUserStatus,

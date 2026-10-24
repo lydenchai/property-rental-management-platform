@@ -34,7 +34,7 @@ export function useAuditLogStore() {
       }
     } catch (err: any) {
       state.error = err?.data?.error?.message || err?.message || 'Failed to fetch audit log history';
-      throw err;
+      return [];
     } finally {
       state.isLoading = false;
     }
@@ -50,6 +50,8 @@ export function useAuditLogStore() {
     errorMessage: toRef(state, 'error'),
     totalLogs,
     fetchLogs,
+    fetchAuditLogs: fetchLogs,
+    loadAuditLogs: fetchLogs,
     clearError,
   };
 }

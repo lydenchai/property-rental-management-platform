@@ -1,14 +1,14 @@
 <script setup lang="ts">
-import { 
-  Building, 
-  Key, 
-  Wrench, 
-  ShieldCheck, 
-  ArrowRight, 
-  MapPin, 
-  CheckCircle2, 
-  Clock, 
-  DollarSign, 
+import {
+  Building,
+  Key,
+  Wrench,
+  ShieldCheck,
+  ArrowRight,
+  MapPin,
+  CheckCircle2,
+  Clock,
+  DollarSign,
   Compass,
   Layers,
   Sparkles
@@ -17,14 +17,15 @@ import { useAuth } from '../composables/useAuth';
 
 import FeatureCard from '../components/common/FeatureCard.vue';
 
+const { t } = useI18n();
 const { isAuthenticated } = useAuth();
 
-const keyMetrics = [
-  { label: 'Managed Units', val: '1,200+', detail: 'Verified residences in Cambodia', icon: Building },
-  { label: 'On-Time Rent Settlement', val: '99.8%', detail: 'Automated invoice workflows', icon: CheckCircle2 },
-  { label: 'Maintenance SLA', val: '< 24 Hours', detail: 'Rapid technician dispatch', icon: Clock },
-  { label: 'Vector Mapping', val: 'OpenFreeMap', detail: 'High-res interactive tiles', icon: Compass },
-];
+const keyMetrics = computed(() => [
+  { label: t('landing.metrics_units'), val: '1,200+', detail: t('landing.metrics_units_detail'), icon: Building },
+  { label: t('landing.metrics_ontime'), val: '99.8%', detail: t('landing.metrics_ontime_detail'), icon: CheckCircle2 },
+  { label: t('landing.metrics_sla'), val: '< 24 Hours', detail: t('landing.metrics_sla_detail'), icon: Clock },
+  { label: t('landing.metrics_map'), val: 'OpenFreeMap', detail: t('landing.metrics_map_detail'), icon: Compass },
+]);
 
 const featuredCities = [
   { name: 'Phnom Penh', desc: 'BKK1, Bassac Garden, Toul Kork & Chroy Changvar high-rises', count: '5 Complexes' },
@@ -33,38 +34,38 @@ const featuredCities = [
   { name: 'Kampot', desc: 'Riverside colonial estates and scenic garden residences', count: '1 Complex' },
 ];
 
-const platformCapabilities = [
+const platformCapabilities = computed(() => [
   {
     icon: Building,
-    title: 'Landlords & Asset Managers',
-    desc: 'Maintain accurate unit inventories, publish listings, evaluate incoming applications, and track recurring rent schedules with automated notifications.',
+    title: t('landing.cap_landlord_title'),
+    desc: t('landing.cap_landlord_desc'),
   },
   {
     icon: Key,
-    title: 'Tenants & Residents',
-    desc: 'Inspect floor plans and room galleries, submit digital applications, sign leases, and pay invoices with instant digital receipts and payment verification.',
+    title: t('landing.cap_tenant_title'),
+    desc: t('landing.cap_tenant_desc'),
   },
   {
     icon: Wrench,
-    title: 'Operations & Technicians',
-    desc: 'Receive assigned maintenance work orders, view unit specifications, report progress notes, and confirm repair resolutions on site.',
+    title: t('landing.cap_tech_title'),
+    desc: t('landing.cap_tech_desc'),
   },
   {
     icon: ShieldCheck,
-    title: 'Platform Administrators',
-    desc: 'Oversee cross-organization user accounts, verify platform system health, and inspect immutable security audit logs for compliance.',
+    title: t('landing.cap_admin_title'),
+    desc: t('landing.cap_admin_desc'),
   },
   {
     icon: Compass,
-    title: 'Interactive Vector Mapping',
-    desc: 'Explore properties across Phnom Penh, Siem Reap, Sihanoukville, and Kampot using OpenFreeMap high-res vector tiles and custom location markers.',
+    title: t('landing.cap_map_title'),
+    desc: t('landing.cap_map_desc'),
   },
   {
     icon: CheckCircle2,
-    title: 'Automated Lease & Billing',
-    desc: 'Generate legally binding lease agreements, track automated invoice cycles, record settlement receipts, and prevent rent delinquency.',
+    title: t('landing.cap_lease_title'),
+    desc: t('landing.cap_lease_desc'),
   },
-];
+]);
 </script>
 
 <template>
@@ -72,27 +73,27 @@ const platformCapabilities = [
     <!-- Hero Section -->
     <section class="hero-section">
       <div class="hero-container">
-        
+
         <h1 class="hero-title">
-          Modern Property Operations &amp; Real Estate Management
+          {{ t('landing.hero_title') }}
         </h1>
-        
+
         <p class="hero-subtitle">
-          RentEase unifies property owners, residents, and field service technicians on a single, high-performance platform — combining verified vacancies, automated invoicing, digital lease workflows, and interactive OpenFreeMap vector navigation.
+          {{ t('landing.hero_subtitle') }}
         </p>
 
         <div class="hero-cta-group">
           <NuxtLink v-if="isAuthenticated" to="/dashboard" class="btn-primary hero-btn">
-            <span>Access Portal Dashboard</span>
+            <span>{{ t('landing.hero_cta_dashboard') }}</span>
             <ArrowRight :size="16" />
           </NuxtLink>
           <template v-else>
             <NuxtLink to="/properties" class="btn-primary hero-btn">
               <Compass :size="16" />
-              <span>Explore Vacancies on Map</span>
+              <span>{{ t('landing.hero_cta_map') }}</span>
             </NuxtLink>
             <NuxtLink to="/login" class="btn-secondary hero-btn">
-              <span>Sign In / Demo Accounts</span>
+              <span>{{ t('landing.hero_cta_signin') }}</span>
             </NuxtLink>
           </template>
         </div>
@@ -103,11 +104,7 @@ const platformCapabilities = [
     <section class="metrics-banner-section">
       <div class="section-container">
         <div class="metrics-strip card-flat">
-          <div 
-            v-for="(m, idx) in keyMetrics" 
-            :key="idx" 
-            class="metric-col"
-          >
+          <div v-for="(m, idx) in keyMetrics" :key="idx" class="metric-col">
             <div class="metric-icon-box">
               <component :is="m.icon" :size="18" />
             </div>
@@ -126,14 +123,14 @@ const platformCapabilities = [
       <div class="section-container">
         <div class="spotlight-card card-flat">
           <div class="spotlight-content">
-            <span class="eyebrow">Interactive Vector Navigation</span>
-            <h2>Locate Your Next Home with OpenFreeMap</h2>
+            <span class="eyebrow">{{ t('landing.map_eyebrow') }}</span>
+            <h2>{{ t('landing.map_heading') }}</h2>
             <p>
-              RentEase features full OpenFreeMap vector tile integration. Explore properties across Phnom Penh, Siem Reap, Sihanoukville, and Kampot with interactive markers, neighborhood inspection, zoom controls, and directions.
+              {{ t('landing.map_desc') }}
             </p>
             <div class="spotlight-actions">
               <NuxtLink to="/properties" class="btn-primary">
-                <span>View Full Cambodia Map</span>
+                <span>{{ t('landing.map_cta') }}</span>
                 <ArrowRight :size="15" />
               </NuxtLink>
             </div>
@@ -141,12 +138,8 @@ const platformCapabilities = [
 
           <!-- City Chips Grid -->
           <div class="cities-preview-grid">
-            <NuxtLink 
-              v-for="city in featuredCities" 
-              :key="city.name" 
-              :to="`/properties?city=${encodeURIComponent(city.name)}`" 
-              class="city-chip-card"
-            >
+            <NuxtLink v-for="city in featuredCities" :key="city.name"
+              :to="`/properties?city=${encodeURIComponent(city.name)}`" class="city-chip-card">
               <div class="city-chip-top">
                 <div class="city-name-row">
                   <MapPin :size="14" class="text-emerald-500" />
@@ -165,21 +158,16 @@ const platformCapabilities = [
     <section class="pillars-section">
       <div class="section-container">
         <div class="section-header">
-          <span class="eyebrow">Modular Architecture</span>
-          <h2>Engineered for Every Stakeholder</h2>
+          <span class="eyebrow">{{ t('landing.pillars_eyebrow') }}</span>
+          <h2>{{ t('landing.pillars_heading') }}</h2>
           <p class="section-subtitle">
-            Role-based interfaces ensure each user sees exactly the operational controls and data they need.
+            {{ t('landing.pillars_subtitle') }}
           </p>
         </div>
 
         <div class="pillars-grid">
-          <FeatureCard
-            v-for="(cap, idx) in platformCapabilities"
-            :key="idx"
-            :icon="cap.icon"
-            :title="cap.title"
-            :description="cap.desc"
-          />
+          <FeatureCard v-for="(cap, idx) in platformCapabilities" :key="idx" :icon="cap.icon" :title="cap.title"
+            :description="cap.desc" />
         </div>
       </div>
     </section>
@@ -213,6 +201,11 @@ const platformCapabilities = [
   letter-spacing: -0.03em;
   color: var(--text-main);
   font-weight: 800;
+}
+
+:lang(km) .hero-title {
+  letter-spacing: normal;
+  line-height: 1.35;
 }
 
 @media (min-width: 768px) {

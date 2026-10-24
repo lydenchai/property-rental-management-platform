@@ -16,11 +16,7 @@ withDefaults(defineProps<Props>(), {
 </script>
 
 <template>
-  <component
-    :is="to ? 'NuxtLink' : 'div'"
-    :to="to"
-    class="feature-card group"
-  >
+  <component :is="to ? 'NuxtLink' : 'div'" :to="to" class="feature-card group">
     <!-- Icon Container in signature rounded squircle -->
     <div class="feature-card-icon-box" :class="`icon-theme-${iconColor}`">
       <component :is="icon" v-if="icon" :size="20" class="feature-card-icon" />
@@ -56,9 +52,9 @@ withDefaults(defineProps<Props>(), {
   align-items: flex-start;
   text-align: left;
   box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.03), 0 2px 6px -1px rgba(15, 23, 42, 0.02);
-  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), 
-              box-shadow 0.22s cubic-bezier(0.16, 1, 0.3, 1), 
-              border-color 0.22s ease;
+  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 0.22s ease;
   text-decoration: none;
   position: relative;
   height: 100%;

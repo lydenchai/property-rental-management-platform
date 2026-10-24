@@ -22,6 +22,15 @@ export function useMaintenanceStore() {
   const openCount = computed(() => 
     state.requests.filter((r) => r.status === 'REPORTED' || r.status === 'ASSIGNED' || r.status === 'IN_PROGRESS').length
   );
+  const inProgressCount = computed(() => 
+    state.requests.filter((r) => r.status === 'IN_PROGRESS' || r.status === 'ASSIGNED').length
+  );
+  const awaitingConfirmCount = computed(() => 
+    state.requests.filter((r) => r.status === 'RESOLVED').length
+  );
+  const closedCount = computed(() => 
+    state.requests.filter((r) => r.status === 'CONFIRMED').length
+  );
   const urgentCount = computed(() => 
     state.requests.filter((r) => r.priority === 'URGENT' && r.status !== 'RESOLVED' && r.status !== 'CONFIRMED').length
   );
@@ -52,7 +61,7 @@ export function useMaintenanceStore() {
       }
     } catch (err: any) {
       state.error = err?.data?.error?.message || err?.message || 'Failed to fetch maintenance requests';
-      throw err;
+      return [];
     } finally {
       state.isLoading = false;
     }
@@ -203,17 +212,30 @@ export function useMaintenanceStore() {
     state.error = null;
   }
 
+  const isAssigning = toRef(state, 'isUpdatingStatus');
+  const isUpdating = toRef(state, 'isUpdatingStatus');
+  const isConfirming = toRef(state, 'isUpdatingStatus');
+
   return {
     state,
     ...toRefs(state),
     errorMessage: toRef(state, 'error'),
+    isAssigning,
+    isUpdating,
+    isConfirming,
     totalCount,
     openCount,
+    inProgressCount,
+    awaitingConfirmCount,
+    closedCount,
     urgentCount,
     resolvedCount,
     fetchMaintenanceRequests,
+    fetchRequests: fetchMaintenanceRequests,
+    loadRequests: fetchMaintenanceRequests,
     fetchMaintenanceById,
     createMaintenanceRequest,
+    createTicket: createMaintenanceRequest,
     assignTechnician,
     updateProgress,
     confirmResolution,

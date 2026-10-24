@@ -65,10 +65,61 @@ export function useReportStore() {
       };
     } catch (err: any) {
       state.error = err?.data?.error?.message || err?.message || 'Failed to load report analytics';
-      throw err;
+      return { success: false, error: state.error };
     } finally {
       state.isLoading = false;
     }
+  }
+
+  function exportCSV(type: 'occupancy' | 'financials' = 'occupancy') {
+    if (typeof window === 'undefined') return;
+
+    let csvContent = '';
+    let filename = '';
+
+    if (type === 'occupancy') {
+      filename = `occupancy-report-${new Date().toISOString().split('T')[0]}.csv`;
+      const rows = [
+        ['Property Title', 'Address', 'City', 'Total Units', 'Occupied Units', 'Available Units', 'Occupancy Rate (%)']
+      ];
+
+      if (state.occupancyData?.propertyBreakdown) {
+        for (const item of state.occupancyData.propertyBreakdown) {
+          rows.push([
+            `"${item.title.replace(/"/g, '""')}"`,
+            `"${item.address.replace(/"/g, '""')}"`,
+            `"${item.city.replace(/"/g, '""')}"`,
+            String(item.totalUnits),
+            String(item.occupiedUnits),
+            String(item.availableUnits),
+            `${item.occupancyRate}%`,
+          ]);
+        }
+      }
+
+      csvContent = rows.map((r) => r.join(',')).join('\n');
+    } else {
+      filename = `financial-report-${new Date().toISOString().split('T')[0]}.csv`;
+      const rows = [
+        ['Metric', 'Value'],
+        ['Total Invoiced', `$${state.financialData?.totalInvoiced ?? 0}`],
+        ['Total Collected', `$${state.financialData?.totalCollected ?? 0}`],
+        ['Outstanding Balance', `$${state.financialData?.outstandingBalance ?? 0}`],
+        ['Overdue Total', `$${state.financialData?.overdueTotal ?? 0}`],
+        ['Collection Rate', `${state.financialData?.collectionRate ?? 0}%`],
+        ['Invoice Count', String(state.financialData?.invoiceCount ?? 0)],
+      ];
+      csvContent = rows.map((r) => r.join(',')).join('\n');
+    }
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', filename);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   }
 
   function clearError() {
@@ -85,8 +136,10 @@ export function useReportStore() {
     outstandingBalance,
     hasData,
     fetchReports,
+    loadReports: fetchReports,
     fetchOccupancy,
     fetchFinancials,
+    exportCSV,
     clearError,
   };
 }

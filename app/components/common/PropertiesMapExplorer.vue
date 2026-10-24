@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, watch, nextTick } from 'vue';
-import { 
-  MapPin, 
-  Layers, 
-  Maximize2, 
-  Minimize2, 
-  RefreshCw, 
+import {
+  MapPin,
+  Layers,
+  Maximize2,
+  Minimize2,
+  RefreshCw,
   ExternalLink,
   Building,
   ArrowRight
@@ -108,7 +108,7 @@ async function initMap() {
       markersMap.clear();
     }
 
-    const currentStyleUrl = MAP_STYLES.find(s => s.id === selectedStyle.value)?.url 
+    const currentStyleUrl = MAP_STYLES.find(s => s.id === selectedStyle.value)?.url
       || 'https://tiles.openfreemap.org/styles/bright';
 
     // Default center on Phnom Penh
@@ -352,14 +352,8 @@ onUnmounted(() => {
       <div class="explorer-header-actions">
         <!-- Style Switcher -->
         <div class="style-switcher">
-          <button
-            v-for="st in MAP_STYLES"
-            :key="st.id"
-            type="button"
-            @click="changeStyle(st.id)"
-            :class="['style-pill', { active: selectedStyle === st.id }]"
-            :title="`OpenFreeMap style: ${st.name}`"
-          >
+          <button v-for="st in MAP_STYLES" :key="st.id" type="button" @click="changeStyle(st.id)"
+            :class="['style-pill', { active: selectedStyle === st.id }]" :title="`OpenFreeMap style: ${st.name}`">
             {{ st.name }}
           </button>
         </div>
@@ -389,7 +383,10 @@ onUnmounted(() => {
     <!-- Map Footer -->
     <div class="explorer-footer">
       <span class="attribution-text">
-        Vector map by <a href="https://openfreemap.org" target="_blank" rel="noopener noreferrer" class="text-emerald-400 font-medium">OpenFreeMap</a> &bull; &copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a> contributors
+        Vector map by <a href="https://openfreemap.org" target="_blank" rel="noopener noreferrer"
+          class="text-emerald-400 font-medium">OpenFreeMap</a> &bull; &copy; <a
+          href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a>
+        contributors
       </span>
       <span class="status-indicator">
         <span class="status-dot"></span>
@@ -546,7 +543,9 @@ onUnmounted(() => {
 }
 
 @keyframes map-spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .explorer-footer {

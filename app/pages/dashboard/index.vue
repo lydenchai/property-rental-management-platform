@@ -1,13 +1,13 @@
 <script setup lang="ts">
-import { 
-  Building, 
-  Key, 
-  CreditCard, 
-  Wrench, 
-  FileText, 
-  ClipboardList, 
-  CheckCircle2, 
-  Plus, 
+import {
+  Building,
+  Key,
+  CreditCard,
+  Wrench,
+  FileText,
+  ClipboardList,
+  CheckCircle2,
+  Plus,
   ArrowRight,
   ShieldCheck,
   Users,
@@ -25,6 +25,7 @@ definePageMeta({
   title: 'Dashboard Overview',
 });
 
+const { t } = useI18n();
 const { user, userRole, isAdmin, isLandlord, isTenant, isTechnician } = useAuth();
 const dashboardStore = useDashboardStore();
 const { metrics, isLoading, errorMessage } = dashboardStore;
@@ -40,39 +41,39 @@ onMounted(() => {
     <!-- Overview Header -->
     <div class="welcome-card card-flat">
       <div class="welcome-content">
-        <h1>Overview</h1>
+        <h1>{{ t('dashboard.overview') }}</h1>
         <p class="welcome-desc">
           <template v-if="isAdmin">
-            System health, platform tenancy, billing reconciliations, and platform audit overview.
+            {{ t('dashboard.desc_admin') }}
           </template>
           <template v-else-if="isLandlord">
-            Real estate portfolio performance, tenant occupancy, and monthly rental receipts.
+            {{ t('dashboard.desc_landlord') }}
           </template>
           <template v-else-if="isTenant">
-            Active lease summary, monthly rental statements, and maintenance tickets.
+            {{ t('dashboard.desc_tenant') }}
           </template>
           <template v-else-if="isTechnician">
-            Assigned maintenance work orders, repair inspection notes, and schedule.
+            {{ t('dashboard.desc_technician') }}
           </template>
         </p>
       </div>
 
       <div class="quick-action-panel gap-2">
-        <button @click="fetchMetrics" class="btn-secondary" title="Refresh Metrics">
+        <button @click="fetchMetrics" class="btn-secondary" :title="t('dashboard.refresh')">
           <RefreshCw :size="14" :class="{ 'spin-icon': isLoading }" />
-          <span>Refresh</span>
+          <span>{{ t('dashboard.refresh') }}</span>
         </button>
         <NuxtLink v-if="isLandlord || isAdmin" to="/dashboard/properties" class="btn-primary">
           <Plus :size="15" />
-          <span>Add Property</span>
+          <span>{{ t('dashboard.add_property') }}</span>
         </NuxtLink>
         <NuxtLink v-if="isTenant" to="/dashboard/maintenance" class="btn-primary">
           <Wrench :size="15" />
-          <span>Request Repair</span>
+          <span>{{ t('dashboard.request_repair') }}</span>
         </NuxtLink>
         <NuxtLink v-if="isTechnician" to="/dashboard/maintenance" class="btn-primary">
           <ClipboardList :size="15" />
-          <span>View Assigned Tasks</span>
+          <span>{{ t('dashboard.view_assigned_tasks') }}</span>
         </NuxtLink>
       </div>
     </div>
@@ -86,12 +87,12 @@ onMounted(() => {
             <Building :size="20" />
           </div>
           <div class="metric-info">
-            <span class="metric-label">Properties / Units</span>
+            <span class="metric-label">{{ t('dashboard.metrics.properties_units') }}</span>
             <div class="metric-val">
               <span v-if="isLoading" class="skeleton-val">--</span>
               <span v-else>{{ metrics?.propertiesCount ?? 0 }} / {{ metrics?.unitsCount ?? 0 }}</span>
             </div>
-            <span class="metric-sub text-muted">Platform listings</span>
+            <span class="metric-sub text-muted">{{ t('dashboard.metrics.platform_listings') }}</span>
           </div>
         </div>
 
@@ -100,12 +101,12 @@ onMounted(() => {
             <Key :size="20" />
           </div>
           <div class="metric-info">
-            <span class="metric-label">Occupancy Rate</span>
+            <span class="metric-label">{{ t('dashboard.metrics.occupancy_rate') }}</span>
             <div class="metric-val">
               <span v-if="isLoading" class="skeleton-val">--</span>
               <span v-else>{{ metrics?.occupancyRate ?? 0 }}%</span>
             </div>
-            <span class="metric-sub text-emerald">System average</span>
+            <span class="metric-sub text-emerald">{{ t('dashboard.metrics.system_average') }}</span>
           </div>
         </div>
 
@@ -114,12 +115,12 @@ onMounted(() => {
             <CreditCard :size="20" />
           </div>
           <div class="metric-info">
-            <span class="metric-label">Total Revenue</span>
+            <span class="metric-label">{{ t('dashboard.metrics.total_revenue') }}</span>
             <div class="metric-val">
               <span v-if="isLoading" class="skeleton-val">--</span>
               <span v-else>{{ metrics?.totalRevenue ?? '$0.00' }}</span>
             </div>
-            <span class="metric-sub text-emerald">Platform collections</span>
+            <span class="metric-sub text-emerald">{{ t('dashboard.metrics.platform_collections') }}</span>
           </div>
         </div>
 
@@ -128,12 +129,12 @@ onMounted(() => {
             <Users :size="20" />
           </div>
           <div class="metric-info">
-            <span class="metric-label">Active Users</span>
+            <span class="metric-label">{{ t('dashboard.metrics.active_users') }}</span>
             <div class="metric-val">
               <span v-if="isLoading" class="skeleton-val">--</span>
               <span v-else>{{ metrics?.activeUsersCount ?? 0 }}</span>
             </div>
-            <span class="metric-sub text-muted">Across all roles</span>
+            <span class="metric-sub text-muted">{{ t('dashboard.metrics.across_roles') }}</span>
           </div>
         </div>
 
@@ -142,12 +143,12 @@ onMounted(() => {
             <Wrench :size="20" />
           </div>
           <div class="metric-info">
-            <span class="metric-label">Open Maintenance</span>
+            <span class="metric-label">{{ t('dashboard.metrics.open_maintenance') }}</span>
             <div class="metric-val">
               <span v-if="isLoading" class="skeleton-val">--</span>
               <span v-else>{{ metrics?.openMaintenanceCount ?? 0 }}</span>
             </div>
-            <span class="metric-sub text-amber">Active tickets</span>
+            <span class="metric-sub text-amber">{{ t('dashboard.metrics.active_tickets') }}</span>
           </div>
         </div>
 
@@ -156,12 +157,12 @@ onMounted(() => {
             <ShieldCheck :size="20" />
           </div>
           <div class="metric-info">
-            <span class="metric-label">Audit Events</span>
+            <span class="metric-label">{{ t('dashboard.metrics.audit_events') }}</span>
             <div class="metric-val">
               <span v-if="isLoading" class="skeleton-val">--</span>
               <span v-else>{{ metrics?.totalAuditLogs ?? 0 }}</span>
             </div>
-            <span class="metric-sub text-muted">Recorded logs</span>
+            <span class="metric-sub text-muted">{{ t('dashboard.metrics.recorded_logs') }}</span>
           </div>
         </div>
       </template>
@@ -173,12 +174,12 @@ onMounted(() => {
             <Building :size="20" />
           </div>
           <div class="metric-info">
-            <span class="metric-label">Managed Properties</span>
+            <span class="metric-label">{{ t('dashboard.metrics.managed_properties') }}</span>
             <div class="metric-val">
               <span v-if="isLoading" class="skeleton-val">--</span>
               <span v-else>{{ metrics?.managedProperties ?? 0 }}</span>
             </div>
-            <span class="metric-sub text-muted">{{ metrics?.managedUnits ?? 0 }} total units</span>
+            <span class="metric-sub text-muted">{{ metrics?.managedUnits ?? 0 }} {{ t('dashboard.metrics.total_units') }}</span>
           </div>
         </div>
 
@@ -187,12 +188,12 @@ onMounted(() => {
             <Key :size="20" />
           </div>
           <div class="metric-info">
-            <span class="metric-label">Occupancy Rate</span>
+            <span class="metric-label">{{ t('dashboard.metrics.occupancy_rate') }}</span>
             <div class="metric-val">
               <span v-if="isLoading" class="skeleton-val">--</span>
               <span v-else>{{ metrics?.occupancyRate ?? 0 }}%</span>
             </div>
-            <span class="metric-sub text-emerald">Portfolio average</span>
+            <span class="metric-sub text-emerald">{{ t('dashboard.metrics.portfolio_average') }}</span>
           </div>
         </div>
 
@@ -201,12 +202,12 @@ onMounted(() => {
             <CreditCard :size="20" />
           </div>
           <div class="metric-info">
-            <span class="metric-label">Revenue Collected</span>
+            <span class="metric-label">{{ t('dashboard.metrics.revenue_collected') }}</span>
             <div class="metric-val">
               <span v-if="isLoading" class="skeleton-val">--</span>
               <span v-else>{{ metrics?.monthlyCollected ?? '$0.00' }}</span>
             </div>
-            <span class="metric-sub text-emerald">Completed payments</span>
+            <span class="metric-sub text-emerald">{{ t('dashboard.metrics.completed_payments') }}</span>
           </div>
         </div>
 
@@ -215,12 +216,12 @@ onMounted(() => {
             <CreditCard :size="20" />
           </div>
           <div class="metric-info">
-            <span class="metric-label">Outstanding Balance</span>
+            <span class="metric-label">{{ t('dashboard.metrics.outstanding_balance') }}</span>
             <div class="metric-val">
               <span v-if="isLoading" class="skeleton-val">--</span>
               <span v-else>{{ metrics?.outstandingRent ?? '$0.00' }}</span>
             </div>
-            <span class="metric-sub text-amber">Pending & overdue</span>
+            <span class="metric-sub text-amber">{{ t('dashboard.metrics.pending_overdue') }}</span>
           </div>
         </div>
 
@@ -229,12 +230,12 @@ onMounted(() => {
             <Wrench :size="20" />
           </div>
           <div class="metric-info">
-            <span class="metric-label">Open Maintenance</span>
+            <span class="metric-label">{{ t('dashboard.metrics.open_maintenance') }}</span>
             <div class="metric-val">
               <span v-if="isLoading" class="skeleton-val">--</span>
               <span v-else>{{ metrics?.openMaintenanceCount ?? 0 }}</span>
             </div>
-            <span class="metric-sub text-amber">Tickets in progress</span>
+            <span class="metric-sub text-amber">{{ t('dashboard.metrics.tickets_in_progress') }}</span>
           </div>
         </div>
       </template>
@@ -246,16 +247,16 @@ onMounted(() => {
             <FileText :size="20" />
           </div>
           <div class="metric-info">
-            <span class="metric-label">Active Lease</span>
+            <span class="metric-label">{{ t('dashboard.metrics.active_lease') }}</span>
             <div class="metric-val">
               <span v-if="isLoading" class="skeleton-val">--</span>
-              <span v-else-if="metrics?.hasActiveLease">Unit {{ metrics.leaseDetails?.unitNumber }}</span>
-              <span v-else>No Active Lease</span>
+              <span v-else-if="metrics?.hasActiveLease">{{ t('dashboard.metrics.unit') }} {{ metrics.leaseDetails?.unitNumber }}</span>
+              <span v-else>{{ t('dashboard.metrics.no_active_lease') }}</span>
             </div>
             <span class="metric-sub text-emerald" v-if="metrics?.hasActiveLease">
-              ${{ metrics.leaseDetails?.rentAmount }}/mo
+              ${{ metrics.leaseDetails?.rentAmount }}{{ t('properties.rent_per_month') }}
             </span>
-            <span class="metric-sub text-muted" v-else>Browse available units</span>
+            <span class="metric-sub text-muted" v-else>{{ t('dashboard.metrics.browse_available_units') }}</span>
           </div>
         </div>
 
@@ -264,16 +265,16 @@ onMounted(() => {
             <CreditCard :size="20" />
           </div>
           <div class="metric-info">
-            <span class="metric-label">Next Rent Due</span>
+            <span class="metric-label">{{ t('dashboard.metrics.next_rent_due') }}</span>
             <div class="metric-val">
               <span v-if="isLoading" class="skeleton-val">--</span>
               <span v-else-if="metrics?.nextRentDue">${{ metrics.nextRentDue.remaining?.toFixed(2) ?? '0.00' }}</span>
               <span v-else>$0.00</span>
             </div>
             <span class="metric-sub text-amber" v-if="metrics?.nextRentDue">
-              Due {{ new Date(metrics.nextRentDue.dueDate).toLocaleDateString() }}
+              {{ t('dashboard.metrics.due') }} {{ new Date(metrics.nextRentDue.dueDate).toLocaleDateString() }}
             </span>
-            <span class="metric-sub text-emerald" v-else>All settled</span>
+            <span class="metric-sub text-emerald" v-else>{{ t('dashboard.metrics.all_settled') }}</span>
           </div>
         </div>
 
@@ -282,12 +283,12 @@ onMounted(() => {
             <Wrench :size="20" />
           </div>
           <div class="metric-info">
-            <span class="metric-label">Maintenance Tickets</span>
+            <span class="metric-label">{{ t('dashboard.metrics.maintenance_tickets') }}</span>
             <div class="metric-val">
               <span v-if="isLoading" class="skeleton-val">--</span>
-              <span v-else>{{ metrics?.activeMaintenanceCount ?? 0 }} Active</span>
+              <span v-else>{{ metrics?.activeMaintenanceCount ?? 0 }} {{ t('dashboard.metrics.active') }}</span>
             </div>
-            <span class="metric-sub text-indigo">Track repair updates</span>
+            <span class="metric-sub text-indigo">{{ t('dashboard.metrics.track_repair_updates') }}</span>
           </div>
         </div>
 
@@ -296,12 +297,12 @@ onMounted(() => {
             <ClipboardList :size="20" />
           </div>
           <div class="metric-info">
-            <span class="metric-label">Applications</span>
+            <span class="metric-label">{{ t('dashboard.metrics.applications') }}</span>
             <div class="metric-val">
               <span v-if="isLoading" class="skeleton-val">--</span>
               <span v-else>{{ metrics?.applicationsCount ?? 0 }}</span>
             </div>
-            <span class="metric-sub text-muted">Submitted applications</span>
+            <span class="metric-sub text-muted">{{ t('dashboard.metrics.submitted_applications') }}</span>
           </div>
         </div>
       </template>
@@ -313,12 +314,12 @@ onMounted(() => {
             <Wrench :size="20" />
           </div>
           <div class="metric-info">
-            <span class="metric-label">Assigned Orders</span>
+            <span class="metric-label">{{ t('dashboard.metrics.assigned_orders') }}</span>
             <div class="metric-val">
               <span v-if="isLoading" class="skeleton-val">--</span>
-              <span v-else>{{ metrics?.assignedCount ?? 0 }} Pending</span>
+              <span v-else>{{ metrics?.assignedCount ?? 0 }} {{ t('dashboard.metrics.pending') }}</span>
             </div>
-            <span class="metric-sub text-amber">Ready for dispatch</span>
+            <span class="metric-sub text-amber">{{ t('dashboard.metrics.ready_for_dispatch') }}</span>
           </div>
         </div>
 
@@ -327,12 +328,12 @@ onMounted(() => {
             <Clock :size="20" />
           </div>
           <div class="metric-info">
-            <span class="metric-label">In Progress</span>
+            <span class="metric-label">{{ t('dashboard.metrics.in_progress') }}</span>
             <div class="metric-val">
               <span v-if="isLoading" class="skeleton-val">--</span>
-              <span v-else>{{ metrics?.inProgressCount ?? 0 }} Active</span>
+              <span v-else>{{ metrics?.inProgressCount ?? 0 }} {{ t('dashboard.metrics.active') }}</span>
             </div>
-            <span class="metric-sub text-indigo">Under repair</span>
+            <span class="metric-sub text-indigo">{{ t('dashboard.metrics.under_repair') }}</span>
           </div>
         </div>
 
@@ -341,12 +342,12 @@ onMounted(() => {
             <CheckCircle2 :size="20" />
           </div>
           <div class="metric-info">
-            <span class="metric-label">Completed Repairs</span>
+            <span class="metric-label">{{ t('dashboard.metrics.completed_repairs') }}</span>
             <div class="metric-val">
               <span v-if="isLoading" class="skeleton-val">--</span>
-              <span v-else>{{ metrics?.completedCount ?? 0 }} Closed</span>
+              <span v-else>{{ metrics?.completedCount ?? 0 }} {{ t('dashboard.metrics.closed') }}</span>
             </div>
-            <span class="metric-sub text-emerald">Verified resolution</span>
+            <span class="metric-sub text-emerald">{{ t('dashboard.metrics.verified_resolution') }}</span>
           </div>
         </div>
 
@@ -355,12 +356,12 @@ onMounted(() => {
             <AlertTriangle :size="20" />
           </div>
           <div class="metric-info">
-            <span class="metric-label">Emergency Priority</span>
+            <span class="metric-label">{{ t('dashboard.metrics.emergency_priority') }}</span>
             <div class="metric-val">
               <span v-if="isLoading" class="skeleton-val">--</span>
               <span v-else>{{ metrics?.emergencyCount ?? 0 }}</span>
             </div>
-            <span class="metric-sub text-rose">Urgent attention</span>
+            <span class="metric-sub text-rose">{{ t('dashboard.metrics.urgent_attention') }}</span>
           </div>
         </div>
       </template>
@@ -368,15 +369,15 @@ onMounted(() => {
 
     <!-- Quick Navigation Workflow Links -->
     <div class="workflow-section">
-      <h3 class="section-title">Core Operations & Workflows</h3>
+      <h3 class="section-title">{{ t('dashboard.workflows.title') }}</h3>
       <div class="workflow-grid">
         <NuxtLink v-if="isLandlord || isAdmin" to="/dashboard/properties" class="workflow-card card-flat">
           <div class="wf-icon bg-indigo">
             <Building :size="20" />
           </div>
           <div class="wf-content">
-            <h4>Property & Unit Management</h4>
-            <p>Create listings, configure unit amenities, set rental pricing, and update availability.</p>
+            <h4>{{ t('dashboard.workflows.property_title') }}</h4>
+            <p>{{ t('dashboard.workflows.property_desc') }}</p>
           </div>
           <ArrowRight :size="16" class="wf-arrow" />
         </NuxtLink>
@@ -386,8 +387,8 @@ onMounted(() => {
             <BarChart3 :size="20" />
           </div>
           <div class="wf-content">
-            <h4>Occupancy & Financial Analytics</h4>
-            <p>Inspect portfolio occupancy rates, revenue collection performance, and unit breakdowns.</p>
+            <h4>{{ t('dashboard.workflows.analytics_title') }}</h4>
+            <p>{{ t('dashboard.workflows.analytics_desc') }}</p>
           </div>
           <ArrowRight :size="16" class="wf-arrow" />
         </NuxtLink>
@@ -397,8 +398,8 @@ onMounted(() => {
             <ClipboardList :size="20" />
           </div>
           <div class="wf-content">
-            <h4>Rental Applications</h4>
-            <p>Review background checks, approve/reject tenant submissions, and manage leases.</p>
+            <h4>{{ t('dashboard.workflows.applications_title') }}</h4>
+            <p>{{ t('dashboard.workflows.applications_desc') }}</p>
           </div>
           <ArrowRight :size="16" class="wf-arrow" />
         </NuxtLink>
@@ -408,8 +409,8 @@ onMounted(() => {
             <CreditCard :size="20" />
           </div>
           <div class="wf-content">
-            <h4>Rent Invoices & Payment Tracking</h4>
-            <p>Issue monthly rental statements, view payment receipts, and reconcile payment records.</p>
+            <h4>{{ t('dashboard.workflows.invoices_title') }}</h4>
+            <p>{{ t('dashboard.workflows.invoices_desc') }}</p>
           </div>
           <ArrowRight :size="16" class="wf-arrow" />
         </NuxtLink>
@@ -419,8 +420,8 @@ onMounted(() => {
             <Wrench :size="20" />
           </div>
           <div class="wf-content">
-            <h4>Maintenance Request Management</h4>
-            <p>Dispatch technicians, monitor repairs in real-time, and confirm work completion.</p>
+            <h4>{{ t('dashboard.workflows.maintenance_title') }}</h4>
+            <p>{{ t('dashboard.workflows.maintenance_desc') }}</p>
           </div>
           <ArrowRight :size="16" class="wf-arrow" />
         </NuxtLink>
@@ -430,8 +431,8 @@ onMounted(() => {
             <ShieldCheck :size="20" />
           </div>
           <div class="wf-content">
-            <h4>System Audit Logs</h4>
-            <p>Inspect immutable event logs, user activities, status changes, and data audits.</p>
+            <h4>{{ t('dashboard.workflows.audit_title') }}</h4>
+            <p>{{ t('dashboard.workflows.audit_desc') }}</p>
           </div>
           <ArrowRight :size="16" class="wf-arrow" />
         </NuxtLink>
@@ -441,8 +442,8 @@ onMounted(() => {
             <Users :size="20" />
           </div>
           <div class="wf-content">
-            <h4>User Management</h4>
-            <p>Review registered accounts, toggle user active/suspended status, and manage roles.</p>
+            <h4>{{ t('dashboard.workflows.users_title') }}</h4>
+            <p>{{ t('dashboard.workflows.users_desc') }}</p>
           </div>
           <ArrowRight :size="16" class="wf-arrow" />
         </NuxtLink>
@@ -527,13 +528,47 @@ onMounted(() => {
   flex-shrink: 0;
 }
 
-.bg-indigo { background: var(--primary-subtle); color: var(--color-indigo-accent); border: 1px solid rgba(99, 102, 241, 0.2); }
-.bg-emerald { background: var(--accent-emerald-subtle); color: var(--color-emerald-accent); border: 1px solid rgba(16, 185, 129, 0.2); }
-.bg-cyan { background: var(--accent-sky-subtle); color: var(--color-cyan-accent); border: 1px solid rgba(2, 132, 199, 0.2); }
-.bg-amber { background: var(--accent-amber-subtle); color: var(--color-amber-accent); border: 1px solid rgba(245, 158, 11, 0.2); }
-.bg-purple { background: rgba(168, 85, 247, 0.1); color: var(--color-purple-accent); border: 1px solid rgba(168, 85, 247, 0.2); }
-.bg-zinc { background: rgba(148, 163, 184, 0.1); color: var(--text-dim); border: 1px solid rgba(148, 163, 184, 0.2); }
-.bg-rose { background: var(--accent-rose-subtle); color: var(--color-rose-accent); border: 1px solid rgba(244, 63, 94, 0.2); }
+.bg-indigo {
+  background: var(--primary-subtle);
+  color: var(--color-indigo-accent);
+  border: 1px solid rgba(99, 102, 241, 0.2);
+}
+
+.bg-emerald {
+  background: var(--accent-emerald-subtle);
+  color: var(--color-emerald-accent);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+.bg-cyan {
+  background: var(--accent-sky-subtle);
+  color: var(--color-cyan-accent);
+  border: 1px solid rgba(2, 132, 199, 0.2);
+}
+
+.bg-amber {
+  background: var(--accent-amber-subtle);
+  color: var(--color-amber-accent);
+  border: 1px solid rgba(245, 158, 11, 0.2);
+}
+
+.bg-purple {
+  background: rgba(168, 85, 247, 0.1);
+  color: var(--color-purple-accent);
+  border: 1px solid rgba(168, 85, 247, 0.2);
+}
+
+.bg-zinc {
+  background: rgba(148, 163, 184, 0.1);
+  color: var(--text-dim);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+.bg-rose {
+  background: var(--accent-rose-subtle);
+  color: var(--color-rose-accent);
+  border: 1px solid rgba(244, 63, 94, 0.2);
+}
 
 .refresh-btn {
   display: inline-flex;
@@ -548,8 +583,13 @@ onMounted(() => {
 }
 
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .skeleton-val {
@@ -582,11 +622,25 @@ onMounted(() => {
   font-size: 0.75rem;
 }
 
-.text-emerald { color: var(--color-emerald-accent); }
-.text-amber { color: var(--color-amber-accent); }
-.text-indigo { color: var(--color-indigo-accent); }
-.text-rose { color: var(--color-rose-accent); }
-.text-muted { color: var(--text-dim); }
+.text-emerald {
+  color: var(--color-emerald-accent);
+}
+
+.text-amber {
+  color: var(--color-amber-accent);
+}
+
+.text-indigo {
+  color: var(--color-indigo-accent);
+}
+
+.text-rose {
+  color: var(--color-rose-accent);
+}
+
+.text-muted {
+  color: var(--text-dim);
+}
 
 .workflow-section {
   display: flex;

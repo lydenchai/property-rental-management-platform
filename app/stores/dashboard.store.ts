@@ -23,7 +23,7 @@ export function useDashboardStore() {
       }
     } catch (err: any) {
       state.error = err?.data?.error?.message || err?.message || 'Failed to load metrics';
-      throw err;
+      return null;
     } finally {
       state.isLoading = false;
     }
@@ -38,6 +38,7 @@ export function useDashboardStore() {
     ...toRefs(state),
     errorMessage: toRef(state, 'error'),
     fetchMetrics,
+    loadMetrics: fetchMetrics,
     clearError,
   };
 }

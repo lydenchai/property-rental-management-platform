@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import { 
-  ChevronLeft, 
-  ChevronRight, 
-  ChevronsLeft, 
-  ChevronsRight 
+import {
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight
 } from '@lucide/vue';
 
 interface Props {
@@ -95,17 +95,13 @@ function onPageSizeChange(event: Event) {
     <!-- Left: Items Info & Per-Page Selector -->
     <div class="pagination-info-group">
       <span class="pagination-summary">
-        Showing <strong class="summary-highlight">{{ startItem }}–{{ endItem }}</strong> of <strong class="summary-highlight">{{ totalItems }}</strong> {{ itemName }}
+        {{ $t('common.showing') }} <strong class="summary-highlight">{{ startItem }}–{{ endItem }}</strong> {{ $t('common.of') }} <strong
+          class="summary-highlight">{{ totalItems }}</strong> {{ itemName }}
       </span>
 
       <div v-if="showPageSize" class="page-size-selector">
-        <label for="page-size-select" class="page-size-label">Per page</label>
-        <select
-          id="page-size-select"
-          :value="pageSize"
-          @change="onPageSizeChange"
-          class="page-size-select"
-        >
+        <label for="page-size-select" class="page-size-label">{{ $t('common.per_page') }}</label>
+        <select id="page-size-select" :value="pageSize" @change="onPageSizeChange" class="page-size-select">
           <option v-for="opt in pageSizeOptions" :key="opt" :value="opt">
             {{ opt }}
           </option>
@@ -116,26 +112,14 @@ function onPageSizeChange(event: Event) {
     <!-- Right: Page Navigation Buttons -->
     <nav class="pagination-nav" aria-label="Pagination Navigation">
       <!-- First Page -->
-      <button
-        type="button"
-        class="pagination-btn pagination-arrow"
-        :disabled="currentPage <= 1"
-        @click="goToPage(1)"
-        title="First Page"
-        aria-label="First Page"
-      >
+      <button type="button" class="pagination-btn pagination-arrow" :disabled="currentPage <= 1" @click="goToPage(1)"
+        :title="$t('common.first_page')" :aria-label="$t('common.first_page')">
         <ChevronsLeft :size="15" />
       </button>
 
       <!-- Previous Page -->
-      <button
-        type="button"
-        class="pagination-btn pagination-arrow"
-        :disabled="currentPage <= 1"
-        @click="goToPage(currentPage - 1)"
-        title="Previous Page"
-        aria-label="Previous Page"
-      >
+      <button type="button" class="pagination-btn pagination-arrow" :disabled="currentPage <= 1"
+        @click="goToPage(currentPage - 1)" :title="$t('common.prev_page')" :aria-label="$t('common.prev_page')">
         <ChevronLeft :size="15" />
       </button>
 
@@ -144,38 +128,21 @@ function onPageSizeChange(event: Event) {
         <span v-if="item === '...'" class="pagination-ellipsis">
           &hellip;
         </span>
-        <button
-          v-else
-          type="button"
-          :class="['pagination-btn', 'pagination-num', { active: item === currentPage }]"
-          :aria-current="item === currentPage ? 'page' : undefined"
-          @click="goToPage(Number(item))"
-        >
+        <button v-else type="button" :class="['pagination-btn', 'pagination-num', { active: item === currentPage }]"
+          :aria-current="item === currentPage ? 'page' : undefined" @click="goToPage(Number(item))">
           {{ item }}
         </button>
       </template>
 
       <!-- Next Page -->
-      <button
-        type="button"
-        class="pagination-btn pagination-arrow"
-        :disabled="currentPage >= totalPages"
-        @click="goToPage(currentPage + 1)"
-        title="Next Page"
-        aria-label="Next Page"
-      >
+      <button type="button" class="pagination-btn pagination-arrow" :disabled="currentPage >= totalPages"
+        @click="goToPage(currentPage + 1)" :title="$t('common.next_page')" :aria-label="$t('common.next_page')">
         <ChevronRight :size="15" />
       </button>
 
       <!-- Last Page -->
-      <button
-        type="button"
-        class="pagination-btn pagination-arrow"
-        :disabled="currentPage >= totalPages"
-        @click="goToPage(totalPages)"
-        title="Last Page"
-        aria-label="Last Page"
-      >
+      <button type="button" class="pagination-btn pagination-arrow" :disabled="currentPage >= totalPages"
+        @click="goToPage(totalPages)" :title="$t('common.last_page')" :aria-label="$t('common.last_page')">
         <ChevronsRight :size="15" />
       </button>
     </nav>
@@ -265,9 +232,9 @@ function onPageSizeChange(event: Event) {
   justify-content: center;
   min-width: 32px;
   height: 32px;
-  padding: 0 0.4rem;
-  border-radius: var(--radius-sm);
-  font-size: 0.8rem;
+  padding: 0 0.5rem;
+  border-radius: 6px;
+  font-size: 0.825rem;
   font-weight: 500;
   color: var(--text-muted);
   background: transparent;
@@ -281,43 +248,48 @@ function onPageSizeChange(event: Event) {
 .pagination-btn:hover:not(:disabled) {
   color: var(--text-main);
   background: var(--bg-surface-hover);
-  border-color: var(--border-subtle);
+  border-color: var(--border-default);
 }
 
 .pagination-btn.active {
-  background: var(--primary);
-  color: #ffffff;
-  border-color: var(--primary);
+  background: #2563eb;
+  color: #ffffff !important;
+  border-color: #2563eb;
   font-weight: 600;
+  box-shadow: 0 1px 3px rgba(37, 99, 235, 0.25);
 }
 
 html.dark .pagination-btn.active {
-  background: #2563eb;
-  color: #ffffff;
-  border-color: #2563eb;
+  background: #3b82f6;
+  color: #ffffff !important;
+  border-color: #3b82f6;
 }
 
 .pagination-btn:disabled {
   opacity: 0.35;
   cursor: not-allowed;
   pointer-events: none;
+  background: transparent;
+  border-color: transparent;
 }
 
 .pagination-arrow {
   color: var(--text-muted);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
 }
 
 .pagination-arrow:hover:not(:disabled) {
-  color: var(--text-main);
-  background: var(--bg-primary);
-  border-color: var(--border-subtle);
+  color: #2563eb;
+  border-color: #2563eb;
+  background: rgba(37, 99, 235, 0.04);
 }
 
 .pagination-ellipsis {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 24px;
+  min-width: 28px;
   height: 32px;
   color: var(--text-dim);
   font-size: 0.85rem;

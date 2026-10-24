@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue';
-import { 
-  MapPin, 
-  Navigation, 
-  ExternalLink, 
-  RefreshCw, 
-  Layers, 
-  Maximize2, 
+import {
+  MapPin,
+  Navigation,
+  ExternalLink,
+  RefreshCw,
+  Layers,
+  Maximize2,
   Minimize2,
   Copy,
   Check
@@ -143,7 +143,7 @@ async function initMap() {
     isLoading.value = true;
     mapError.value = null;
 
-    const maplibregl = (await import('maplibre-gl')).default;
+    const maplibregl = (await import('maplibre-gl') as any).default;
 
     // Clean up previous instance
     if (mapInstance) {
@@ -152,7 +152,7 @@ async function initMap() {
       markerInstance = null;
     }
 
-    const currentStyleUrl = MAP_STYLES.find(s => s.id === selectedStyle.value)?.url 
+    const currentStyleUrl = MAP_STYLES.find(s => s.id === selectedStyle.value)?.url
       || 'https://tiles.openfreemap.org/styles/bright';
 
     const map = new maplibregl.Map({
@@ -299,13 +299,8 @@ onUnmounted(() => {
           <MapPin :size="16" class="pin-icon" />
           <span class="map-title-text">Location & Neighborhood</span>
         </div>
-        <button 
-          v-if="formattedCoords" 
-          type="button" 
-          @click="copyCoordinates" 
-          class="coord-badge" 
-          title="Click to copy latitude and longitude"
-        >
+        <button v-if="formattedCoords" type="button" @click="copyCoordinates" class="coord-badge"
+          title="Click to copy latitude and longitude">
           <span>{{ formattedCoords }}</span>
           <Check v-if="copiedCoords" :size="12" class="text-emerald-400" />
           <Copy v-else :size="11" class="text-slate-400" />
@@ -315,14 +310,8 @@ onUnmounted(() => {
       <div class="map-header-actions">
         <!-- Style Switcher Pills -->
         <div class="style-switcher">
-          <button
-            v-for="st in MAP_STYLES"
-            :key="st.id"
-            type="button"
-            @click="changeStyle(st.id)"
-            :class="['style-pill-btn', { active: selectedStyle === st.id }]"
-            :title="`Switch map style to ${st.name}`"
-          >
+          <button v-for="st in MAP_STYLES" :key="st.id" type="button" @click="changeStyle(st.id)"
+            :class="['style-pill-btn', { active: selectedStyle === st.id }]" :title="`Switch map style to ${st.name}`">
             {{ st.name }}
           </button>
         </div>
@@ -842,4 +831,3 @@ html.dark .popup-link:hover {
   color: #7dd3fc;
 }
 </style>
-

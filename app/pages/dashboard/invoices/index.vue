@@ -1,18 +1,18 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue';
-import { 
-  CreditCard, 
-  DollarSign, 
-  Calendar, 
-  Clock, 
-  CheckCircle2, 
-  AlertCircle, 
-  AlertTriangle, 
-  Search, 
-  Plus, 
-  Receipt, 
-  FileText, 
-  Printer, 
+import {
+  CreditCard,
+  DollarSign,
+  Calendar,
+  Clock,
+  CheckCircle2,
+  AlertCircle,
+  AlertTriangle,
+  Search,
+  Plus,
+  Receipt,
+  FileText,
+  Printer,
 } from '@lucide/vue';
 import { useAuth } from '../../../composables/useAuth';
 import { useInvoiceStore } from '../../../stores/invoice.store';
@@ -25,6 +25,7 @@ definePageMeta({
   title: 'Invoices & Billing',
 });
 
+const { t } = useI18n();
 const { isLandlord, isTenant, isAdmin } = useAuth();
 const invoiceStore = useInvoiceStore();
 
@@ -107,8 +108,8 @@ watch([activeTab, searchQuery], () => {
 async function executeGenerateInvoice() {
   const res = await generateInvoice({
     ...generateForm.value,
-    dueDate: generateForm.value.dueDate,
-  });
+    dueDate: generateForm.value.dueDate!,
+  }) as any;
 
   if (res.success) {
     successMessage.value = res.message || 'Invoice generated successfully';
@@ -138,7 +139,7 @@ async function executeRecordPayment() {
     method: paymentForm.value.method,
     referenceNumber: paymentForm.value.referenceNumber || undefined,
     notes: paymentForm.value.notes || undefined,
-  });
+  }) as any;
 
   if (res.success) {
     successMessage.value = res.message || 'Payment recorded successfully';
@@ -168,18 +169,14 @@ onMounted(() => {
     <!-- Top Bar -->
     <div class="page-top-bar">
       <div>
-        <h1>Invoices & Billing</h1>
+        <h1>{{ t('invoices.title') }}</h1>
         <p class="subtitle">
-          Track recurring rental billing, record digital or manual payments, and access verified receipts.
+          {{ t('invoices.subtitle') }}
         </p>
       </div>
-      <button
-        v-if="isLandlord || isAdmin"
-        @click="isGenerateModalOpen = true"
-        class="btn-primary"
-      >
+      <button v-if="isLandlord || isAdmin" @click="isGenerateModalOpen = true" class="btn-primary">
         <Plus :size="15" />
-        <span>Generate Invoice</span>
+        <span>{{ t('invoices.generate_invoice') }}</span>
       </button>
     </div>
 
@@ -193,12 +190,9 @@ onMounted(() => {
       <AlertCircle :size="16" class="alert-icon" />
       <div class="alert-body">
         <span>{{ errorMessage }}</span>
-        <NuxtLink
-          v-if="errorMessage.toLowerCase().includes('logged in')"
-          :to="{ path: '/login', query: { redirect: $route.fullPath } }"
-          class="alert-action-btn"
-        >
-          Sign In
+        <NuxtLink v-if="errorMessage.toLowerCase().includes('logged in')"
+          :to="{ path: '/login', query: { redirect: $route.fullPath } }" class="alert-action-btn">
+          {{ t('nav.sign_in') }}
         </NuxtLink>
       </div>
     </div>
@@ -207,40 +201,40 @@ onMounted(() => {
     <div class="stats-grid">
       <div class="stat-card card-flat">
         <div class="stat-header">
-          <span class="stat-label">Total Outstanding</span>
+          <span class="stat-label">{{ t('invoices.total_outstanding') }}</span>
           <div class="stat-icon-wrap outstanding">
             <Clock :size="16" />
           </div>
         </div>
         <div class="stat-value font-mono">${{ totalOutstanding.toLocaleString() }}</div>
-        <div class="stat-subtext">Unsettled tenant balance</div>
+        <div class="stat-subtext">{{ t('invoices.unsettled_balance') }}</div>
       </div>
 
       <div class="stat-card card-flat">
         <div class="stat-header">
-          <span class="stat-label">Total Collected</span>
+          <span class="stat-label">{{ t('invoices.total_collected') }}</span>
           <div class="stat-icon-wrap collected">
             <DollarSign :size="16" />
           </div>
         </div>
         <div class="stat-value font-mono">${{ totalCollected.toLocaleString() }}</div>
-        <div class="stat-subtext">Verified cleared funds</div>
+        <div class="stat-subtext">{{ t('invoices.verified_cleared') }}</div>
       </div>
 
       <div class="stat-card card-flat">
         <div class="stat-header">
-          <span class="stat-label">Total Billed</span>
+          <span class="stat-label">{{ t('invoices.total_invoiced') }}</span>
           <div class="stat-icon-wrap billed">
             <CreditCard :size="16" />
           </div>
         </div>
         <div class="stat-value font-mono">${{ totalInvoiced.toLocaleString() }}</div>
-        <div class="stat-subtext">{{ invoices.length }} invoices generated</div>
+        <div class="stat-subtext">{{ invoices.length }} {{ t('invoices.title') }}</div>
       </div>
 
       <div class="stat-card card-flat">
         <div class="stat-header">
-          <span class="stat-label">Overdue Invoices</span>
+          <span class="stat-label">{{ t('invoices.overdue_invoices') }}</span>
           <div class="stat-icon-wrap overdue">
             <AlertTriangle :size="16" />
           </div>
@@ -248,153 +242,117 @@ onMounted(() => {
         <div class="stat-value font-mono" :class="{ 'text-danger': overdueCount > 0 }">
           {{ overdueCount }}
         </div>
-        <div class="stat-subtext">Requires immediate follow-up</div>
+        <div class="stat-subtext">{{ t('invoices.requiring_attention') }}</div>
       </div>
     </div>
 
     <!-- Invoices Table using shared AppTableCard -->
-    <AppTableCard
-      v-model:search="searchQuery"
-      search-placeholder="Search by invoice #, tenant, unit..."
-      :is-loading="isLoading"
-      :is-empty="filteredInvoices.length === 0"
-      empty-title="No invoices found"
-      empty-description="Invoices will appear here once generated for active leases."
-      :empty-icon="FileText"
-      v-model:current-page="currentPage"
-      v-model:page-size="pageSize"
-      :total-items="filteredInvoices.length"
-      item-name="invoices"
-    >
+    <AppTableCard v-model:search="searchQuery" :search-placeholder="t('invoices.col_invoice_num')"
+      :is-loading="isLoading" :is-empty="filteredInvoices.length === 0" :empty-title="t('invoices.no_invoices')"
+      :empty-description="t('invoices.no_invoices_desc')" :empty-icon="FileText"
+      v-model:current-page="currentPage" v-model:page-size="pageSize" :total-items="filteredInvoices.length"
+      :item-name="t('common.records')">
       <template #toolbar-start>
-        <div class="status-tabs">
-          <button
-            class="tab-btn"
-            :class="{ active: activeTab === 'ALL' }"
-            @click="activeTab = 'ALL'"
-          >
-            All Invoices
+        <div class="filter-btn-group status-tabs">
+          <button type="button" class="filter-btn tab-btn" :class="{ active: activeTab === 'ALL' }" @click="activeTab = 'ALL'">
+            {{ t('invoices.filter_all') }}
           </button>
-          <button
-            class="tab-btn"
-            :class="{ active: activeTab === 'UNPAID' }"
-            @click="activeTab = 'UNPAID'"
-          >
-            Unpaid
+          <button type="button" class="filter-btn tab-btn" :class="{ active: activeTab === 'UNPAID' }" @click="activeTab = 'UNPAID'">
+            {{ t('invoices.filter_unpaid') }}
           </button>
-          <button
-            class="tab-btn"
-            :class="{ active: activeTab === 'PARTIALLY_PAID' }"
-            @click="activeTab = 'PARTIALLY_PAID'"
-          >
-            Partially Paid
+          <button type="button" class="filter-btn tab-btn" :class="{ active: activeTab === 'PARTIALLY_PAID' }"
+            @click="activeTab = 'PARTIALLY_PAID'">
+            {{ t('invoices.filter_partially_paid') }}
           </button>
-          <button
-            class="tab-btn"
-            :class="{ active: activeTab === 'PAID' }"
-            @click="activeTab = 'PAID'"
-          >
-            Paid
+          <button type="button" class="filter-btn tab-btn" :class="{ active: activeTab === 'PAID' }" @click="activeTab = 'PAID'">
+            {{ t('invoices.filter_paid') }}
           </button>
-          <button
-            class="tab-btn"
-            :class="{ active: activeTab === 'OVERDUE' }"
-            @click="activeTab = 'OVERDUE'"
-          >
-            Overdue
+          <button type="button" class="filter-btn tab-btn" :class="{ active: activeTab === 'OVERDUE' }" @click="activeTab = 'OVERDUE'">
+            {{ t('invoices.filter_overdue') }}
           </button>
         </div>
       </template>
 
       <table class="data-table">
-          <thead>
-            <tr>
-              <th>Invoice Number</th>
-              <th>Property & Unit</th>
-              <th>Tenant / Recipient</th>
-              <th>Due Date</th>
-              <th>Amount Due</th>
-              <th>Amount Paid</th>
-              <th>Status</th>
-              <th class="text-right">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="inv in paginatedInvoices" :key="inv.id">
-              <td>
-                <div class="invoice-num-cell">
-                  <span class="font-mono font-semibold">{{ inv.invoiceNumber }}</span>
-                  <span class="text-dim text-xs">Issued: {{ new Date(inv.issueDate).toLocaleDateString() }}</span>
-                </div>
-              </td>
-              <td>
-                <div class="unit-cell">
-                  <span class="font-semibold">Unit {{ inv.lease?.unit?.unitNumber || '101A' }}</span>
-                  <span class="text-dim text-xs">{{ inv.lease?.unit?.property?.title || 'Skyline Heights' }}</span>
-                </div>
-              </td>
-              <td>
-                <div class="tenant-cell">
-                  <span>{{ inv.tenant?.fullName || 'Sarah Jenkins' }}</span>
-                  <span class="text-dim text-xs">{{ inv.tenant?.email || 'tenant@example.com' }}</span>
-                </div>
-              </td>
-              <td>
-                <div class="date-cell">
-                  <Calendar :size="13" class="text-dim" />
-                  <span>{{ new Date(inv.dueDate).toLocaleDateString() }}</span>
-                </div>
-              </td>
-              <td class="font-mono font-semibold">
-                ${{ inv.amountDue.toLocaleString() }}
-              </td>
-              <td>
-                <div class="paid-cell font-mono">
-                  <span>${{ inv.amountPaid.toLocaleString() }}</span>
-                  <span v-if="inv.amountDue > inv.amountPaid" class="text-xs text-dim">
-                    (${{ (inv.amountDue - inv.amountPaid).toLocaleString() }} left)
-                  </span>
-                </div>
-              </td>
-              <td>
-                <span
-                  class="badge"
-                  :class="{
-                    'badge-success': inv.status === 'PAID',
-                    'badge-warning': inv.status === 'PARTIALLY_PAID',
-                    'badge-info': inv.status === 'UNPAID',
-                    'badge-danger': inv.status === 'OVERDUE',
-                  }"
-                >
-                  {{ inv.status.replace('_', ' ') }}
+        <thead>
+          <tr>
+            <th>{{ t('invoices.col_invoice_num') }}</th>
+            <th>{{ t('invoices.col_property_unit') }}</th>
+            <th>{{ t('invoices.col_tenant') }}</th>
+            <th>{{ t('invoices.col_due_date') }}</th>
+            <th>{{ t('invoices.col_amount') }}</th>
+            <th>{{ t('invoices.col_paid') }}</th>
+            <th>{{ t('invoices.col_status') }}</th>
+            <th class="text-right">{{ t('invoices.col_actions') }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="inv in paginatedInvoices" :key="inv.id">
+            <td>
+              <div class="invoice-num-cell">
+                <span class="font-mono font-semibold">{{ inv.invoiceNumber }}</span>
+                <span class="text-dim text-xs">{{ t('common.created_at') }}: {{ new Date(inv.issueDate).toLocaleDateString() }}</span>
+              </div>
+            </td>
+            <td>
+              <div class="unit-cell">
+                <span class="font-semibold">{{ t('dashboard.metrics.unit') }} {{ inv.lease?.unit?.unitNumber || '101A' }}</span>
+                <span class="text-dim text-xs">{{ inv.lease?.unit?.property?.title || 'Skyline Heights' }}</span>
+              </div>
+            </td>
+            <td>
+              <div class="tenant-cell">
+                <span>{{ inv.tenant?.fullName || 'Sarah Jenkins' }}</span>
+                <span class="text-dim text-xs">{{ inv.tenant?.email || 'tenant@example.com' }}</span>
+              </div>
+            </td>
+            <td>
+              <div class="date-cell">
+                <Calendar :size="13" class="text-dim" />
+                <span>{{ new Date(inv.dueDate).toLocaleDateString() }}</span>
+              </div>
+            </td>
+            <td class="font-mono font-semibold">
+              ${{ inv.amountDue.toLocaleString() }}
+            </td>
+            <td>
+              <div class="paid-cell font-mono">
+                <span>${{ inv.amountPaid.toLocaleString() }}</span>
+                <span v-if="inv.amountDue > inv.amountPaid" class="text-xs text-dim">
+                  (${{ (inv.amountDue - inv.amountPaid).toLocaleString() }} left)
                 </span>
-              </td>
-              <td class="text-right">
-                <div class="action-btn-group">
-                  <!-- Pay / Record Button -->
-                  <button
-                    v-if="inv.status !== 'PAID' && inv.status !== 'CANCELLED'"
-                    @click="openPayModal(inv)"
-                    class="btn-primary btn-sm"
-                  >
-                    <CreditCard :size="13" />
-                    <span>{{ isTenant ? 'Pay Now' : 'Record Payment' }}</span>
-                  </button>
+              </div>
+            </td>
+            <td>
+              <span class="badge badge-pill" :class="{
+                'badge-success': inv.status === 'PAID',
+                'badge-warning': inv.status === 'PARTIALLY_PAID',
+                'badge-info': inv.status === 'UNPAID',
+                'badge-danger': inv.status === 'OVERDUE',
+              }">
+                <span class="badge-dot"></span>
+                <span>{{ inv.status === 'PAID' ? t('invoices.status.paid') : inv.status === 'PARTIALLY_PAID' ? t('invoices.status.partially_paid') : inv.status === 'UNPAID' ? t('invoices.status.unpaid') : inv.status === 'OVERDUE' ? t('invoices.status.overdue') : inv.status }}</span>
+              </span>
+            </td>
+            <td class="text-right">
+              <div class="action-btn-group">
+                <!-- Pay / Record Button -->
+                <button v-if="inv.status !== 'PAID' && inv.status !== 'CANCELLED'" @click="openPayModal(inv)"
+                  class="btn-primary btn-sm">
+                  <CreditCard :size="13" />
+                  <span>{{ isTenant ? t('invoices.pay_now') : t('invoices.record_payment') }}</span>
+                </button>
 
-                  <!-- Receipt Button -->
-                  <button
-                    v-if="inv.payments && inv.payments.length > 0"
-                    @click="viewReceipt(inv.payments[0]!.id)"
-                    class="btn-secondary btn-sm"
-                    title="View Digital Receipt"
-                  >
-                    <Receipt :size="13" />
-                    <span>Receipt</span>
-                  </button>
-                </div>
-              </td>
-            </tr>
-          </tbody>
+                <!-- Receipt Button -->
+                <button v-if="inv.payments && inv.payments.length > 0" @click="viewReceipt(inv.payments[0]!.id)"
+                  class="btn-secondary btn-sm" :title="t('invoices.view_receipt')">
+                  <Receipt :size="13" />
+                  <span>{{ t('invoices.view_receipt') }}</span>
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
       </table>
     </AppTableCard>
 
@@ -409,57 +367,33 @@ onMounted(() => {
         <form @submit.prevent="executeGenerateInvoice" class="modal-body">
           <div class="form-group">
             <label class="form-label">Active Lease Reference ID</label>
-            <input
-              v-model="generateForm.leaseId"
-              type="text"
-              required
-              class="form-control"
-              placeholder="e.g. lease-skyline-101a"
-            />
+            <input v-model="generateForm.leaseId" type="text" required class="form-control"
+              placeholder="e.g. lease-skyline-101a" />
           </div>
 
           <div class="grid-2-col">
             <div class="form-group">
               <label class="form-label">Due Date</label>
-              <input
-                v-model="generateForm.dueDate"
-                type="date"
-                required
-                class="form-control"
-              />
+              <input v-model="generateForm.dueDate" type="date" required class="form-control" />
             </div>
             <div class="form-group">
               <label class="form-label">Amount Due ($)</label>
-              <input
-                v-model.number="generateForm.amountDue"
-                type="number"
-                min="1"
-                step="0.01"
-                required
-                class="form-control"
-              />
+              <input v-model.number="generateForm.amountDue" type="number" min="1" step="0.01" required
+                class="form-control" />
             </div>
           </div>
 
           <div class="form-group">
             <label class="form-label">Invoice Description / Memo</label>
-            <input
-              v-model="generateForm.notes"
-              type="text"
-              class="form-control"
-              placeholder="e.g. March 2026 Monthly Residential Rent"
-            />
+            <input v-model="generateForm.notes" type="text" class="form-control"
+              placeholder="e.g. March 2026 Monthly Residential Rent" />
           </div>
 
           <div class="modal-actions">
             <button type="button" @click="isGenerateModalOpen = false" class="btn-secondary">
               Cancel
             </button>
-            <button
-              type="submit"
-              :disabled="isGenerating"
-              class="btn-primary"
-            >
+            <button type="submit" :disabled="isGenerating" class="btn-primary">
               <Plus :size="14" />
               <span>{{ isGenerating ? 'Generating...' : 'Issue Invoice' }}</span>
             </button>
@@ -490,15 +424,8 @@ onMounted(() => {
           <div class="grid-2-col">
             <div class="form-group">
               <label class="form-label">Payment Amount ($)</label>
-              <input
-                v-model.number="paymentForm.amount"
-                type="number"
-                min="1"
-                :max="invoiceToPay.amountDue - invoiceToPay.amountPaid"
-                step="0.01"
-                required
-                class="form-control"
-              />
+              <input v-model.number="paymentForm.amount" type="number" min="1"
+                :max="invoiceToPay.amountDue - invoiceToPay.amountPaid" step="0.01" required class="form-control" />
             </div>
 
             <div class="form-group">
@@ -515,33 +442,21 @@ onMounted(() => {
 
           <div class="form-group">
             <label class="form-label">Reference / Confirmation Code (Optional)</label>
-            <input
-              v-model="paymentForm.referenceNumber"
-              type="text"
-              class="form-control"
-              placeholder="e.g. TXN-WIRE-9921 or Card Auth #4910"
-            />
+            <input v-model="paymentForm.referenceNumber" type="text" class="form-control"
+              placeholder="e.g. TXN-WIRE-9921 or Card Auth #4910" />
           </div>
 
           <div class="form-group">
             <label class="form-label">Notes (Optional)</label>
-            <input
-              v-model="paymentForm.notes"
-              type="text"
-              class="form-control"
-              placeholder="Payment notes or remittance info"
-            />
+            <input v-model="paymentForm.notes" type="text" class="form-control"
+              placeholder="Payment notes or remittance info" />
           </div>
 
           <div class="modal-actions">
             <button type="button" @click="invoiceToPay = null" class="btn-secondary">
               Cancel
             </button>
-            <button
-              type="submit"
-              :disabled="isPaying"
-              class="btn-primary"
-            >
+            <button type="submit" :disabled="isPaying" class="btn-primary">
               <DollarSign :size="14" />
               <span>{{ isPaying ? 'Processing...' : 'Confirm Payment' }}</span>
             </button>
@@ -621,7 +536,9 @@ onMounted(() => {
               <tr>
                 <td>
                   Invoice {{ receiptData.invoice?.invoiceNumber }}
-                  <span class="text-xs text-dim block">Due: {{ new Date(receiptData.invoice?.dueDate).toLocaleDateString() }}</span>
+                  <span class="text-xs text-dim block">Due: {{ new
+                    Date(receiptData.invoice?.dueDate).toLocaleDateString()
+                    }}</span>
                 </td>
                 <td class="text-right font-mono font-semibold">
                   ${{ Number(receiptData.amount).toFixed(2) }}
@@ -646,7 +563,8 @@ onMounted(() => {
 
           <div class="receipt-footer">
             <span class="text-xs text-dim">
-              This is a computer-generated digital receipt and official proof of payment recorded within the RentEase platform.
+              This is a computer-generated digital receipt and official proof of payment recorded within the RentEase
+              platform.
             </span>
           </div>
         </div>
@@ -768,34 +686,47 @@ onMounted(() => {
   gap: 1rem;
 }
 
+.filter-btn-group,
 .status-tabs {
-  display: flex;
-  background: var(--bg-canvas);
-  padding: 0.2rem;
-  gap: 0.2rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  flex-wrap: wrap;
 }
 
+.filter-btn,
 .tab-btn {
-  background: none;
-  border: none;
-  color: var(--text-muted);
-  font-size: 0.8rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.42rem 0.85rem;
+  font-size: 0.825rem;
   font-weight: 500;
-  padding: 0.35rem 0.75rem;
+  line-height: 1.25;
+  color: var(--text-muted);
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
   border-radius: var(--radius-sm);
   cursor: pointer;
   transition: all 0.15s ease;
+  white-space: nowrap;
 }
 
+.filter-btn:hover,
 .tab-btn:hover {
   color: var(--text-main);
+  background-color: var(--bg-surface-hover);
+  border-color: var(--border-default);
 }
 
+.filter-btn.active,
 .tab-btn.active {
-  background: var(--bg-surface);
-  color: var(--text-main);
-  border: 1px solid var(--border-default);
-  box-shadow: none;
+  color: #ffffff !important;
+  background-color: var(--primary) !important;
+  border-color: var(--primary) !important;
+  font-weight: 600;
+  box-shadow: 0 1px 2px rgba(37, 99, 235, 0.2);
 }
 
 .search-wrap {
@@ -1149,7 +1080,9 @@ onMounted(() => {
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 @media (max-width: 900px) {
@@ -1162,6 +1095,7 @@ onMounted(() => {
   .stats-grid {
     grid-template-columns: 1fr;
   }
+
   .grid-2-col,
   .receipt-info-grid,
   .receipt-parties-box {
@@ -1173,11 +1107,13 @@ onMounted(() => {
   .no-print {
     display: none !important;
   }
+
   .modal-backdrop {
     position: static;
     background: none;
     padding: 0;
   }
+
   .modal-card {
     border: none;
     padding: 0;

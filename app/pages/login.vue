@@ -7,6 +7,7 @@ definePageMeta({
   layout: 'auth',
 });
 
+const { t } = useI18n();
 const { login, isLoading, error } = useAuth();
 const router = useRouter();
 const route = useRoute();
@@ -15,10 +16,10 @@ const email = ref('');
 const password = ref('');
 
 const demoAccounts = [
-  { role: 'Admin', email: 'admin@rentease.com', pass: 'RentEase123!', icon: ShieldCheck },
-  { role: 'Landlord', email: 'landlord@rentease.com', pass: 'RentEase123!', icon: Building },
-  { role: 'Tenant', email: 'tenant@rentease.com', pass: 'RentEase123!', icon: Key },
-  { role: 'Technician', email: 'technician@rentease.com', pass: 'RentEase123!', icon: Wrench },
+  { roleKey: 'auth.demo_admin', email: 'admin@rentease.com', pass: 'RentEase123!', icon: ShieldCheck },
+  { roleKey: 'auth.demo_landlord', email: 'landlord@rentease.com', pass: 'RentEase123!', icon: Building },
+  { roleKey: 'auth.demo_tenant', email: 'tenant@rentease.com', pass: 'RentEase123!', icon: Key },
+  { roleKey: 'auth.demo_technician', email: 'technician@rentease.com', pass: 'RentEase123!', icon: Wrench },
 ];
 
 function fillDemo(item: typeof demoAccounts[0]) {
@@ -42,8 +43,8 @@ async function handleLogin() {
 <template>
   <div class="login-view">
     <div class="card-header">
-      <h2>Welcome Back</h2>
-      <p class="subtitle">Enter your credentials to access your portal</p>
+      <h2>{{ t('auth.welcome_back') }}</h2>
+      <p class="subtitle">{{ t('auth.credentials_prompt') }}</p>
     </div>
 
     <!-- Error Alert -->
@@ -53,60 +54,43 @@ async function handleLogin() {
 
     <form @submit.prevent="handleLogin" class="login-form">
       <div class="form-group">
-        <label for="login-email" class="form-label">Email Address</label>
-        <input
-          id="login-email"
-          v-model="email"
-          type="email"
-          placeholder="name@example.com"
-          required
-          class="input-field"
-        />
+        <label for="login-email" class="form-label">{{ t('auth.email') }}</label>
+        <input id="login-email" v-model="email" type="email" :placeholder="t('auth.email_placeholder')" required
+          class="input-field" />
       </div>
 
       <div class="form-group">
         <div class="password-label-wrapper">
-          <label for="login-password" class="form-label">Password</label>
+          <label for="login-password" class="form-label">{{ t('auth.password') }}</label>
         </div>
-        <input
-          id="login-password"
-          v-model="password"
-          type="password"
-          placeholder="••••••••"
-          required
-          class="input-field"
-        />
+        <input id="login-password" v-model="password" type="password" :placeholder="t('auth.password_placeholder')"
+          required class="input-field" />
       </div>
 
       <button type="submit" :disabled="isLoading" class="btn-primary btn-block">
-        <span v-if="isLoading">Signing in...</span>
-        <span v-else>Sign In</span>
+        <span v-if="isLoading">{{ t('auth.signing_in') }}</span>
+        <span v-else>{{ t('auth.sign_in') }}</span>
       </button>
     </form>
 
     <!-- Quick Demo Accounts -->
     <div class="demo-section">
       <div class="divider">
-        <span>Quick Demo Access</span>
+        <span>{{ t('auth.quick_demo') }}</span>
       </div>
       <div class="demo-grid">
-        <button
-          v-for="item in demoAccounts"
-          :key="item.role"
-          type="button"
-          @click="fillDemo(item)"
-          :class="['demo-chip', { 'demo-chip-active': email === item.email }]"
-        >
+        <button v-for="item in demoAccounts" :key="item.roleKey" type="button" @click="fillDemo(item)"
+          :class="['demo-chip', { 'demo-chip-active': email === item.email }]">
           <component :is="item.icon" :size="15" class="chip-icon" />
-          <span class="chip-role">{{ item.role }}</span>
+          <span class="chip-role">{{ t(item.roleKey) }}</span>
           <Check v-if="email === item.email" :size="13" class="chip-check" />
         </button>
       </div>
     </div>
 
     <div class="register-prompt">
-      <span>Don't have an account?</span>
-      <NuxtLink to="/register" class="register-link">Create one now</NuxtLink>
+      <span>{{ t('auth.dont_have_account') }}</span>
+      <NuxtLink to="/register" class="register-link">{{ t('auth.create_account_now') }}</NuxtLink>
     </div>
   </div>
 </template>

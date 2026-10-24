@@ -1,15 +1,15 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue';
-import { 
-  ClipboardList, 
-  Search, 
-  CheckCircle2, 
-  XCircle, 
-  Clock, 
-  AlertCircle, 
-  Building, 
-  User, 
-  FileSignature, 
+import {
+  ClipboardList,
+  Search,
+  CheckCircle2,
+  XCircle,
+  Clock,
+  AlertCircle,
+  Building,
+  User,
+  FileSignature,
   FileText,
   DollarSign,
   Calendar,
@@ -26,6 +26,7 @@ definePageMeta({
   title: 'Rental Applications',
 });
 
+const { t } = useI18n();
 const { user, isLandlord, isTenant, isAdmin } = useAuth();
 const applicationStore = useApplicationStore();
 
@@ -85,8 +86,8 @@ watch([activeTab, searchQuery], () => {
 function openReviewModal(app: ApplicationItem, decision: 'APPROVED' | 'REJECTED') {
   appToReview.value = app;
   reviewDecision.value = decision;
-  reviewReason.value = decision === 'APPROVED' 
-    ? 'Application meets credit and income criteria. Lease agreement drafted.' 
+  reviewReason.value = decision === 'APPROVED'
+    ? 'Application meets credit and income criteria. Lease agreement drafted.'
     : 'Unable to approve application at this time based on qualification criteria.';
 }
 
@@ -95,7 +96,7 @@ async function submitReview() {
   const res = await reviewApplication(appToReview.value.id, {
     status: reviewDecision.value,
     reason: reviewReason.value,
-  });
+  }) as any;
 
   if (res.success) {
     successMessage.value = res.message || `Application ${reviewDecision.value.toLowerCase()} successfully.`;
@@ -115,20 +116,20 @@ onMounted(() => {
   <div class="applications-page">
     <div class="page-top-bar">
       <div>
-        <h1>Rental Applications</h1>
+        <h1>{{ t('applications.title') }}</h1>
         <p class="subtitle">
           <template v-if="isTenant">
-            Track the status of your submitted tenancy applications and review landlord decisions.
+            {{ t('applications.tenant_subtitle') }}
           </template>
           <template v-else>
-            Review prospective tenant submissions, inspect employment credentials, and approve leases.
+            {{ t('applications.subtitle') }}
           </template>
         </p>
       </div>
 
       <NuxtLink v-if="isTenant" to="/properties" class="btn-primary">
         <Building :size="15" />
-        <span>Browse Available Units</span>
+        <span>{{ t('dashboard.metrics.browse_available_units') }}</span>
       </NuxtLink>
     </div>
 
@@ -142,153 +143,127 @@ onMounted(() => {
       <AlertCircle :size="16" class="alert-icon" />
       <div class="alert-body">
         <span>{{ errorMessage }}</span>
-        <NuxtLink
-          v-if="errorMessage.toLowerCase().includes('logged in')"
-          :to="{ path: '/login', query: { redirect: $route.fullPath } }"
-          class="alert-action-btn"
-        >
-          Sign In
+        <NuxtLink v-if="errorMessage.toLowerCase().includes('logged in')"
+          :to="{ path: '/login', query: { redirect: $route.fullPath } }" class="alert-action-btn">
+          {{ t('nav.sign_in') }}
         </NuxtLink>
       </div>
     </div>
 
     <!-- Applications Table using shared AppTableCard -->
-    <AppTableCard
-      v-model:search="searchQuery"
-      search-placeholder="Search by unit, property, or tenant..."
-      :is-loading="isLoading"
-      :is-empty="filteredApplications.length === 0"
-      empty-title="No applications found"
-      :empty-description="isTenant ? 'You haven\'t submitted any rental applications yet. Browse properties to apply for a unit.' : 'No applications match the selected filter criteria.'"
-      :empty-icon="ClipboardList"
-      v-model:current-page="currentPage"
-      v-model:page-size="pageSize"
-      :total-items="filteredApplications.length"
-      item-name="applications"
-    >
+    <AppTableCard v-model:search="searchQuery" :search-placeholder="t('applications.title')"
+      :is-loading="isLoading" :is-empty="filteredApplications.length === 0" :empty-title="t('applications.no_applications')"
+      :empty-description="t('applications.no_applications_desc')"
+      :empty-icon="ClipboardList" v-model:current-page="currentPage" v-model:page-size="pageSize"
+      :total-items="filteredApplications.length" :item-name="t('common.records')">
       <template #toolbar-start>
-        <div class="tab-pill-group">
-          <button
-            @click="activeTab = 'ALL'"
-            :class="['tab-pill', { active: activeTab === 'ALL' }]"
-          >
-            All ({{ applications.length }})
+        <div class="filter-btn-group tab-pill-group">
+          <button type="button" @click="activeTab = 'ALL'" :class="['filter-btn tab-pill', { active: activeTab === 'ALL' }]">
+            <span>{{ t('applications.filter_all') }}</span>
+            <span class="filter-count">{{ applications.length }}</span>
           </button>
-          <button
-            @click="activeTab = 'PENDING'"
-            :class="['tab-pill', { active: activeTab === 'PENDING' }]"
-          >
-            Pending ({{ applications.filter(a => a.status === 'PENDING').length }})
+          <button type="button" @click="activeTab = 'PENDING'" :class="['filter-btn tab-pill', { active: activeTab === 'PENDING' }]">
+            <span>{{ t('applications.filter_pending') }}</span>
+            <span class="filter-count">{{ applications.filter(a => a.status === 'PENDING').length }}</span>
           </button>
-          <button
-            @click="activeTab = 'APPROVED'"
-            :class="['tab-pill', { active: activeTab === 'APPROVED' }]"
-          >
-            Approved ({{ applications.filter(a => a.status === 'APPROVED').length }})
+          <button type="button" @click="activeTab = 'APPROVED'" :class="['filter-btn tab-pill', { active: activeTab === 'APPROVED' }]">
+            <span>{{ t('applications.filter_approved') }}</span>
+            <span class="filter-count">{{ applications.filter(a => a.status === 'APPROVED').length }}</span>
           </button>
-          <button
-            @click="activeTab = 'REJECTED'"
-            :class="['tab-pill', { active: activeTab === 'REJECTED' }]"
-          >
-            Rejected ({{ applications.filter(a => a.status === 'REJECTED').length }})
+          <button type="button" @click="activeTab = 'REJECTED'" :class="['filter-btn tab-pill', { active: activeTab === 'REJECTED' }]">
+            <span>{{ t('applications.filter_rejected') }}</span>
+            <span class="filter-count">{{ applications.filter(a => a.status === 'REJECTED').length }}</span>
           </button>
         </div>
       </template>
 
       <table class="data-table">
-          <thead>
-            <tr>
-              <th>Property & Unit</th>
-              <th v-if="!isTenant">Applicant</th>
-              <th>Move-in Date</th>
-              <th>Proposed Rent</th>
-              <th>Status</th>
-              <th>Submitted</th>
-              <th class="text-right">Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="app in paginatedApplications" :key="app.id">
-              <td>
-                <div class="unit-cell">
-                  <span class="font-semibold">Unit {{ app.unit?.unitNumber || 'N/A' }}</span>
-                  <span class="text-dim text-sm">{{ app.property?.title || 'Skyline Complex' }}</span>
-                </div>
-              </td>
-              <td v-if="!isTenant">
-                <div class="applicant-cell">
-                  <span class="font-medium">{{ app.tenant?.fullName || 'Prospective Tenant' }}</span>
-                  <span class="text-dim text-xs">{{ app.tenant?.email }}</span>
-                </div>
-              </td>
-              <td>
-                <div class="date-cell">
-                  <Calendar :size="13" class="text-dim" />
-                  <span>{{ new Date(app.desiredMoveInDate).toLocaleDateString() }}</span>
-                </div>
-              </td>
-              <td class="font-semibold">
-                ${{ app.proposedRent.toLocaleString() }} / mo
-              </td>
-              <td>
-                <span
-                  :class="[
-                    'badge',
-                    app.status === 'APPROVED' ? 'badge-success' :
-                    app.status === 'PENDING' ? 'badge-warning' :
+        <thead>
+          <tr>
+            <th>{{ t('applications.col_property') }}</th>
+            <th v-if="!isTenant">{{ t('applications.col_applicant') }}</th>
+            <th>{{ t('applications.col_move_in') }}</th>
+            <th>{{ t('leases.col_rent') }}</th>
+            <th>{{ t('applications.col_status') }}</th>
+            <th>{{ t('applications.col_submitted') }}</th>
+            <th class="text-right">{{ t('applications.col_actions') }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="app in paginatedApplications" :key="app.id">
+            <td>
+              <div class="unit-cell">
+                <span class="font-semibold">{{ t('dashboard.metrics.unit') }} {{ app.unit?.unitNumber || 'N/A' }}</span>
+                <span class="text-dim text-sm">{{ app.property?.title || 'Skyline Complex' }}</span>
+              </div>
+            </td>
+            <td v-if="!isTenant">
+              <div class="applicant-cell">
+                <span class="font-medium">{{ app.tenant?.fullName || 'Prospective Tenant' }}</span>
+                <span class="text-dim text-xs">{{ app.tenant?.email }}</span>
+              </div>
+            </td>
+            <td>
+              <div class="date-cell">
+                <Calendar :size="13" class="text-dim" />
+                <span>{{ new Date(app.desiredMoveInDate).toLocaleDateString() }}</span>
+              </div>
+            </td>
+            <td class="font-semibold">
+              ${{ app.proposedRent.toLocaleString() }} {{ t('properties.rent_per_month') }}
+            </td>
+            <td>
+              <span :class="[
+                'badge badge-pill',
+                app.status === 'APPROVED' ? 'badge-success' :
+                  app.status === 'PENDING' ? 'badge-warning' :
                     app.status === 'REJECTED' ? 'badge-danger' : 'badge-subtle'
-                  ]"
-                >
-                  {{ app.status }}
+              ]">
+                <span class="badge-dot"></span>
+                <span>{{ app.status === 'PENDING' ? t('applications.status.pending') : app.status === 'APPROVED' ? t('applications.status.approved') : app.status === 'REJECTED' ? t('applications.status.rejected') : app.status }}</span>
+              </span>
+            </td>
+            <td class="text-muted text-sm">
+              {{ new Date(app.createdAt).toLocaleDateString() }}
+            </td>
+            <td class="text-right">
+              <!-- Tenant Actions -->
+              <div v-if="isTenant">
+                <span v-if="app.status === 'APPROVED'" class="text-emerald text-sm font-semibold">
+                  {{ t('applications.status.approved') }}
                 </span>
-              </td>
-              <td class="text-muted text-sm">
-                {{ new Date(app.createdAt).toLocaleDateString() }}
-              </td>
-              <td class="text-right">
-                <!-- Tenant Actions -->
-                <div v-if="isTenant">
-                  <span v-if="app.status === 'APPROVED'" class="text-emerald text-sm font-semibold">
-                    Approved — Check Leases
-                  </span>
-                  <span v-else-if="app.status === 'PENDING'" class="text-amber text-sm">
-                    In Landlord Review
-                  </span>
-                  <span v-else class="text-dim text-sm">
-                    Resolved
-                  </span>
-                </div>
+                <span v-else-if="app.status === 'PENDING'" class="text-amber text-sm">
+                  {{ t('applications.status.pending') }}
+                </span>
+                <span v-else class="text-dim text-sm">
+                  {{ t('applications.status.rejected') }}
+                </span>
+              </div>
 
-                <!-- Landlord / Admin Review Actions -->
-                <div v-else class="action-btn-group">
-                  <template v-if="app.status === 'PENDING'">
-                    <button
-                      @click="openReviewModal(app, 'APPROVED')"
-                      class="btn-primary btn-sm btn-approve"
-                      title="Approve Application & Generate Lease"
-                    >
-                      <CheckCircle2 :size="13" />
-                      <span>Approve</span>
-                    </button>
-                    <button
-                      @click="openReviewModal(app, 'REJECTED')"
-                      class="btn-secondary btn-sm text-danger"
-                      title="Reject Application"
-                    >
-                      <XCircle :size="13" />
-                      <span>Reject</span>
-                    </button>
-                  </template>
-                  <span v-else-if="app.status === 'APPROVED'" class="text-emerald text-xs font-semibold">
-                    Lease Drafted
-                  </span>
-                  <span v-else class="text-dim text-xs">
-                    Rejected
-                  </span>
-                </div>
-              </td>
-            </tr>
-          </tbody>
+              <!-- Landlord / Admin Review Actions -->
+              <div v-else class="action-btn-group">
+                <template v-if="app.status === 'PENDING'">
+                  <button @click="openReviewModal(app, 'APPROVED')" class="btn-primary btn-sm btn-approve"
+                    :title="t('applications.approve')">
+                    <CheckCircle2 :size="13" />
+                    <span>{{ t('applications.approve') }}</span>
+                  </button>
+                  <button @click="openReviewModal(app, 'REJECTED')" class="btn-secondary btn-sm text-danger"
+                    :title="t('applications.reject')">
+                    <XCircle :size="13" />
+                    <span>{{ t('applications.reject') }}</span>
+                  </button>
+                </template>
+                <span v-else-if="app.status === 'APPROVED'" class="text-emerald text-xs font-semibold">
+                  Lease Drafted
+                </span>
+                <span v-else class="text-dim text-xs">
+                  Rejected
+                </span>
+              </div>
+            </td>
+          </tr>
+        </tbody>
       </table>
     </AppTableCard>
 
@@ -304,9 +279,13 @@ onMounted(() => {
 
         <form @submit.prevent="submitReview" class="modal-body">
           <div class="app-summary-card">
-            <div><strong>Applicant:</strong> {{ appToReview.tenant?.fullName || 'Tenant' }} ({{ appToReview.tenant?.email }})</div>
-            <div><strong>Unit:</strong> Unit {{ appToReview.unit?.unitNumber }} ({{ appToReview.property?.title }})</div>
-            <div><strong>Desired Move-in:</strong> {{ new Date(appToReview.desiredMoveInDate).toLocaleDateString() }}</div>
+            <div><strong>Applicant:</strong> {{ appToReview.tenant?.fullName || 'Tenant' }} ({{
+              appToReview.tenant?.email
+              }})</div>
+            <div><strong>Unit:</strong> Unit {{ appToReview.unit?.unitNumber }} ({{ appToReview.property?.title }})
+            </div>
+            <div><strong>Desired Move-in:</strong> {{ new Date(appToReview.desiredMoveInDate).toLocaleDateString() }}
+            </div>
             <div><strong>Proposed Rent:</strong> ${{ appToReview.proposedRent }}/month</div>
             <div class="employment-box mt-2">
               <span class="box-label">Employment & Income Credentials:</span>
@@ -316,28 +295,21 @@ onMounted(() => {
 
           <div class="form-group">
             <label class="form-label">Review Decision Notes / Message to Tenant *</label>
-            <textarea
-              v-model="reviewReason"
-              rows="3"
-              required
-              class="input-field"
-              placeholder="Provide confirmation notes or reason for rejection..."
-            ></textarea>
+            <textarea v-model="reviewReason" rows="3" required class="input-field"
+              placeholder="Provide confirmation notes or reason for rejection..."></textarea>
           </div>
 
           <p v-if="reviewDecision === 'APPROVED'" class="approval-notice text-sm text-muted">
-            Approving this application will automatically mark Unit {{ appToReview.unit?.unitNumber }} as <strong>RESERVED</strong> and generate a digital lease agreement ready for signature.
+            Approving this application will automatically mark Unit {{ appToReview.unit?.unitNumber }} as
+            <strong>RESERVED</strong> and generate a digital lease agreement ready for signature.
           </p>
 
           <div class="modal-actions">
             <button type="button" @click="appToReview = null" class="btn-secondary">
               Cancel
             </button>
-            <button
-              type="submit"
-              :disabled="isSubmittingReview"
-              :class="['btn-primary', reviewDecision === 'REJECTED' ? 'btn-danger-action' : '']"
-            >
+            <button type="submit" :disabled="isSubmittingReview"
+              :class="['btn-primary', reviewDecision === 'REJECTED' ? 'btn-danger-action' : '']">
               <span>{{ isSubmittingReview ? 'Processing...' : (reviewDecision === 'APPROVED' ? 'Confirm Approval' : 'Confirm Rejection') }}</span>
             </button>
           </div>
@@ -387,32 +359,47 @@ onMounted(() => {
   gap: 1rem;
 }
 
+.filter-btn-group,
 .tab-pill-group {
-  display: flex;
-  gap: 0.35rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  flex-wrap: wrap;
 }
 
+.filter-btn,
 .tab-pill {
-   background: none;
-  border: none;
-  color: var(--text-muted);
-  font-size: 0.8rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.42rem 0.85rem;
+  font-size: 0.825rem;
   font-weight: 500;
-  padding: 0.35rem 0.75rem;
+  line-height: 1.25;
+  color: var(--text-muted);
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
   border-radius: var(--radius-sm);
   cursor: pointer;
   transition: all 0.15s ease;
+  white-space: nowrap;
 }
 
+.filter-btn:hover,
 .tab-pill:hover {
   color: var(--text-main);
+  background-color: var(--bg-surface-hover);
+  border-color: var(--border-default);
 }
 
+.filter-btn.active,
 .tab-pill.active {
-  background: var(--bg-surface);
-  color: var(--text-main);
-  border: 1px solid var(--border-default);
-  box-shadow: none;
+  color: #ffffff !important;
+  background-color: var(--primary) !important;
+  border-color: var(--primary) !important;
+  font-weight: 600;
+  box-shadow: 0 1px 2px rgba(37, 99, 235, 0.2);
 }
 
 .search-wrap {
@@ -546,7 +533,9 @@ onMounted(() => {
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* Modal */

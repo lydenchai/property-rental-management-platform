@@ -1,14 +1,13 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue';
-import { 
-  Building, 
-  MapPin, 
-  Search, 
-  SlidersHorizontal, 
-  ArrowRight, 
-  Check, 
+import {
+  Building,
+  MapPin,
+  Search,
+  SlidersHorizontal,
+  ArrowRight,
+  Check,
   RotateCcw,
-  Sparkles,
   LayoutGrid,
   Map as MapIcon,
   Columns2
@@ -36,6 +35,7 @@ interface Property {
   createdAt: string;
 }
 
+const { t } = useI18n();
 const properties = ref<Property[]>([]);
 const isLoading = ref<boolean>(true);
 const errorMessage = ref<string | null>(null);
@@ -147,9 +147,9 @@ onMounted(() => {
     <!-- Header Section -->
     <section class="page-header">
       <div class="header-container">
-        <h1>Explore Available Properties</h1>
+        <h1>{{ t('properties.explore_title') }}</h1>
         <p class="header-subtitle">
-          Discover verified apartments and residences with flexible leasing, clear terms, and interactive vector maps powered by OpenFreeMap.
+          {{ t('properties.explore_subtitle') }}
         </p>
       </div>
     </section>
@@ -159,55 +159,39 @@ onMounted(() => {
       <form @submit.prevent="handleSearch" class="filter-form">
         <div class="search-box">
           <Search :size="16" class="search-icon" />
-          <input
-            v-model="searchKeyword"
-            type="text"
-            placeholder="Search by title, street, or neighborhood..."
-            class="filter-input"
-          />
+          <input v-model="searchKeyword" type="text" :placeholder="t('properties.search_input_placeholder')"
+            class="filter-input" />
         </div>
 
         <div class="filter-controls">
           <div class="filter-group">
-            <label class="filter-label">City</label>
+            <label class="filter-label">{{ t('properties.city_filter') }}</label>
             <select v-model="selectedCity" class="filter-select">
-              <option value="">All Cities</option>
+              <option value="">{{ t('properties.all_cities') }}</option>
               <option v-for="c in availableCities" :key="c" :value="c">{{ c }}</option>
             </select>
           </div>
 
           <div class="filter-group">
-            <label class="filter-label">Min Rent</label>
-            <input
-              v-model.number="minPrice"
-              type="number"
-              placeholder="$ Any"
-              class="filter-input-sm"
-              min="0"
-              step="50"
-            />
+            <label class="filter-label">{{ t('properties.min_rent') }}</label>
+            <input v-model.number="minPrice" type="number" placeholder="$ Any" class="filter-input-sm" min="0"
+              step="50" />
           </div>
 
           <div class="filter-group">
-            <label class="filter-label">Max Rent</label>
-            <input
-              v-model.number="maxPrice"
-              type="number"
-              placeholder="$ Any"
-              class="filter-input-sm"
-              min="0"
-              step="50"
-            />
+            <label class="filter-label">{{ t('properties.max_rent') }}</label>
+            <input v-model.number="maxPrice" type="number" placeholder="$ Any" class="filter-input-sm" min="0"
+              step="50" />
           </div>
 
           <div class="filter-actions">
             <button type="submit" class="btn-primary filter-btn">
               <SlidersHorizontal :size="14" />
-              <span>Apply Filters</span>
+              <span>{{ t('properties.apply_filters') }}</span>
             </button>
-            <button type="button" @click="resetFilters" class="btn-secondary filter-btn" title="Reset Filters">
+            <button type="button" @click="resetFilters" class="btn-secondary filter-btn" :title="t('properties.reset_filters')">
               <RotateCcw :size="14" />
-              <span>Reset</span>
+              <span>{{ t('common.reset') }}</span>
             </button>
           </div>
         </div>
@@ -217,36 +201,24 @@ onMounted(() => {
     <!-- View Mode Switcher Bar -->
     <section class="view-bar-row">
       <div class="results-count">
-        <strong>{{ properties.length }}</strong> {{ properties.length === 1 ? 'property' : 'properties' }} found
+        <strong>{{ properties.length }}</strong> {{ properties.length === 1 ? t('properties.property_found_singular') : t('properties.properties_found', { count: properties.length }) }}
       </div>
 
       <div class="view-modes-group">
-        <button
-          type="button"
-          @click="viewMode = 'grid'"
-          :class="['view-toggle-btn', { active: viewMode === 'grid' }]"
-          title="Grid view of cards"
-        >
+        <button type="button" @click="viewMode = 'grid'" :class="['view-toggle-btn', { active: viewMode === 'grid' }]"
+          :title="t('properties.view_cards')">
           <LayoutGrid :size="14" />
-          <span>Cards</span>
+          <span>{{ t('properties.view_cards') }}</span>
         </button>
-        <button
-          type="button"
-          @click="viewMode = 'split'"
-          :class="['view-toggle-btn', { active: viewMode === 'split' }]"
-          title="Split cards and interactive map"
-        >
+        <button type="button" @click="viewMode = 'split'" :class="['view-toggle-btn', { active: viewMode === 'split' }]"
+          :title="t('properties.view_split_map')">
           <Columns2 :size="14" />
-          <span>Split Map</span>
+          <span>{{ t('properties.view_split_map') }}</span>
         </button>
-        <button
-          type="button"
-          @click="viewMode = 'map'"
-          :class="['view-toggle-btn', { active: viewMode === 'map' }]"
-          title="Full-screen OpenFreeMap view"
-        >
+        <button type="button" @click="viewMode = 'map'" :class="['view-toggle-btn', { active: viewMode === 'map' }]"
+          :title="t('properties.view_map')">
           <MapIcon :size="14" />
-          <span>Map View</span>
+          <span>{{ t('properties.view_map') }}</span>
         </button>
       </div>
     </section>
@@ -259,7 +231,7 @@ onMounted(() => {
     <!-- Loading State -->
     <div v-if="isLoading" class="loading-state">
       <div class="loading-spinner"></div>
-      <p>Loading available properties...</p>
+      <p>{{ t('properties.loading') }}</p>
     </div>
 
     <!-- Empty State -->
@@ -267,25 +239,21 @@ onMounted(() => {
       <div class="empty-icon-box">
         <Building :size="32" />
       </div>
-      <h3>No Properties Found</h3>
-      <p>No listings matched your active filter criteria. Try adjusting your search keywords or clearing filters.</p>
+      <h3>{{ t('properties.no_properties') }}</h3>
+      <p>{{ t('properties.no_properties_desc') }}</p>
       <button @click="resetFilters" class="btn-secondary mt-2">
         <RotateCcw :size="14" />
-        <span>Clear All Filters</span>
+        <span>{{ t('properties.clear_all_filters') }}</span>
       </button>
     </div>
 
     <!-- 1. FULL MAP VIEW -->
     <div v-else-if="viewMode === 'map'" class="full-map-container">
       <ClientOnly>
-        <PropertiesMapExplorer
-          :properties="properties"
-          :selected-id="activePropertyId"
-          height="650px"
-          @select="selectProperty"
-        />
+        <PropertiesMapExplorer :properties="properties" :selected-id="activePropertyId" height="650px"
+          @select="selectProperty" />
         <template #fallback>
-          <div class="map-placeholder card-flat">Loading OpenFreeMap explorer...</div>
+          <div class="map-placeholder card-flat">{{ t('common.please_wait') }}</div>
         </template>
       </ClientOnly>
     </div>
@@ -294,19 +262,16 @@ onMounted(() => {
     <div v-else-if="viewMode === 'split'" class="split-view-layout">
       <!-- Left: Property Cards Column -->
       <div class="split-cards-col">
-        <article
-          v-for="property in paginatedProperties"
-          :key="property.id"
+        <article v-for="property in paginatedProperties" :key="property.id"
           :class="['property-card card-flat', { 'is-active-card': activePropertyId === property.id }]"
-          @mouseenter="selectProperty(property.id)"
-          @click="selectProperty(property.id)"
-        >
+          @mouseenter="selectProperty(property.id)" @click="selectProperty(property.id)">
           <!-- Card Image Header -->
           <div class="card-hero-media">
             <img :src="getPropertyThumbnail(property)" :alt="property.title" class="card-hero-img" loading="lazy" />
             <div class="card-hero-overlay">
-              <span :class="['badge', property.availableUnitsCount > 0 ? 'badge-success' : 'badge-warning']">
-                {{ property.availableUnitsCount > 0 ? `${property.availableUnitsCount} Units` : 'Occupied' }}
+              <span :class="['badge badge-pill', property.availableUnitsCount > 0 ? 'badge-success' : 'badge-warning']">
+                <span class="badge-dot"></span>
+                <span>{{ property.availableUnitsCount > 0 ? t('properties.unit_available_badge', { count: property.availableUnitsCount }) : t('properties.unit_fully_leased_badge') }}</span>
               </span>
               <span class="city-pill">{{ property.city }}</span>
             </div>
@@ -330,20 +295,20 @@ onMounted(() => {
 
             <div class="property-footer">
               <div class="price-box">
-                <span class="price-label">Starting From</span>
+                <span class="price-label">{{ t('properties.starting_from') }}</span>
                 <div class="price-val">
                   <template v-if="property.minRent > 0">
                     <span class="rent-highlight">${{ property.minRent.toLocaleString() }}</span>
-                    <span class="price-period">/mo</span>
+                    <span class="price-period">{{ t('properties.per_month_short') }}</span>
                   </template>
                   <template v-else>
-                    <span class="price-inquire">Inquire</span>
+                    <span class="price-inquire">{{ t('properties.inquire_rates') }}</span>
                   </template>
                 </div>
               </div>
 
               <NuxtLink :to="`/properties/${property.id}`" class="btn-primary card-cta">
-                <span>View</span>
+                <span>{{ t('properties.view_cta') }}</span>
                 <ArrowRight :size="13" />
               </NuxtLink>
             </div>
@@ -352,13 +317,8 @@ onMounted(() => {
 
         <!-- Split View Pagination -->
         <div class="split-pagination card-flat mt-4">
-          <AppPagination
-            v-model:currentPage="currentPage"
-            v-model:pageSize="pageSize"
-            :pageSizeOptions="[4, 6, 8, 12]"
-            :totalItems="properties.length"
-            itemName="properties"
-          />
+          <AppPagination v-model:currentPage="currentPage" v-model:pageSize="pageSize" :pageSizeOptions="[4, 6, 8, 12]"
+            :totalItems="properties.length" :itemName="t('properties.units')" />
         </div>
       </div>
 
@@ -366,14 +326,10 @@ onMounted(() => {
       <div class="split-map-col">
         <div class="sticky-map-wrapper">
           <ClientOnly>
-            <PropertiesMapExplorer
-              :properties="properties"
-              :selected-id="activePropertyId"
-              height="620px"
-              @select="selectProperty"
-            />
+            <PropertiesMapExplorer :properties="properties" :selected-id="activePropertyId" height="620px"
+              @select="selectProperty" />
             <template #fallback>
-              <div class="map-placeholder card-flat">Loading OpenFreeMap explorer...</div>
+              <div class="map-placeholder card-flat">{{ t('common.please_wait') }}</div>
             </template>
           </ClientOnly>
         </div>
@@ -383,17 +339,14 @@ onMounted(() => {
     <!-- 3. STANDARD GRID CARDS VIEW -->
     <div v-else class="properties-grid-container">
       <div class="properties-grid">
-        <article
-          v-for="property in paginatedProperties"
-          :key="property.id"
-          class="property-card card-flat"
-        >
+        <article v-for="property in paginatedProperties" :key="property.id" class="property-card card-flat">
           <!-- Card Image Header -->
           <div class="card-hero-media">
             <img :src="getPropertyThumbnail(property)" :alt="property.title" class="card-hero-img" loading="lazy" />
             <div class="card-hero-overlay">
-              <span :class="['badge', property.availableUnitsCount > 0 ? 'badge-success' : 'badge-warning']">
-                {{ property.availableUnitsCount > 0 ? `${property.availableUnitsCount} Units Available` : 'Fully Occupied' }}
+              <span :class="['badge badge-pill', property.availableUnitsCount > 0 ? 'badge-success' : 'badge-warning']">
+                <span class="badge-dot"></span>
+                <span>{{ property.availableUnitsCount > 0 ? t('properties.unit_available_badge', { count: property.availableUnitsCount }) : t('properties.unit_fully_leased_badge') }}</span>
               </span>
               <span class="city-pill">{{ property.city }}</span>
             </div>
@@ -416,39 +369,35 @@ onMounted(() => {
 
               <!-- Amenities list -->
               <div v-if="property.amenities?.length" class="amenities-row">
-                <span
-                  v-for="amenity in property.amenities.slice(0, 4)"
-                  :key="amenity"
-                  class="amenity-tag"
-                >
+                <span v-for="amenity in property.amenities.slice(0, 4)" :key="amenity" class="amenity-tag">
                   <Check :size="12" class="tag-check" />
                   {{ amenity }}
                 </span>
                 <span v-if="property.amenities.length > 4" class="amenity-tag-more">
-                  +{{ property.amenities.length - 4 }} more
+                  {{ t('properties.more_amenities', { count: property.amenities.length - 4 }) }}
                 </span>
               </div>
             </div>
 
             <div class="property-footer">
               <div class="price-box">
-                <span class="price-label">Starting From</span>
+                <span class="price-label">{{ t('properties.starting_from') }}</span>
                 <div class="price-val">
                   <template v-if="property.minRent > 0">
                     <span class="rent-highlight">${{ property.minRent.toLocaleString() }}</span>
                     <span v-if="property.maxRent > property.minRent" class="price-range">
                       – ${{ property.maxRent.toLocaleString() }}
                     </span>
-                    <span class="price-period">/mo</span>
+                    <span class="price-period">{{ t('properties.per_month_short') }}</span>
                   </template>
                   <template v-else>
-                    <span class="price-inquire">Inquire for rates</span>
+                    <span class="price-inquire">{{ t('properties.inquire_rates') }}</span>
                   </template>
                 </div>
               </div>
 
               <NuxtLink :to="`/properties/${property.id}`" class="btn-primary card-cta">
-                <span>View Units</span>
+                <span>{{ t('properties.view_units') }}</span>
                 <ArrowRight :size="14" />
               </NuxtLink>
             </div>
@@ -458,13 +407,8 @@ onMounted(() => {
 
       <!-- Grid Cards Pagination -->
       <div class="grid-pagination-wrapper card-flat mt-4">
-        <AppPagination
-          v-model:currentPage="currentPage"
-          v-model:pageSize="pageSize"
-          :pageSizeOptions="[6, 12, 18, 24]"
-          :totalItems="properties.length"
-          itemName="properties"
-        />
+        <AppPagination v-model:currentPage="currentPage" v-model:pageSize="pageSize" :pageSizeOptions="[6, 12, 18, 24]"
+          :totalItems="properties.length" :itemName="t('properties.units')" />
       </div>
     </div>
   </div>
@@ -935,7 +879,9 @@ onMounted(() => {
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .empty-state {

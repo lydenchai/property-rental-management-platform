@@ -4,6 +4,7 @@ import { Bell, Check, CheckCheck, Clock, AlertTriangle, Info, CheckCircle2, X } 
 import type { ApiResponse } from '../../../shared/types/api';
 import type { NotificationDetail } from '../../../shared/types/notification';
 
+const { t } = useI18n();
 const isOpen = ref(false);
 const notifications = ref<NotificationDetail[]>([]);
 const unreadCount = ref(0);
@@ -53,10 +54,10 @@ async function markAllRead() {
 function timeAgo(dateStr: string | Date) {
   const d = new Date(dateStr);
   const diffSec = Math.floor((Date.now() - d.getTime()) / 1000);
-  if (diffSec < 60) return 'Just now';
-  if (diffSec < 3600) return `${Math.floor(diffSec / 60)}m ago`;
-  if (diffSec < 86400) return `${Math.floor(diffSec / 3600)}h ago`;
-  return `${Math.floor(diffSec / 86400)}d ago`;
+  if (diffSec < 60) return t('notifications.just_now');
+  if (diffSec < 3600) return t('notifications.minutes_ago', { count: Math.floor(diffSec / 60) });
+  if (diffSec < 86400) return t('notifications.hours_ago', { count: Math.floor(diffSec / 3600) });
+  return t('notifications.days_ago', { count: Math.floor(diffSec / 86400) });
 }
 
 let pollInterval: any = null;
@@ -73,12 +74,8 @@ onUnmounted(() => {
 
 <template>
   <div class="notification-wrapper">
-    <button
-      @click="isOpen = !isOpen"
-      class="bell-btn"
-      :class="{ 'has-unread': unreadCount > 0, active: isOpen }"
-      title="Notifications"
-    >
+    <button @click="isOpen = !isOpen" class="bell-btn" :class="{ 'has-unread': unreadCount > 0, active: isOpen }"
+      :title="t('notifications.title')">
       <Bell :size="16" />
       <span v-if="unreadCount > 0" class="unread-pill">{{ unreadCount }}</span>
     </button>
@@ -87,18 +84,13 @@ onUnmounted(() => {
     <div v-if="isOpen" class="notif-dropdown card-flat">
       <div class="notif-header">
         <div class="notif-title-row">
-          <span class="notif-title">Notifications</span>
-          <span v-if="unreadCount > 0" class="badge badge-info">{{ unreadCount }} new</span>
+          <span class="notif-title">{{ t('notifications.title') }}</span>
+          <span v-if="unreadCount > 0" class="badge badge-info">{{ t('notifications.new', { count: unreadCount }) }}</span>
         </div>
         <div class="notif-header-actions">
-          <button
-            v-if="unreadCount > 0"
-            @click="markAllRead"
-            class="action-link"
-            title="Mark all as read"
-          >
+          <button v-if="unreadCount > 0" @click="markAllRead" class="action-link" :title="t('notifications.mark_all_read')">
             <CheckCheck :size="13" />
-            <span>Mark all read</span>
+            <span>{{ t('notifications.mark_all_read') }}</span>
           </button>
           <button @click="isOpen = false" class="close-btn">&times;</button>
         </div>
@@ -107,27 +99,19 @@ onUnmounted(() => {
       <div class="notif-body">
         <div v-if="notifications.length === 0" class="notif-empty">
           <Bell :size="24" class="empty-icon" />
-          <p>No notifications yet</p>
+          <p>{{ t('notifications.empty') }}</p>
         </div>
 
         <div v-else class="notif-list">
-          <div
-            v-for="notif in notifications"
-            :key="notif.id"
-            class="notif-item"
-            :class="{ unread: !notif.isRead }"
-            @click="markAsRead(notif.id, notif.link)"
-          >
+          <div v-for="notif in notifications" :key="notif.id" class="notif-item" :class="{ unread: !notif.isRead }"
+            @click="markAsRead(notif.id, notif.link)">
             <div class="notif-indicator-col">
-              <span
-                class="status-dot"
-                :class="{
-                  warning: notif.type === 'WARNING',
-                  success: notif.type === 'SUCCESS',
-                  info: notif.type === 'INFO',
-                  error: notif.type === 'ERROR',
-                }"
-              ></span>
+              <span class="status-dot" :class="{
+                warning: notif.type === 'WARNING',
+                success: notif.type === 'SUCCESS',
+                info: notif.type === 'INFO',
+                error: notif.type === 'ERROR',
+              }"></span>
             </div>
             <div class="notif-text-col">
               <div class="notif-item-title">{{ notif.title }}</div>

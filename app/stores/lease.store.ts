@@ -50,7 +50,7 @@ export function useLeaseStore() {
       }
     } catch (err: any) {
       state.error = err?.data?.error?.message || err?.message || 'Failed to fetch leases';
-      throw err;
+      return [];
     } finally {
       state.isLoading = false;
     }
@@ -178,8 +178,12 @@ export function useLeaseStore() {
     activeLeasesCount,
     pendingLeasesCount,
     terminatedLeasesCount,
+    activeLeases: activeLeasesCount,
+    pendingLeases: pendingLeasesCount,
+    terminatedLeases: terminatedLeasesCount,
     monthlyRentRoll,
     fetchLeases,
+    loadLeases: fetchLeases,
     fetchLeaseById,
     createLease,
     signLease,

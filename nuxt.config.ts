@@ -1,8 +1,21 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
+  modules: [
+    '@nuxtjs/tailwindcss',
+    '@pinia/nuxt',
+    '@nuxtjs/google-fonts',
+    '@nuxtjs/i18n'
+  ],
+  googleFonts: {
+    download: true,
+    families: {
+      'Plus+Jakarta+Sans': [400, 500, 600, 700],
+      'Kantumruy+Pro': [300, 400, 500, 600, 700],
+      'Inter': [400, 500, 600, 700],
+    },
+  },
   devtools: { enabled: true },
-  modules: ['@nuxtjs/tailwindcss'],
   imports: {
     dirs: ['stores', 'stores/**'],
   },
@@ -32,4 +45,19 @@ export default defineNuxtConfig({
       ],
     },
   },
+  i18n: {
+    langDir: 'locales',
+    defaultLocale: 'en',
+    strategy: 'no_prefix',
+    locales: [
+      { code: 'en', name: 'English', file: 'en.json', language: 'en-US' },
+      { code: 'km', name: 'ខ្មែរ', file: 'km.json', language: 'km-KH' }
+    ],
+    detectBrowserLanguage: {
+      useCookie: true,
+      cookieKey: 'rentease-locale',
+      redirectOn: 'root',
+      alwaysRedirect: false,
+    },
+  }
 });

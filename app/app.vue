@@ -1,8 +1,15 @@
 <script setup lang="ts">
-import { onMounted } from 'vue';
+import { computed, onMounted } from 'vue';
 import { useTheme } from './composables/useTheme';
 
 const { initTheme } = useTheme();
+const { locale } = useI18n();
+
+useHead({
+  htmlAttrs: {
+    lang: computed(() => locale.value || 'en'),
+  },
+});
 
 onMounted(() => {
   initTheme();

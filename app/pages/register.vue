@@ -7,6 +7,7 @@ definePageMeta({
   layout: 'auth',
 });
 
+const { t } = useI18n();
 const { register, isLoading, error } = useAuth();
 const router = useRouter();
 
@@ -22,12 +23,12 @@ async function handleRegister() {
   validationError.value = null;
 
   if (password.value !== confirmPassword.value) {
-    validationError.value = 'Passwords do not match';
+    validationError.value = t('auth.password_mismatch');
     return;
   }
 
   if (password.value.length < 8) {
-    validationError.value = 'Password must be at least 8 characters long';
+    validationError.value = t('auth.password_too_short');
     return;
   }
 
@@ -48,8 +49,8 @@ async function handleRegister() {
 <template>
   <div class="register-view">
     <div class="card-header">
-      <h2>Join RentEase</h2>
-      <p class="subtitle">Create an account to start managing or renting properties</p>
+      <h2>{{ t('auth.join_title') }}</h2>
+      <p class="subtitle">{{ t('auth.join_subtitle') }}</p>
     </div>
 
     <!-- Error Alerts -->
@@ -59,42 +60,25 @@ async function handleRegister() {
 
     <form @submit.prevent="handleRegister" class="register-form">
       <div class="form-group">
-        <label for="reg-name" class="form-label">Full Name</label>
-        <input
-          id="reg-name"
-          v-model="fullName"
-          type="text"
-          placeholder="Jane Doe"
-          required
-          class="input-field"
-        />
+        <label for="reg-name" class="form-label">{{ t('auth.full_name') }}</label>
+        <input id="reg-name" v-model="fullName" type="text" :placeholder="t('auth.full_name_placeholder')" required
+          class="input-field" />
       </div>
 
       <div class="form-group">
-        <label for="reg-email" class="form-label">Email Address</label>
-        <input
-          id="reg-email"
-          v-model="email"
-          type="email"
-          placeholder="name@example.com"
-          required
-          class="input-field"
-        />
+        <label for="reg-email" class="form-label">{{ t('auth.email') }}</label>
+        <input id="reg-email" v-model="email" type="email" :placeholder="t('auth.email_placeholder')" required
+          class="input-field" />
       </div>
 
       <div class="form-group">
-        <label for="reg-phone" class="form-label">Phone Number (Optional)</label>
-        <input
-          id="reg-phone"
-          v-model="phone"
-          type="tel"
-          placeholder="+855 12 345 678"
-          class="input-field"
-        />
+        <label for="reg-phone" class="form-label">{{ t('auth.phone_optional') }}</label>
+        <input id="reg-phone" v-model="phone" type="tel" :placeholder="t('auth.phone_placeholder')"
+          class="input-field" />
       </div>
 
       <div class="form-group">
-        <label class="form-label">I want to register as</label>
+        <label class="form-label">{{ t('auth.register_as') }}</label>
         <div class="role-selector">
           <label class="role-option" :class="{ selected: role === 'TENANT' }">
             <input type="radio" v-model="role" value="TENANT" class="radio-hidden" />
@@ -102,8 +86,8 @@ async function handleRegister() {
               <Key :size="16" />
             </div>
             <div class="role-text">
-              <span class="role-title">Tenant</span>
-              <span class="role-desc">Rent units & pay invoices</span>
+              <span class="role-title">{{ t('auth.role_tenant') }}</span>
+              <span class="role-desc">{{ t('auth.role_tenant_desc') }}</span>
             </div>
           </label>
 
@@ -113,46 +97,34 @@ async function handleRegister() {
               <Building :size="16" />
             </div>
             <div class="role-text">
-              <span class="role-title">Landlord</span>
-              <span class="role-desc">Manage properties & leases</span>
+              <span class="role-title">{{ t('auth.role_landlord') }}</span>
+              <span class="role-desc">{{ t('auth.role_landlord_desc') }}</span>
             </div>
           </label>
         </div>
       </div>
 
       <div class="form-group">
-        <label for="reg-password" class="form-label">Password</label>
-        <input
-          id="reg-password"
-          v-model="password"
-          type="password"
-          placeholder="At least 8 characters (1 uppercase, 1 number)"
-          required
-          class="input-field"
-        />
+        <label for="reg-password" class="form-label">{{ t('auth.password') }}</label>
+        <input id="reg-password" v-model="password" type="password"
+          :placeholder="t('auth.password_hint')" required class="input-field" />
       </div>
 
       <div class="form-group">
-        <label for="reg-confirm" class="form-label">Confirm Password</label>
-        <input
-          id="reg-confirm"
-          v-model="confirmPassword"
-          type="password"
-          placeholder="Re-enter your password"
-          required
-          class="input-field"
-        />
+        <label for="reg-confirm" class="form-label">{{ t('auth.confirm_password') }}</label>
+        <input id="reg-confirm" v-model="confirmPassword" type="password"
+          :placeholder="t('auth.confirm_password_placeholder')" required class="input-field" />
       </div>
 
       <button type="submit" :disabled="isLoading" class="btn-primary btn-block">
-        <span v-if="isLoading">Creating account...</span>
-        <span v-else>Register Account</span>
+        <span v-if="isLoading">{{ t('auth.creating_account') }}</span>
+        <span v-else>{{ t('auth.register_account') }}</span>
       </button>
     </form>
 
     <div class="signin-prompt">
-      <span>Already have an account?</span>
-      <NuxtLink to="/login" class="signin-link">Sign in</NuxtLink>
+      <span>{{ t('auth.already_have_account') }}</span>
+      <NuxtLink to="/login" class="signin-link">{{ t('auth.sign_in') }}</NuxtLink>
     </div>
   </div>
 </template>

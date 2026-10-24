@@ -2,8 +2,10 @@
 import { Building2 } from '@lucide/vue';
 import { useAuth } from '../composables/useAuth';
 import ThemeToggle from '../components/common/ThemeToggle.vue';
+import LanguageSwitcher from '../components/common/LanguageSwitcher.vue';
 
-const { isAuthenticated, user, logout } = useAuth();
+const { t } = useI18n();
+const { isAuthenticated, logout } = useAuth();
 </script>
 
 <template>
@@ -19,19 +21,20 @@ const { isAuthenticated, user, logout } = useAuth();
         </NuxtLink>
 
         <nav class="nav-links">
-          <NuxtLink to="/" class="nav-link">Home</NuxtLink>
-          <NuxtLink to="/properties" class="nav-link">Browse Properties</NuxtLink>
+          <NuxtLink to="/" class="nav-link">{{ t('nav.home') }}</NuxtLink>
+          <NuxtLink to="/properties" class="nav-link">{{ t('nav.properties') }}</NuxtLink>
         </nav>
 
         <div class="nav-actions">
+          <LanguageSwitcher />
           <ThemeToggle />
           <template v-if="isAuthenticated">
-            <NuxtLink to="/dashboard" class="btn-primary">Dashboard</NuxtLink>
-            <button @click="logout" class="btn-secondary">Log Out</button>
+            <NuxtLink to="/dashboard" class="btn-primary">{{ t('nav.dashboard') }}</NuxtLink>
+            <button @click="logout" class="btn-secondary">{{ t('nav.log_out') }}</button>
           </template>
           <template v-else>
-            <NuxtLink to="/login" class="btn-secondary">Sign In</NuxtLink>
-            <NuxtLink to="/register" class="btn-primary">Get Started</NuxtLink>
+            <NuxtLink to="/login" class="btn-secondary">{{ t('nav.sign_in') }}</NuxtLink>
+            <NuxtLink to="/register" class="btn-primary">{{ t('nav.get_started') }}</NuxtLink>
           </template>
         </div>
       </div>
@@ -53,11 +56,11 @@ const { isAuthenticated, user, logout } = useAuth();
             <span class="brand-name">Rent<span class="brand-accent">Ease</span></span>
           </div>
           <p class="footer-tagline">
-            Next-generation property rental management platform built for modern living.
+            {{ t('brand.tagline') }}
           </p>
         </div>
         <div class="footer-copyright">
-          &copy; {{ new Date().getFullYear() }} RentEase Platform. All rights reserved.
+          &copy; {{ new Date().getFullYear() }} {{ t('brand.copyright') }}
         </div>
       </div>
     </footer>
