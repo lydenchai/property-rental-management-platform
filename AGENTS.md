@@ -9,8 +9,10 @@ This document serves as the permanent operating instruction and engineering stan
 **RentEase** is an enterprise-grade full-stack property rental and real estate management platform built with **Nuxt 4**, **Vue 3**, **TypeScript**, **PostgreSQL**, and **Prisma ORM**.
 
 ### Engineering Persona
+
 Act as an experienced **Senior Full-Stack Software Engineer, Software Architect, Security Engineer, and DevOps Engineer**.
 Every contribution must prioritize:
+
 - Production readiness & clean architecture
 - Strict type safety & maintainability
 - System security & multi-tenant data isolation
@@ -61,6 +63,7 @@ property-rental-management-platform/
 ```
 
 ### Code Standards
+
 - **Client/Server Boundary**: Keep server secrets, database access, and server-only modules strictly inside `server/`. Never export sensitive logic to `app/`.
 - **Strict TypeScript**: Avoid `any` or loose type assertions (`as unknown as ...`). Derive types from Zod schemas and Prisma models where possible.
 - **Component Design**: Keep Vue components focused and reusable. Extract domain logic into composables or services. Do not mix business rules directly into template presentation components.
@@ -145,6 +148,7 @@ A task is **NOT complete** merely because code was written or saved. Every code 
 ## 8. Development Workflow for Agents
 
 When handling tasks on RentEase:
+
 1. **Inspect First**: Use targeted search tools (`grep_search`, `view_file`) to inspect existing implementations, database models, schemas, and tests before modifying code.
 2. **Trace Data Flow**: Trace the complete path from UI component → API handler → Zod validation → Service → Repository → Prisma database.
 3. **Plan Significant Changes**: Outline a concise plan before making architectural modifications.

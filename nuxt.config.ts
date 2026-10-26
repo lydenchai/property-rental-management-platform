@@ -1,18 +1,13 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
-  modules: [
-    '@nuxtjs/tailwindcss',
-    '@pinia/nuxt',
-    '@nuxtjs/google-fonts',
-    '@nuxtjs/i18n'
-  ],
+  modules: ['@nuxtjs/tailwindcss', '@pinia/nuxt', '@nuxtjs/google-fonts', '@nuxtjs/i18n'],
   googleFonts: {
     download: true,
     families: {
       'Plus+Jakarta+Sans': [400, 500, 600, 700],
       'Kantumruy+Pro': [300, 400, 500, 600, 700],
-      'Inter': [400, 500, 600, 700],
+      Inter: [400, 500, 600, 700],
     },
   },
   devtools: { enabled: true },
@@ -22,7 +17,9 @@ export default defineNuxtConfig({
   css: ['~/assets/css/main.css'],
   runtimeConfig: {
     databaseUrl: process.env.DATABASE_URL,
-    sessionSecret: process.env.SESSION_SECRET || 'super-secret-random-key-change-this-in-production-min-32-chars-long',
+    sessionSecret:
+      process.env.SESSION_SECRET ||
+      'super-secret-random-key-change-this-in-production-min-32-chars-long',
     public: {
       appUrl: process.env.APP_URL || 'http://localhost:3000',
     },
@@ -35,7 +32,8 @@ export default defineNuxtConfig({
         { name: 'viewport', content: 'width=device-width, initial-scale=1' },
         {
           name: 'description',
-          content: 'Enterprise-grade property rental management platform for Landlords, Tenants, Technicians, and Admins.',
+          content:
+            'Enterprise-grade property rental management platform for Landlords, Tenants, Technicians, and Admins.',
         },
       ],
       script: [
@@ -51,7 +49,7 @@ export default defineNuxtConfig({
     strategy: 'no_prefix',
     locales: [
       { code: 'en', name: 'English', file: 'en.json', language: 'en-US' },
-      { code: 'km', name: 'ខ្មែរ', file: 'km.json', language: 'km-KH' }
+      { code: 'km', name: 'ខ្មែរ', file: 'km.json', language: 'km-KH' },
     ],
     detectBrowserLanguage: {
       useCookie: true,
@@ -59,5 +57,9 @@ export default defineNuxtConfig({
       redirectOn: 'root',
       alwaysRedirect: false,
     },
-  }
+  },
+  devServer: {
+    host: process.env.NUXT_HOST || '0.0.0.0',
+    port: Number(process.env.NUXT_PORT || process.env.PORT || 4000),
+  },
 });

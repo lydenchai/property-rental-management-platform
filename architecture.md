@@ -35,6 +35,7 @@
 ```
 
 ### Core Architectural Decisions
+
 1. **Nuxt 4 Layer Separation**:
    - `app/`: Client-side UI (pages, components, composables, layouts, assets).
    - `server/`: Nitro backend (API event handlers, middleware, services, repositories, database client, email/notification handlers).
@@ -353,27 +354,27 @@ erDiagram
 
 ## 5. Role-Based Access Control (RBAC) Matrix
 
-| Domain Resource | Action | Admin | Landlord | Tenant | Technician |
-| :--- | :--- | :---: | :---: | :---: | :---: |
-| **Users & Accounts** | Create/Invite | Yes | No | No | No |
-| | View Profiles | All | Self/Own Tenants | Self/Landlord | Self |
-| | Suspend/Activate | Yes | No | No | No |
-| **Properties & Units** | Create / Edit / Delete | All | Own Properties | No | No |
-| | View Listings | All | Own Properties | Available/All | Assigned Only |
-| **Applications** | Submit | No | No | Yes (Self) | No |
-| | Review / Approve / Reject | All | Own Properties | View Self Only | No |
-| **Lease Agreements** | Create Draft | All | Own Properties | No | No |
-| | Sign Lease | All (Admin override)| Landlord Sign | Tenant Sign | No |
-| | Terminate Lease | All | Own Leases | No | No |
-| **Invoices & Billing** | Generate / Issue | All | Own Leases | View Self Only | No |
-| | Record / Confirm Payment | All | Own Invoices | Submit proof | No |
-| | View Invoices & Receipts | All | Own Leases | Self Invoices | No |
-| **Maintenance** | Create Request | All | Own Properties | Own Unit Only | No |
-| | Assign Technician | All | Own Properties | No | No |
-| | Update Progress / Resolve| All | Own Properties | No | Assigned Tasks |
-| | Confirm Resolution | All | Own Properties | Own Request | No |
-| **Audit Logs & Reports** | View Global Audit Logs | Yes | No | No | No |
-| | View Financial Reports | Platform-wide | Own Properties | Self History | No |
+| Domain Resource          | Action                    |        Admin         |     Landlord     |     Tenant     |   Technician   |
+| :----------------------- | :------------------------ | :------------------: | :--------------: | :------------: | :------------: |
+| **Users & Accounts**     | Create/Invite             |         Yes          |        No        |       No       |       No       |
+|                          | View Profiles             |         All          | Self/Own Tenants | Self/Landlord  |      Self      |
+|                          | Suspend/Activate          |         Yes          |        No        |       No       |       No       |
+| **Properties & Units**   | Create / Edit / Delete    |         All          |  Own Properties  |       No       |       No       |
+|                          | View Listings             |         All          |  Own Properties  | Available/All  | Assigned Only  |
+| **Applications**         | Submit                    |          No          |        No        |   Yes (Self)   |       No       |
+|                          | Review / Approve / Reject |         All          |  Own Properties  | View Self Only |       No       |
+| **Lease Agreements**     | Create Draft              |         All          |  Own Properties  |       No       |       No       |
+|                          | Sign Lease                | All (Admin override) |  Landlord Sign   |  Tenant Sign   |       No       |
+|                          | Terminate Lease           |         All          |    Own Leases    |       No       |       No       |
+| **Invoices & Billing**   | Generate / Issue          |         All          |    Own Leases    | View Self Only |       No       |
+|                          | Record / Confirm Payment  |         All          |   Own Invoices   |  Submit proof  |       No       |
+|                          | View Invoices & Receipts  |         All          |    Own Leases    | Self Invoices  |       No       |
+| **Maintenance**          | Create Request            |         All          |  Own Properties  | Own Unit Only  |       No       |
+|                          | Assign Technician         |         All          |  Own Properties  |       No       |       No       |
+|                          | Update Progress / Resolve |         All          |  Own Properties  |       No       | Assigned Tasks |
+|                          | Confirm Resolution        |         All          |  Own Properties  |  Own Request   |       No       |
+| **Audit Logs & Reports** | View Global Audit Logs    |         Yes          |        No        |       No       |       No       |
+|                          | View Financial Reports    |    Platform-wide     |  Own Properties  |  Self History  |       No       |
 
 ---
 
@@ -383,6 +384,7 @@ All endpoints prefixed with `/api/v1` and return uniform envelope format:
 `{ success: boolean, data?: T, error?: { code: string, message: string, details?: any } }`
 
 ### Authentication (`/api/v1/auth`)
+
 - `POST /register`: Register user (Tenant default or Landlord request).
 - `POST /login`: Validate credentials, issue secure HTTP-only session cookie.
 - `POST /logout`: Invalidate session in database, clear cookie.
@@ -391,6 +393,7 @@ All endpoints prefixed with `/api/v1` and return uniform envelope format:
 - `POST /password-reset/confirm`: Validate token and update password.
 
 ### Properties & Units (`/api/v1/properties`, `/api/v1/units`)
+
 - `GET    /properties`: Paginated list (filtered by owner or search query).
 - `POST   /properties`: Create property (Landlord/Admin).
 - `GET    /properties/:id`: View property details with units.
@@ -401,6 +404,7 @@ All endpoints prefixed with `/api/v1` and return uniform envelope format:
 - `PATCH  /units/:id/status`: Change unit status (`AVAILABLE`, `UNDER_MAINTENANCE`, etc.).
 
 ### Applications & Leases (`/api/v1/applications`, `/api/v1/leases`)
+
 - `POST   /applications`: Submit rental application for available unit.
 - `GET    /applications`: List applications (scoped to Tenant or Landlord).
 - `PATCH  /applications/:id/review`: Approve/reject application.
@@ -410,6 +414,7 @@ All endpoints prefixed with `/api/v1` and return uniform envelope format:
 - `POST   /leases/:id/terminate`: Early termination / cancellation with reason.
 
 ### Billing & Payments (`/api/v1/invoices`, `/api/v1/payments`)
+
 - `GET    /invoices`: List invoices (scoped to Tenant/Landlord/Admin).
 - `POST   /invoices/generate`: Generate monthly invoice for active lease.
 - `GET    /invoices/:id`: Single invoice with breakdown and payment history.
@@ -417,6 +422,7 @@ All endpoints prefixed with `/api/v1` and return uniform envelope format:
 - `GET    /payments/:id/receipt`: Download or view payment receipt summary.
 
 ### Maintenance (`/api/v1/maintenance`)
+
 - `POST   /maintenance/requests`: Tenant submits new maintenance ticket.
 - `GET    /maintenance/requests`: List requests (filtered by status/unit/assignee).
 - `PATCH  /maintenance/requests/:id/assign`: Assign technician to request.
@@ -424,6 +430,7 @@ All endpoints prefixed with `/api/v1` and return uniform envelope format:
 - `POST   /maintenance/requests/:id/confirm`: Tenant confirms repair completion.
 
 ### Administration & Audit Logs (`/api/v1/admin`)
+
 - `GET    /admin/users`: Manage user accounts and statuses.
 - `GET    /admin/audit-logs`: Query filterable audit log events with IP/Agent data.
 - `GET    /admin/reports/occupancy`: Occupancy rates and property performance.
@@ -434,61 +441,61 @@ All endpoints prefixed with `/api/v1` and return uniform envelope format:
 ## 7. Key Risks & Security Controls
 
 1. **Broken Object Level Authorization (BOLA/IDOR)**:
-   - *Risk*: A malicious tenant queries or modifies another tenant's lease or invoice by guessing UUIDs.
-   - *Control*: Every repository and service method enforces tenancy check (`WHERE id = :id AND (landlordId = :userId OR tenantId = :userId)`).
+   - _Risk_: A malicious tenant queries or modifies another tenant's lease or invoice by guessing UUIDs.
+   - _Control_: Every repository and service method enforces tenancy check (`WHERE id = :id AND (landlordId = :userId OR tenantId = :userId)`).
 2. **Double-Leasing / Race Conditions on Units**:
-   - *Risk*: Two applications approved simultaneously, leading to conflicting active leases for the same unit.
-   - *Control*: Strict PostgreSQL isolation and row locking (`SELECT FOR UPDATE`) within `prisma.$transaction`. Unit status updated to `RESERVED` atomically upon approval.
+   - _Risk_: Two applications approved simultaneously, leading to conflicting active leases for the same unit.
+   - _Control_: Strict PostgreSQL isolation and row locking (`SELECT FOR UPDATE`) within `prisma.$transaction`. Unit status updated to `RESERVED` atomically upon approval.
 3. **Payment Integrity & Mock Separation**:
-   - *Risk*: Client claims payment was made by posting status `PAID`.
-   - *Control*: Clients can only submit payment intent or proof of transfer. Only Landlords or Admins can confirm offline payments, and automated webhooks with cryptographic signature verification are required for payment gateways.
+   - _Risk_: Client claims payment was made by posting status `PAID`.
+   - _Control_: Clients can only submit payment intent or proof of transfer. Only Landlords or Admins can confirm offline payments, and automated webhooks with cryptographic signature verification are required for payment gateways.
 4. **Credential Exposure & Session Hijacking**:
-   - *Risk*: Stolen cookies or brute-force credential stuffing.
-   - *Control*: `HttpOnly`, `Secure`, `SameSite=Lax` cookies, rate limiting on `/auth/*` endpoints via Nitro middleware, and secure password hashing using Node `scrypt`.
+   - _Risk_: Stolen cookies or brute-force credential stuffing.
+   - _Control_: `HttpOnly`, `Secure`, `SameSite=Lax` cookies, rate limiting on `/auth/*` endpoints via Nitro middleware, and secure password hashing using Node `scrypt`.
 5. **Data Auditability**:
-   - *Risk*: Unauthorized rent changes or dispute over lease terms.
-   - *Control*: Dedicated `AuditLog` service logging before/after states for all sensitive operations (application review, lease signing, invoice modifications, payment recordings).
+   - _Risk_: Unauthorized rent changes or dispute over lease terms.
+   - _Control_: Dedicated `AuditLog` service logging before/after states for all sensitive operations (application review, lease signing, invoice modifications, payment recordings).
 
 ---
 
 ## 8. Phased Implementation Roadmap
 
-- [x] **Phase 1: Architecture, ERD, RBAC, and Environment Setup** *(Completed)*
+- [x] **Phase 1: Architecture, ERD, RBAC, and Environment Setup** _(Completed)_
   - System architecture document, ERD, and API contracts.
   - Dependencies: `@prisma/client`, `prisma`, `zod`, `@nuxtjs/tailwindcss`, `@lucide/vue`, `bcryptjs`, `vitest`.
   - Configured `nuxt.config.ts`, `tailwind.config.ts`, and comprehensive `.env.example`.
-- [x] **Phase 2: Database Schema, Migrations, Authentication & Authorization** *(Completed)*
+- [x] **Phase 2: Database Schema, Migrations, Authentication & Authorization** _(Completed)_
   - Complete `prisma/schema.prisma` with all models, constraints, and indexes.
   - Migration script and seed script with test accounts for each role.
   - Session auth engine (cookie-based, Nitro server middleware, RBAC guards).
   - Auth UI pages (Login, Register, Dashboard shell) adhering to strict flat design & no emojis.
-- [x] **Phase 3: Property & Unit Management** *(Completed)*
+- [x] **Phase 3: Property & Unit Management** _(Completed)_
   - Property and unit CRUD with amenities, pricing, and images.
   - Landlord management UI (`/dashboard/properties`, `/dashboard/properties/create`, `/dashboard/properties/[id]`, `/dashboard/properties/[id]/edit`).
   - Public & tenant property browsing (`/properties`, `/properties/[id]`).
-- [x] **Phase 4: Rental Applications & Lease Workflows** *(Completed)*
+- [x] **Phase 4: Rental Applications & Lease Workflows** _(Completed)_
   - Application submission, landlord review/approval flow with reason notes.
   - Automatic lease generation upon application approval.
   - Digital signature flow (tenant and landlord dual-signing).
   - Atomic unit state transitions (AVAILABLE -> RESERVED -> OCCUPIED -> AVAILABLE).
-- [x] **Phase 5: Invoices, Payment Records & Scheduled Billing** *(Completed)*
+- [x] **Phase 5: Invoices, Payment Records & Scheduled Billing** _(Completed)_
   - Monthly rent invoice generation engine with sequential numbering (`INV-YYYY-XXXXXX`).
   - Dual-mode payment processing (tenant online card/Stripe mock, landlord cash/check/wire recording).
   - Automated status transitions (`UNPAID` -> `PARTIALLY_PAID` -> `PAID` / `OVERDUE`).
   - Printable official digital payment receipts (`RCPT-YYYY-XXXXXX`) with breakdown.
   - Dashboard invoice ledger UI (`/dashboard/invoices`) adhering to strict flat UI design standards.
-- [x] **Phase 6: Maintenance Management & Notifications** *(Completed)*
+- [x] **Phase 6: Maintenance Management & Notifications** _(Completed)_
   - End-to-end maintenance ticket lifecycle: Tenant report -> Landlord assignment -> Technician resolution -> Tenant confirmation.
   - Priority levels (`LOW`, `MEDIUM`, `HIGH`, `EMERGENCY`) and status tracking (`OPEN`, `ASSIGNED`, `IN_PROGRESS`, `RESOLVED`, `CONFIRMED_CLOSED`).
   - Notification repository and dispatch system with real-time in-app alerts.
   - Topbar `NotificationBell` with unread badge counter, popover menu, and mark-as-read functionality.
   - Full-featured dashboard management interface (`/dashboard/maintenance`) adhering to strict flat UI design standards.
-- [x] **Phase 7: Dashboards, Reports, Audit Logs & Performance** *(Completed)*
+- [x] **Phase 7: Dashboards, Reports, Audit Logs & Performance** _(Completed)_
   - Role-specific dashboards (Admin, Landlord, Tenant, Technician) with live dynamic metrics.
   - Filterable audit logs ledger (`/dashboard/audit-logs`) with actor/action/entity filters and state inspection diff modal.
   - User governance console (`/dashboard/users`) with account suspension/activation workflows and audit trail.
   - Dedicated reports & analytics portal (`/dashboard/reports`) with real-time occupancy distribution and revenue collection meters + CSV export.
-- [x] **Phase 8: Comprehensive Testing, Docker, CI/CD & Production Hardening** *(Completed)*
+- [x] **Phase 8: Comprehensive Testing, Docker, CI/CD & Production Hardening** _(Completed)_
   - Vitest unit test suite (42 unit and integration lifecycle tests passing).
   - Playwright E2E test suite (`auth.spec.ts`, `public-listings.spec.ts`, `dashboard.spec.ts`) with `playwright.config.ts`.
   - Multi-stage production `Dockerfile` with non-root security user, Alpine base, and container health probes.

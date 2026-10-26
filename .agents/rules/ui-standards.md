@@ -13,7 +13,9 @@
 - **Design references:** Before building the UI, establish a cohesive design system and inspect existing project styles. If reference designs are provided, follow their visual direction without blindly copying unrelated elements.
 
 ### Design Acceptance Criteria
+
 Before considering a page complete, verify that:
+
 1. No emojis are used as interface icons or decorative elements.
 2. The layout follows a consistent flat design system.
 3. Typography, spacing, colors, borders, and component states are consistent.
