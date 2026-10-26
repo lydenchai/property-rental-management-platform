@@ -12,11 +12,19 @@ export function useApplicationStore() {
 
   // Computed metrics
   const totalCount = computed(() => state.applications.length);
-  const pendingCount = computed(() => state.applications.filter((a) => a.status === 'PENDING').length);
-  const approvedCount = computed(() => state.applications.filter((a) => a.status === 'APPROVED').length);
-  const rejectedCount = computed(() => state.applications.filter((a) => a.status === 'REJECTED').length);
+  const pendingCount = computed(
+    () => state.applications.filter((a) => a.status === 'PENDING').length
+  );
+  const approvedCount = computed(
+    () => state.applications.filter((a) => a.status === 'APPROVED').length
+  );
+  const rejectedCount = computed(
+    () => state.applications.filter((a) => a.status === 'REJECTED').length
+  );
 
-  async function fetchApplications(filter: { unitId?: string; tenantId?: string; status?: string } = {}) {
+  async function fetchApplications(
+    filter: { unitId?: string; tenantId?: string; status?: string } = {}
+  ) {
     state.isLoading = true;
     state.error = null;
 
@@ -58,7 +66,8 @@ export function useApplicationStore() {
         throw error.value || new Error('Failed to fetch application details');
       }
     } catch (err: any) {
-      state.error = err?.data?.error?.message || err?.message || 'Failed to fetch application details';
+      state.error =
+        err?.data?.error?.message || err?.message || 'Failed to fetch application details';
       throw err;
     } finally {
       state.isLoading = false;

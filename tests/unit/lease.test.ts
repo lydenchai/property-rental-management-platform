@@ -1,9 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { 
-  SubmitApplicationSchema, 
-  ReviewApplicationSchema, 
+import {
+  SubmitApplicationSchema,
+  ReviewApplicationSchema,
   CreateLeaseSchema,
-  SignLeaseSchema
+  SignLeaseSchema,
 } from '../../shared/schemas/lease.schema';
 import { leaseService } from '../../server/services/lease.service';
 import { unitRepo } from '../../server/repositories/unit.repo';
@@ -155,7 +155,9 @@ describe('Phase 4: Lease & Application State Transitions', () => {
   it('should return unit to AVAILABLE when active lease is terminated', async () => {
     // Terminate the lease created on unit-oakwood-12
     const allLeases = await leaseService.listLeases(landlordContext);
-    const activeLease = allLeases.find((l) => l.unitId === 'unit-oakwood-12' && l.status === LeaseStatus.ACTIVE);
+    const activeLease = allLeases.find(
+      (l) => l.unitId === 'unit-oakwood-12' && l.status === LeaseStatus.ACTIVE
+    );
     expect(activeLease).toBeDefined();
 
     const terminateRes = await leaseService.terminateLease(activeLease!.id, landlordContext);

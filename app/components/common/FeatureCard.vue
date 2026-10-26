@@ -10,185 +10,62 @@ interface Props {
   iconColor?: 'blue' | 'indigo' | 'emerald' | 'amber' | 'rose';
 }
 
-withDefaults(defineProps<Props>(), {
+const props = withDefaults(defineProps<Props>(), {
   iconColor: 'blue',
+});
+
+const colorClasses = computed(() => {
+  switch (props.iconColor) {
+    case 'indigo':
+      return 'bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800';
+    case 'emerald':
+      return 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800';
+    case 'amber':
+      return 'bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-800';
+    case 'rose':
+      return 'bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-800';
+    default:
+      return 'bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800';
+  }
 });
 </script>
 
 <template>
-  <component :is="to ? 'NuxtLink' : 'div'" :to="to" class="feature-card group">
+  <component
+    :is="to ? 'NuxtLink' : 'div'"
+    :to="to"
+    class="group flex h-full flex-col items-start rounded-xl border border-neutral-200 bg-white p-6 text-left no-underline transition-all duration-200 hover:-translate-y-0.5 hover:border-primary-500 dark:border-neutral-800 dark:bg-neutral-900"
+  >
     <!-- Icon Container in signature rounded squircle -->
-    <div class="feature-card-icon-box" :class="`icon-theme-${iconColor}`">
-      <component :is="icon" v-if="icon" :size="20" class="feature-card-icon" />
+    <div
+      :class="['mb-4 flex h-10 w-10 shrink-0 items-center justify-center rounded-lg', colorClasses]"
+    >
+      <component :is="icon" v-if="icon" :size="20" />
       <slot name="icon" v-else />
     </div>
 
     <!-- Title and optional badge -->
-    <div class="feature-card-header">
-      <h3 class="feature-card-title">{{ title }}</h3>
-      <span v-if="badge" class="feature-card-badge">{{ badge }}</span>
+    <div class="mb-2 flex w-full items-center gap-2">
+      <h3
+        class="text-base font-semibold text-neutral-900 transition-colors group-hover:text-primary-600 dark:text-white dark:group-hover:text-primary-400"
+      >
+        {{ title }}
+      </h3>
+      <span
+        v-if="badge"
+        class="rounded-full border border-primary-200 bg-primary-50 px-2 py-0.5 text-[10px] font-semibold text-primary-700 dark:border-primary-800 dark:bg-primary-950/40 dark:text-primary-300"
+        >{{ badge }}</span
+      >
     </div>
 
     <!-- Description -->
-    <p class="feature-card-desc">
+    <p class="mb-4 text-xs leading-relaxed text-neutral-500 dark:text-neutral-400">
       {{ description }}
     </p>
 
     <!-- Optional slot for actions / extra content -->
-    <div v-if="$slots.default" class="feature-card-content">
+    <div v-if="$slots.default" class="mt-auto w-full pt-2">
       <slot />
     </div>
   </component>
 </template>
-
-<style scoped>
-.feature-card {
-  background: var(--bg-surface);
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-md);
-  padding: 1.75rem 1.5rem;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  text-align: left;
-  box-shadow: none;
-  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1),
-    border-color 0.2s ease;
-  text-decoration: none;
-  position: relative;
-  height: 100%;
-}
-
-.feature-card:hover {
-  transform: translateY(-2px);
-  border-color: var(--primary);
-  box-shadow: none;
-}
-
-/* Icon Box Styling */
-.feature-card-icon-box {
-  width: 40px;
-  height: 40px;
-  border-radius: var(--radius-sm);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 1.25rem;
-  flex-shrink: 0;
-  transition: transform 0.2s ease;
-}
-
-.feature-card:hover .feature-card-icon-box {
-  transform: scale(1.05);
-}
-
-/* Primary Light Blue Theme matching reference screenshot */
-.icon-theme-blue {
-  background: #eff6ff;
-  border: 1px solid #dbeafe;
-  color: #2563eb;
-}
-
-:root.dark .icon-theme-blue,
-html.dark .icon-theme-blue {
-  background: rgba(37, 99, 235, 0.15);
-  border-color: rgba(37, 99, 235, 0.35);
-  color: #60a5fa;
-}
-
-.icon-theme-indigo {
-  background: #eef2ff;
-  border: 1px solid #e0e7ff;
-  color: #4f46e5;
-}
-
-:root.dark .icon-theme-indigo,
-html.dark .icon-theme-indigo {
-  background: rgba(79, 70, 229, 0.15);
-  border-color: rgba(79, 70, 229, 0.35);
-  color: #818cf8;
-}
-
-.icon-theme-emerald {
-  background: #ecfdf5;
-  border: 1px solid #d1fae5;
-  color: #059669;
-}
-
-:root.dark .icon-theme-emerald,
-html.dark .icon-theme-emerald {
-  background: rgba(16, 185, 129, 0.15);
-  border-color: rgba(16, 185, 129, 0.35);
-  color: #34d399;
-}
-
-.icon-theme-amber {
-  background: #fffbeb;
-  border: 1px solid #fef3c7;
-  color: #d97706;
-}
-
-:root.dark .icon-theme-amber,
-html.dark .icon-theme-amber {
-  background: rgba(245, 158, 11, 0.15);
-  border-color: rgba(245, 158, 11, 0.35);
-  color: #fbbf24;
-}
-
-.icon-theme-rose {
-  background: #fff1f2;
-  border: 1px solid #ffe4e6;
-  color: #e11d48;
-}
-
-:root.dark .icon-theme-rose,
-html.dark .icon-theme-rose {
-  background: rgba(225, 29, 72, 0.15);
-  border-color: rgba(225, 29, 72, 0.35);
-  color: #fb7185;
-}
-
-.feature-card-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  width: 100%;
-  margin-bottom: 0.65rem;
-}
-
-.feature-card-title {
-  font-size: 1.125rem;
-  font-weight: 700;
-  color: var(--text-main);
-  letter-spacing: -0.015em;
-  line-height: 1.35;
-  margin: 0;
-}
-
-:lang(km) .feature-card-title {
-  letter-spacing: normal;
-  line-height: 1.4;
-}
-
-.feature-card-badge {
-  font-size: 0.6875rem;
-  font-weight: 600;
-  padding: 0.15rem 0.5rem;
-  border-radius: var(--radius-full);
-  background: var(--bg-subtle);
-  color: var(--text-muted);
-  border: 1px solid var(--border-subtle);
-}
-
-.feature-card-desc {
-  font-size: 0.875rem;
-  color: var(--text-muted);
-  line-height: 1.625;
-  margin: 0;
-}
-
-.feature-card-content {
-  margin-top: 1rem;
-  width: 100%;
-}
-</style>

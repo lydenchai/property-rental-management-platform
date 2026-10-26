@@ -12,7 +12,10 @@ const isLoading = ref(false);
 
 async function fetchNotifications() {
   try {
-    const res = await $fetch<ApiResponse<{ notifications: NotificationDetail[]; unreadCount: number }>>('/api/v1/notifications');
+    const res =
+      await $fetch<ApiResponse<{ notifications: NotificationDetail[]; unreadCount: number }>>(
+        '/api/v1/notifications'
+      );
     if (res.success && res.data) {
       notifications.value = res.data.notifications;
       unreadCount.value = res.data.unreadCount;
@@ -73,268 +76,108 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="notification-wrapper">
-    <button @click="isOpen = !isOpen" class="bell-btn" :class="{ 'has-unread': unreadCount > 0, active: isOpen }"
-      :title="t('notifications.title')">
+  <div class="relative">
+    <button
+      @click="isOpen = !isOpen"
+      class="relative flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg border border-neutral-200 bg-white text-neutral-600 transition-colors hover:border-neutral-300 hover:text-neutral-900 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:border-neutral-600 dark:hover:text-white"
+      :class="{ 'border-primary-500 text-primary-600 dark:text-primary-400': isOpen }"
+      :title="t('notifications.title')"
+    >
       <Bell :size="16" />
-      <span v-if="unreadCount > 0" class="unread-pill">{{ unreadCount }}</span>
+      <span
+        v-if="unreadCount > 0"
+        class="absolute -right-1 -top-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-primary-600 px-1 text-[10px] font-bold text-white ring-2 ring-white dark:ring-neutral-900"
+      >
+        {{ unreadCount }}
+      </span>
     </button>
 
     <!-- Dropdown Menu -->
-    <div v-if="isOpen" class="notif-dropdown card-flat">
-      <div class="notif-header">
-        <div class="notif-title-row">
-          <span class="notif-title">{{ t('notifications.title') }}</span>
-          <span v-if="unreadCount > 0" class="badge badge-info">{{ t('notifications.new', { count: unreadCount }) }}</span>
+    <div
+      v-if="isOpen"
+      class="absolute right-0 top-full z-50 mt-2 w-80 overflow-hidden rounded-xl border border-neutral-200 bg-white shadow-xl dark:border-neutral-800 dark:bg-neutral-900 sm:w-96"
+    >
+      <div
+        class="flex items-center justify-between border-b border-neutral-200 px-4 py-3 dark:border-neutral-800"
+      >
+        <div class="flex items-center gap-2">
+          <span class="text-sm font-semibold text-neutral-900 dark:text-white">{{
+            t('notifications.title')
+          }}</span>
+          <span
+            v-if="unreadCount > 0"
+            class="rounded-full border border-primary-200 bg-primary-50 px-2 py-0.5 text-[10px] font-medium text-primary-700 dark:border-primary-800 dark:bg-primary-950/40 dark:text-primary-300"
+          >
+            {{ t('notifications.new', { count: unreadCount }) }}
+          </span>
         </div>
-        <div class="notif-header-actions">
-          <button v-if="unreadCount > 0" @click="markAllRead" class="action-link" :title="t('notifications.mark_all_read')">
+        <div class="flex items-center gap-2">
+          <button
+            v-if="unreadCount > 0"
+            @click="markAllRead"
+            class="inline-flex cursor-pointer items-center gap-1 text-xs text-primary-600 hover:underline dark:text-primary-400"
+            :title="t('notifications.mark_all_read')"
+          >
             <CheckCheck :size="13" />
             <span>{{ t('notifications.mark_all_read') }}</span>
           </button>
-          <button @click="isOpen = false" class="close-btn">&times;</button>
+          <button
+            @click="isOpen = false"
+            class="cursor-pointer text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200"
+          >
+            <X :size="16" />
+          </button>
         </div>
       </div>
 
-      <div class="notif-body">
-        <div v-if="notifications.length === 0" class="notif-empty">
-          <Bell :size="24" class="empty-icon" />
-          <p>{{ t('notifications.empty') }}</p>
+      <div class="max-h-80 overflow-y-auto">
+        <div
+          v-if="notifications.length === 0"
+          class="flex flex-col items-center justify-center px-4 py-8 text-center text-neutral-400"
+        >
+          <Bell :size="24" class="mb-2 opacity-50" />
+          <p class="text-xs">{{ t('notifications.empty') }}</p>
         </div>
 
-        <div v-else class="notif-list">
-          <div v-for="notif in notifications" :key="notif.id" class="notif-item" :class="{ unread: !notif.isRead }"
-            @click="markAsRead(notif.id, notif.link)">
-            <div class="notif-indicator-col">
-              <span class="status-dot" :class="{
-                warning: notif.type === 'WARNING',
-                success: notif.type === 'SUCCESS',
-                info: notif.type === 'INFO',
-                error: notif.type === 'ERROR',
-              }"></span>
+        <div v-else class="divide-y divide-neutral-100 dark:divide-neutral-800/60">
+          <div
+            v-for="notif in notifications"
+            :key="notif.id"
+            class="flex cursor-pointer items-start gap-3 p-3.5 transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-800/40"
+            :class="{ 'bg-primary-50/30 dark:bg-primary-950/10': !notif.isRead }"
+            @click="markAsRead(notif.id, notif.link)"
+          >
+            <div class="shrink-0 pt-0.5">
+              <span
+                class="block h-2 w-2 rounded-full"
+                :class="{
+                  'bg-amber-500': notif.type === 'WARNING',
+                  'bg-emerald-500': notif.type === 'SUCCESS',
+                  'bg-blue-500': notif.type === 'INFO',
+                  'bg-rose-500': notif.type === 'ERROR',
+                }"
+              ></span>
             </div>
-            <div class="notif-text-col">
-              <div class="notif-item-title">{{ notif.title }}</div>
-              <div class="notif-item-msg">{{ notif.message }}</div>
-              <div class="notif-item-time">{{ timeAgo(notif.createdAt) }}</div>
+            <div class="min-w-0 flex-1 space-y-0.5">
+              <div class="truncate text-xs font-semibold text-neutral-900 dark:text-white">
+                {{ notif.title }}
+              </div>
+              <div
+                class="line-clamp-2 text-xs leading-relaxed text-neutral-600 dark:text-neutral-400"
+              >
+                {{ notif.message }}
+              </div>
+              <div class="mt-1 text-[10px] text-neutral-400 dark:text-neutral-500">
+                {{ timeAgo(notif.createdAt) }}
+              </div>
             </div>
-            <div v-if="!notif.isRead" class="notif-unread-dot"></div>
+            <div
+              v-if="!notif.isRead"
+              class="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-primary-600"
+            ></div>
           </div>
         </div>
       </div>
     </div>
   </div>
 </template>
-
-<style scoped>
-.notification-wrapper {
-  position: relative;
-}
-
-.bell-btn {
-  position: relative;
-  background: var(--bg-surface);
-  border: 1px solid var(--border-default);
-  color: var(--text-muted);
-  width: 32px;
-  height: 32px;
-  border-radius: var(--radius-sm);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.bell-btn:hover,
-.bell-btn.active {
-  color: var(--text-main);
-  border-color: var(--border-focus);
-}
-
-.unread-pill {
-  position: absolute;
-  top: -4px;
-  right: -4px;
-  background: var(--primary);
-  color: #fff;
-  font-size: 0.65rem;
-  font-weight: 700;
-  min-width: 16px;
-  height: 16px;
-  border-radius: 9999px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0 3px;
-  border: 2px solid var(--bg-surface);
-}
-
-.notif-dropdown {
-  position: absolute;
-  top: 100%;
-  right: 0;
-  margin-top: 0.5rem;
-  width: 340px;
-  max-height: 420px;
-  background: var(--bg-surface);
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-md);
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
-  z-index: 200;
-  display: flex;
-  flex-direction: column;
-}
-
-.notif-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.75rem 1rem;
-  border-bottom: 1px solid var(--border-subtle);
-}
-
-.notif-title-row {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.notif-title {
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--text-main);
-}
-
-.notif-header-actions {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.action-link {
-  background: none;
-  border: none;
-  color: var(--text-dim);
-  font-size: 0.75rem;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.25rem;
-  cursor: pointer;
-}
-
-.action-link:hover {
-  color: var(--primary);
-}
-
-.close-btn {
-  background: none;
-  border: none;
-  color: var(--text-dim);
-  font-size: 1.25rem;
-  cursor: pointer;
-  line-height: 1;
-}
-
-.notif-body {
-  overflow-y: auto;
-  max-height: 350px;
-}
-
-.notif-empty {
-  padding: 2.5rem 1rem;
-  text-align: center;
-  color: var(--text-dim);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.825rem;
-}
-
-.empty-icon {
-  color: var(--text-dim);
-  opacity: 0.6;
-}
-
-.notif-list {
-  display: flex;
-  flex-direction: column;
-}
-
-.notif-item {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.65rem;
-  padding: 0.75rem 1rem;
-  border-bottom: 1px solid var(--border-subtle);
-  cursor: pointer;
-  transition: background 0.15s ease;
-  position: relative;
-}
-
-.notif-item:hover {
-  background: var(--bg-hover);
-}
-
-.notif-item.unread {
-  background: rgba(79, 70, 229, 0.05);
-}
-
-.status-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  margin-top: 0.4rem;
-  display: inline-block;
-}
-
-.status-dot.info {
-  background: var(--primary);
-}
-
-.status-dot.warning {
-  background: #fbbf24;
-}
-
-.status-dot.success {
-  background: #34d399;
-}
-
-.status-dot.error {
-  background: #f87171;
-}
-
-.notif-text-col {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 0.15rem;
-}
-
-.notif-item-title {
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: var(--text-main);
-}
-
-.notif-item-msg {
-  font-size: 0.775rem;
-  color: var(--text-muted);
-  line-height: 1.35;
-}
-
-.notif-item-time {
-  font-size: 0.7rem;
-  color: var(--text-dim);
-  margin-top: 0.2rem;
-}
-
-.notif-unread-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--primary);
-  margin-top: 0.4rem;
-}
-</style>

@@ -8,7 +8,7 @@ import {
   RefreshCw,
   ExternalLink,
   Building,
-  ArrowRight
+  ArrowRight,
 } from '@lucide/vue';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { useTheme } from '../../composables/useTheme';
@@ -74,7 +74,7 @@ let resizeObserver: ResizeObserver | null = null;
 const DEFAULT_COORDS: Record<string, [number, number]> = {
   'prop-skyline-01': [104.9224, 11.5516],
   'prop-oakwood-02': [104.9352, 11.5458],
-  'prop-metropolitan-03': [103.8590, 13.3671],
+  'prop-metropolitan-03': [103.859, 13.3671],
   'prop-peak-04': [104.9388, 11.5528],
   'prop-toulkork-05': [104.8967, 11.5762],
   'prop-chroy-06': [104.9312, 11.5878],
@@ -108,8 +108,9 @@ async function initMap() {
       markersMap.clear();
     }
 
-    const currentStyleUrl = MAP_STYLES.find(s => s.id === selectedStyle.value)?.url
-      || 'https://tiles.openfreemap.org/styles/bright';
+    const currentStyleUrl =
+      MAP_STYLES.find((s) => s.id === selectedStyle.value)?.url ||
+      'https://tiles.openfreemap.org/styles/bright';
 
     // Default center on Phnom Penh
     const map = new maplibregl.Map({
@@ -120,7 +121,10 @@ async function initMap() {
       attributionControl: true,
     });
 
-    map.addControl(new maplibregl.NavigationControl({ showCompass: false, showZoom: true }), 'top-left');
+    map.addControl(
+      new maplibregl.NavigationControl({ showCompass: false, showZoom: true }),
+      'top-left'
+    );
 
     const renderMarkers = () => {
       // Clear old markers
@@ -173,8 +177,7 @@ async function initMap() {
           </div>
         `;
 
-        const popup = new maplibregl.Popup({ offset: 16, closeButton: true })
-          .setHTML(popupContent);
+        const popup = new maplibregl.Popup({ offset: 16, closeButton: true }).setHTML(popupContent);
 
         el.addEventListener('click', () => {
           emit('select', item.id);
@@ -221,7 +224,6 @@ async function initMap() {
         if (mapInstance) mapInstance.resize();
       }, 250);
     });
-
   } catch (err) {
     console.error('Error initializing OpenFreeMap explorer:', err);
     isLoading.value = false;
@@ -231,7 +233,7 @@ async function initMap() {
 function changeStyle(styleId: string, fromUser: boolean = true) {
   if (fromUser) isUserStyleChoice.value = true;
   selectedStyle.value = styleId;
-  const target = MAP_STYLES.find(s => s.id === styleId);
+  const target = MAP_STYLES.find((s) => s.id === styleId);
   if (!mapInstance || !target) return;
 
   try {
@@ -275,7 +277,7 @@ function fitAllProperties() {
 }
 
 function flyToProperty(propertyId: string) {
-  const p = props.properties.find(x => x.id === propertyId);
+  const p = props.properties.find((x) => x.id === propertyId);
   if (!p || !mapInstance) return;
   const coords = getCoords(p);
   if (!coords) return;
@@ -332,15 +334,22 @@ onMounted(() => {
   }
 });
 
-watch(() => props.properties, () => {
-  initMap();
-}, { deep: true });
+watch(
+  () => props.properties,
+  () => {
+    initMap();
+  },
+  { deep: true }
+);
 
-watch(() => props.selectedId, (newId) => {
-  if (newId) {
-    flyToProperty(newId);
+watch(
+  () => props.selectedId,
+  (newId) => {
+    if (newId) {
+      flyToProperty(newId);
+    }
   }
-});
+);
 
 onUnmounted(() => {
   document.removeEventListener('fullscreenchange', handleFullscreenChange);
@@ -362,7 +371,7 @@ onUnmounted(() => {
       <div class="explorer-header-left">
         <div class="map-badge-row">
           <MapPin :size="15" class="text-emerald-400" />
-          <span class="font-semibold text-slate-100 text-sm">Cambodia Rental Map</span>
+          <span class="text-sm font-semibold text-slate-100">Cambodia Rental Map</span>
           <span class="count-pill">{{ properties.length }} Properties</span>
         </div>
       </div>
@@ -370,18 +379,34 @@ onUnmounted(() => {
       <div class="explorer-header-actions">
         <!-- Style Switcher -->
         <div class="style-switcher">
-          <button v-for="st in MAP_STYLES" :key="st.id" type="button" @click="changeStyle(st.id)"
-            :class="['style-pill', { active: selectedStyle === st.id }]" :title="`OpenFreeMap style: ${st.name}`">
+          <button
+            v-for="st in MAP_STYLES"
+            :key="st.id"
+            type="button"
+            @click="changeStyle(st.id)"
+            :class="['style-pill', { active: selectedStyle === st.id }]"
+            :title="`OpenFreeMap style: ${st.name}`"
+          >
             {{ st.name }}
           </button>
         </div>
 
-        <button type="button" @click="fitAllProperties" class="header-btn" title="Fit all properties on map">
+        <button
+          type="button"
+          @click="fitAllProperties"
+          class="header-btn"
+          title="Fit all properties on map"
+        >
           <RefreshCw :size="13" />
           <span>Fit All</span>
         </button>
 
-        <button type="button" @click="toggleFullscreen" class="header-btn" title="Toggle fullscreen view">
+        <button
+          type="button"
+          @click="toggleFullscreen"
+          class="header-btn"
+          title="Toggle fullscreen view"
+        >
           <Minimize2 v-if="isFullscreen" :size="13" />
           <Maximize2 v-else :size="13" />
         </button>
@@ -389,7 +414,10 @@ onUnmounted(() => {
     </div>
 
     <!-- Map Viewport -->
-    <div class="explorer-canvas-box" :style="{ height: isFullscreen ? 'calc(100vh - 84px)' : height }">
+    <div
+      class="explorer-canvas-box"
+      :style="{ height: isFullscreen ? 'calc(100vh - 84px)' : height }"
+    >
       <div v-show="isLoading" class="map-loading-overlay">
         <div class="map-spinner"></div>
         <span>Loading OpenFreeMap tiles...</span>
@@ -401,9 +429,18 @@ onUnmounted(() => {
     <!-- Map Footer -->
     <div class="explorer-footer">
       <span class="attribution-text">
-        Vector map by <a href="https://openfreemap.org" target="_blank" rel="noopener noreferrer"
-          class="text-emerald-400 font-medium">OpenFreeMap</a> &bull; &copy; <a
-          href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a>
+        Vector map by
+        <a
+          href="https://openfreemap.org"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="font-medium text-emerald-400"
+          >OpenFreeMap</a
+        >
+        &bull; &copy;
+        <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer"
+          >OpenStreetMap</a
+        >
         contributors
       </span>
       <span class="status-indicator">
@@ -602,179 +639,5 @@ onUnmounted(() => {
   border-radius: 50%;
   background: var(--accent-emerald, #10b981);
   box-shadow: 0 0 6px rgba(16, 185, 129, 0.8);
-}
-</style>
-
-<style>
-/* Global styles for OpenFreeMap pins & popups in the explorer */
-.browse-map-pin {
-  cursor: pointer;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  transform: translateY(0);
-  transition: transform 0.15s ease;
-}
-
-.browse-map-pin:hover {
-  transform: translateY(-3px) scale(1.08);
-  z-index: 50;
-}
-
-.browse-map-pin.is-selected {
-  transform: translateY(-4px) scale(1.12);
-  z-index: 60;
-}
-
-.pin-badge {
-  background: #10b981;
-  color: #ffffff;
-  font-size: 0.75rem;
-  font-weight: 700;
-  padding: 4px 8px;
-  border-radius: 12px;
-  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.4);
-  border: 1.5px solid #ffffff;
-  white-space: nowrap;
-}
-
-.browse-map-pin.is-selected .pin-badge {
-  background: #2563eb;
-  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.6);
-}
-
-.pin-pointer {
-  width: 0;
-  height: 0;
-  border-left: 5px solid transparent;
-  border-right: 5px solid transparent;
-  border-top: 5px solid #10b981;
-  margin-top: -1px;
-}
-
-.browse-map-pin.is-selected .pin-pointer {
-  border-top-color: #2563eb;
-}
-
-.browse-popup-card {
-  min-width: 220px;
-  max-width: 280px;
-}
-
-.popup-header-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  margin-bottom: 4px;
-}
-
-.popup-city-tag {
-  font-size: 0.68rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  color: #818cf8;
-  letter-spacing: 0.05em;
-}
-
-.popup-avail-tag {
-  font-size: 0.68rem;
-  font-weight: 600;
-  color: #10b981;
-  background: rgba(16, 185, 129, 0.15);
-  padding: 1px 6px;
-  border-radius: 4px;
-}
-
-.popup-title {
-  font-weight: 700;
-  font-size: 0.92rem;
-  color: #f8fafc;
-  line-height: 1.3;
-  margin-bottom: 3px;
-}
-
-.popup-addr {
-  font-size: 0.76rem;
-  color: #94a3b8;
-  margin-bottom: 10px;
-}
-
-.popup-bottom-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding-top: 6px;
-  border-top: 1px solid #334155;
-  gap: 8px;
-}
-
-.popup-price-txt {
-  font-size: 0.78rem;
-  color: #cbd5e1;
-}
-
-.popup-cta-btn {
-  font-size: 0.74rem;
-  font-weight: 600;
-  color: #ffffff;
-  background: #2563eb;
-  padding: 3px 8px;
-  border-radius: 4px;
-  text-decoration: none;
-  transition: background 0.15s ease;
-}
-
-.popup-cta-btn:hover {
-  background: #1d4ed8;
-}
-
-/* MapLibre Top-Left Zoom Controls */
-.maplibre-container .maplibregl-ctrl-top-left {
-  top: 10px;
-  left: 10px;
-}
-
-.maplibre-container .maplibregl-ctrl-group {
-  background: #ffffff !important;
-  border: 1px solid #d1d5db !important;
-  border-radius: 6px !important;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2) !important;
-  overflow: hidden !important;
-}
-
-.maplibre-container .maplibregl-ctrl-group button {
-  width: 32px !important;
-  height: 32px !important;
-  background-color: #ffffff !important;
-  border-bottom: 1px solid #e5e7eb !important;
-}
-
-.maplibre-container .maplibregl-ctrl-group button:last-child {
-  border-bottom: none !important;
-}
-
-.maplibre-container .maplibregl-ctrl-group button:hover {
-  background-color: #f3f4f6 !important;
-}
-
-/* MapLibre Compact Attribution */
-.maplibre-container .maplibregl-ctrl-attrib {
-  background-color: rgba(255, 255, 255, 0.85) !important;
-  color: #374151 !important;
-  font-size: 11px !important;
-  padding: 2px 6px !important;
-  border-radius: 4px !important;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1) !important;
-  margin: 0 10px 10px 0 !important;
-}
-
-.maplibre-container .maplibregl-ctrl-attrib a {
-  color: #1f2937 !important;
-  text-decoration: none !important;
-}
-
-.maplibre-container .maplibregl-ctrl-attrib a:hover {
-  text-decoration: underline !important;
 }
 </style>

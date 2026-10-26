@@ -68,7 +68,8 @@ export class ReportService {
       });
     }
 
-    const overallRate = totalUnits > 0 ? Number(((occupiedUnits / totalUnits) * 100).toFixed(1)) : 0;
+    const overallRate =
+      totalUnits > 0 ? Number(((occupiedUnits / totalUnits) * 100).toFixed(1)) : 0;
 
     return {
       totalProperties: properties.length,
@@ -119,7 +120,8 @@ export class ReportService {
     }
 
     const outstandingBalance = Math.max(0, totalInvoiced - totalCollected);
-    const collectionRate = totalInvoiced > 0 ? Number(((totalCollected / totalInvoiced) * 100).toFixed(1)) : 0;
+    const collectionRate =
+      totalInvoiced > 0 ? Number(((totalCollected / totalInvoiced) * 100).toFixed(1)) : 0;
 
     return {
       totalInvoiced,
@@ -191,7 +193,10 @@ export class ReportService {
     }
 
     if (role === 'TENANT') {
-      const leases = await leaseRepository.findMany({ tenantId: user.id, status: LeaseStatus.ACTIVE });
+      const leases = await leaseRepository.findMany({
+        tenantId: user.id,
+        status: LeaseStatus.ACTIVE,
+      });
       const activeLease = leases[0] || null;
       let activeUnit = null;
       let activeProperty = null;
@@ -203,7 +208,9 @@ export class ReportService {
       }
 
       const invoices = await invoiceRepository.findMany({ tenantId: user.id });
-      const pendingInvoices = invoices.filter((i) => i.status !== InvoiceStatus.PAID && i.status !== InvoiceStatus.CANCELLED);
+      const pendingInvoices = invoices.filter(
+        (i) => i.status !== InvoiceStatus.PAID && i.status !== InvoiceStatus.CANCELLED
+      );
       const nextInvoice = pendingInvoices[0] || null;
 
       const tickets = await maintenanceRepository.findMany({ tenantId: user.id });
@@ -214,19 +221,26 @@ export class ReportService {
       return {
         role: 'TENANT',
         hasActiveLease: !!activeLease,
-        leaseDetails: activeLease ? {
-          unitNumber: activeUnit?.unitNumber || '101A',
-          propertyTitle: activeProperty?.title || 'Skyline Heights',
-          rentAmount: activeLease.rentAmount,
-          endDate: activeLease.endDate,
-        } : null,
-        nextRentDue: nextInvoice ? {
-          invoiceNumber: nextInvoice.invoiceNumber,
-          amountDue: nextInvoice.amountDue,
-          amountPaid: nextInvoice.amountPaid,
-          dueDate: nextInvoice.dueDate,
-          remaining: Math.max(0, Number(nextInvoice.amountDue) - Number(nextInvoice.amountPaid)),
-        } : null,
+        leaseDetails: activeLease
+          ? {
+              unitNumber: activeUnit?.unitNumber || '101A',
+              propertyTitle: activeProperty?.title || 'Skyline Heights',
+              rentAmount: activeLease.rentAmount,
+              endDate: activeLease.endDate,
+            }
+          : null,
+        nextRentDue: nextInvoice
+          ? {
+              invoiceNumber: nextInvoice.invoiceNumber,
+              amountDue: nextInvoice.amountDue,
+              amountPaid: nextInvoice.amountPaid,
+              dueDate: nextInvoice.dueDate,
+              remaining: Math.max(
+                0,
+                Number(nextInvoice.amountDue) - Number(nextInvoice.amountPaid)
+              ),
+            }
+          : null,
         activeMaintenanceCount: activeTickets.length,
         applicationsCount: apps.length,
       };
@@ -235,9 +249,16 @@ export class ReportService {
     if (role === 'TECHNICIAN') {
       const tickets = await maintenanceRepository.findMany({ technicianId: user.id });
       const assignedCount = tickets.filter((t) => t.status === MaintenanceStatus.ASSIGNED).length;
-      const inProgressCount = tickets.filter((t) => t.status === MaintenanceStatus.IN_PROGRESS).length;
-      const completedCount = tickets.filter((t) => t.status === MaintenanceStatus.RESOLVED || t.status === MaintenanceStatus.CONFIRMED_CLOSED).length;
-      const emergencyCount = tickets.filter((t) => t.priority === 'HIGH' || t.priority === 'EMERGENCY').length;
+      const inProgressCount = tickets.filter(
+        (t) => t.status === MaintenanceStatus.IN_PROGRESS
+      ).length;
+      const completedCount = tickets.filter(
+        (t) =>
+          t.status === MaintenanceStatus.RESOLVED || t.status === MaintenanceStatus.CONFIRMED_CLOSED
+      ).length;
+      const emergencyCount = tickets.filter(
+        (t) => t.priority === 'HIGH' || t.priority === 'EMERGENCY'
+      ).length;
 
       return {
         role: 'TECHNICIAN',

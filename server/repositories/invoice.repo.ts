@@ -223,12 +223,14 @@ export class InvoiceRepository {
     }
   }
 
-  async findMany(filter: {
-    leaseId?: string;
-    tenantId?: string;
-    status?: InvoiceStatus;
-    landlordId?: string;
-  } = {}): Promise<InvoiceEntity[]> {
+  async findMany(
+    filter: {
+      leaseId?: string;
+      tenantId?: string;
+      status?: InvoiceStatus;
+      landlordId?: string;
+    } = {}
+  ): Promise<InvoiceEntity[]> {
     try {
       const where: any = {};
       if (filter.leaseId) where.leaseId = filter.leaseId;
@@ -320,7 +322,7 @@ export class InvoiceRepository {
       if (idx === -1) return null;
       inMemoryInvoices[idx] = {
         ...inMemoryInvoices[idx],
-        ...data as any,
+        ...(data as any),
         updatedAt: new Date(),
       };
       return { ...inMemoryInvoices[idx] } as any;

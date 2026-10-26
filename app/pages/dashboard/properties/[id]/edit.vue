@@ -99,28 +99,46 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="property-edit-page">
-    <div class="top-nav-bar">
-      <NuxtLink :to="`/dashboard/properties/${propertyId}`" class="back-link">
+  <div class="mx-auto flex max-w-3xl flex-col gap-5">
+    <div class="flex items-center">
+      <NuxtLink
+        :to="`/dashboard/properties/${propertyId}`"
+        class="inline-flex items-center gap-1.5 text-xs font-medium text-neutral-500 transition-colors hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white sm:text-sm"
+      >
         <ArrowLeft :size="15" />
         <span>{{ t('properties.back_to_property') }}</span>
       </NuxtLink>
     </div>
 
     <!-- Loading State -->
-    <div v-if="isLoading" class="loading-state">
-      <div class="loading-spinner"></div>
-      <p>{{ t('properties.loading_property_details') }}</p>
+    <div v-if="isLoading" class="flex flex-col items-center gap-3 py-20 text-center">
+      <div
+        class="h-8 w-8 animate-spin rounded-full border-2 border-neutral-300 border-t-blue-600"
+      />
+      <p class="text-sm text-neutral-500 dark:text-neutral-400">
+        {{ t('properties.loading_property_details') }}
+      </p>
     </div>
 
-    <div v-else class="form-shell card-flat">
-      <div class="form-header">
-        <div class="header-icon-box">
+    <div
+      v-else
+      class="shadow-xs flex flex-col gap-6 rounded-2xl border border-neutral-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-900 sm:p-8"
+    >
+      <div
+        class="flex items-center gap-3.5 border-b border-neutral-100 pb-5 dark:border-neutral-800"
+      >
+        <div
+          class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-blue-200 bg-blue-50 text-blue-600 dark:border-blue-800/40 dark:bg-blue-950/40 dark:text-blue-400"
+        >
           <Building :size="20" />
         </div>
         <div>
-          <h2>{{ t('properties.edit_property_title') }}</h2>
-          <p class="subtitle">{{ t('properties.edit_property_subtitle') }}</p>
+          <h2 class="text-xl font-bold text-neutral-900 dark:text-white">
+            {{ t('properties.edit_property_title') }}
+          </h2>
+          <p class="text-xs text-neutral-500 dark:text-neutral-400 sm:text-sm">
+            {{ t('properties.edit_property_subtitle') }}
+          </p>
         </div>
       </div>
 
@@ -129,68 +147,144 @@ onMounted(() => {
         <span>{{ errorMessage }}</span>
       </div>
 
-      <form @submit.prevent="handleUpdateProperty" class="create-form">
-        <div class="form-section">
-          <h3 class="section-title">{{ t('properties.property_details') }}</h3>
+      <form @submit.prevent="handleUpdateProperty" class="flex flex-col gap-6">
+        <div class="flex flex-col gap-4">
+          <h3
+            class="text-xs font-bold uppercase tracking-wider text-neutral-400 dark:text-neutral-500"
+          >
+            {{ t('properties.property_details') }}
+          </h3>
 
-          <div class="form-group">
-            <label for="prop-title" class="form-label">{{ t('properties.property_title_label') }}</label>
+          <div class="flex flex-col gap-1.5">
+            <label
+              for="prop-title"
+              class="text-xs font-semibold uppercase tracking-wider text-neutral-900 dark:text-neutral-100"
+              >{{ t('properties.property_title_label') }}</label
+            >
             <input id="prop-title" v-model="form.title" type="text" required class="input-field" />
           </div>
 
-          <div class="form-group">
-            <label for="prop-desc" class="form-label">{{ t('properties.description_label') }}</label>
-            <textarea id="prop-desc" v-model="form.description" rows="4" required
-              class="input-field textarea-field"></textarea>
+          <div class="flex flex-col gap-1.5">
+            <label
+              for="prop-desc"
+              class="text-xs font-semibold uppercase tracking-wider text-neutral-900 dark:text-neutral-100"
+              >{{ t('properties.description_label') }}</label
+            >
+            <textarea
+              id="prop-desc"
+              v-model="form.description"
+              rows="4"
+              required
+              class="input-field"
+            ></textarea>
           </div>
         </div>
 
-        <div class="form-section">
-          <h3 class="section-title">{{ t('properties.address_location') }}</h3>
+        <div class="flex flex-col gap-4 border-t border-neutral-100 pt-6 dark:border-neutral-800">
+          <h3
+            class="text-xs font-bold uppercase tracking-wider text-neutral-400 dark:text-neutral-500"
+          >
+            {{ t('properties.address_location') }}
+          </h3>
 
-          <div class="form-group">
-            <label for="prop-addr" class="form-label">{{ t('properties.street_address_label') }}</label>
-            <input id="prop-addr" v-model="form.addressLine1" type="text" required class="input-field" />
+          <div class="flex flex-col gap-1.5">
+            <label
+              for="prop-addr"
+              class="text-xs font-semibold uppercase tracking-wider text-neutral-900 dark:text-neutral-100"
+              >{{ t('properties.street_address_label') }}</label
+            >
+            <input
+              id="prop-addr"
+              v-model="form.addressLine1"
+              type="text"
+              required
+              class="input-field"
+            />
           </div>
 
-          <div class="grid-3">
-            <div class="form-group">
-              <label for="prop-city" class="form-label">{{ t('properties.city_label') }}</label>
+          <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <div class="flex flex-col gap-1.5">
+              <label
+                for="prop-city"
+                class="text-xs font-semibold uppercase tracking-wider text-neutral-900 dark:text-neutral-100"
+                >{{ t('properties.city_label') }}</label
+              >
               <input id="prop-city" v-model="form.city" type="text" required class="input-field" />
             </div>
 
-            <div class="form-group">
-              <label for="prop-state" class="form-label">{{ t('properties.state_region_label') }}</label>
-              <input id="prop-state" v-model="form.state" type="text" required class="input-field" />
+            <div class="flex flex-col gap-1.5">
+              <label
+                for="prop-state"
+                class="text-xs font-semibold uppercase tracking-wider text-neutral-900 dark:text-neutral-100"
+                >{{ t('properties.state_region_label') }}</label
+              >
+              <input
+                id="prop-state"
+                v-model="form.state"
+                type="text"
+                required
+                class="input-field"
+              />
             </div>
 
-            <div class="form-group">
-              <label for="prop-zip" class="form-label">{{ t('properties.postal_code_label') }}</label>
-              <input id="prop-zip" v-model="form.postalCode" type="text" required class="input-field" />
+            <div class="flex flex-col gap-1.5">
+              <label
+                for="prop-zip"
+                class="text-xs font-semibold uppercase tracking-wider text-neutral-900 dark:text-neutral-100"
+                >{{ t('properties.postal_code_label') }}</label
+              >
+              <input
+                id="prop-zip"
+                v-model="form.postalCode"
+                type="text"
+                required
+                class="input-field"
+              />
             </div>
           </div>
         </div>
 
-        <div class="form-section">
-          <h3 class="section-title">{{ t('properties.amenities_features') }}</h3>
-          <div class="amenities-picker">
-            <button v-for="item in standardAmenities" :key="item" type="button" @click="toggleAmenity(item)"
-              class="amenity-chip" :class="{ selected: form.amenities.includes(item) }">
+        <div class="flex flex-col gap-3 border-t border-neutral-100 pt-6 dark:border-neutral-800">
+          <h3
+            class="text-xs font-bold uppercase tracking-wider text-neutral-400 dark:text-neutral-500"
+          >
+            {{ t('properties.amenities_features') }}
+          </h3>
+          <div class="mt-1 flex flex-wrap gap-2">
+            <button
+              v-for="item in standardAmenities"
+              :key="item"
+              type="button"
+              @click="toggleAmenity(item)"
+              :class="[
+                'rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors',
+                form.amenities.includes(item)
+                  ? 'shadow-xs border-blue-600 bg-blue-600 text-white'
+                  : 'border-neutral-200 bg-neutral-50 text-neutral-700 hover:bg-neutral-100 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-700',
+              ]"
+            >
               <span>{{ item }}</span>
             </button>
           </div>
 
-          <div class="custom-amenity-row mt-3">
-            <input v-model="newAmenity" type="text" :placeholder="t('properties.add_custom_amenity')" class="input-field input-sm"
-              @keydown.enter.prevent="addCustomAmenity" />
-            <button type="button" @click="addCustomAmenity" class="btn-secondary btn-sm">
+          <div class="mt-2 flex items-center gap-2">
+            <input
+              v-model="newAmenity"
+              type="text"
+              :placeholder="t('properties.add_custom_amenity')"
+              class="input-field max-w-xs text-xs"
+              @keydown.enter.prevent="addCustomAmenity"
+            />
+            <button type="button" @click="addCustomAmenity" class="btn-secondary btn-sm shrink-0">
               <Plus :size="14" />
               <span>{{ t('properties.add') }}</span>
             </button>
           </div>
         </div>
 
-        <div class="form-actions">
+        <div
+          class="flex items-center justify-end gap-3 border-t border-neutral-100 pt-4 dark:border-neutral-800"
+        >
           <NuxtLink :to="`/dashboard/properties/${propertyId}`" class="btn-secondary">
             {{ t('common.cancel') }}
           </NuxtLink>
@@ -202,188 +296,3 @@ onMounted(() => {
     </div>
   </div>
 </template>
-
-<style scoped>
-.property-edit-page {
-  max-width: 800px;
-  margin: 0 auto;
-  display: flex;
-  flex-direction: column;
-  gap: 1.25rem;
-}
-
-.top-nav-bar {
-  display: flex;
-  align-items: center;
-}
-
-.back-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  color: var(--text-muted);
-  font-size: 0.85rem;
-  font-weight: 500;
-  transition: color 0.15s ease;
-}
-
-.back-link:hover {
-  color: var(--text-main);
-}
-
-.form-shell {
-  padding: 2rem;
-  background: var(--bg-surface);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-md);
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
-
-.form-header {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  border-bottom: 1px solid var(--border-subtle);
-  padding-bottom: 1.25rem;
-}
-
-.header-icon-box {
-  width: 42px;
-  height: 42px;
-  border-radius: var(--radius-sm);
-  background: var(--primary-subtle);
-  color: #818cf8;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.form-header h2 {
-  font-size: 1.4rem;
-}
-
-.subtitle {
-  color: var(--text-muted);
-  font-size: 0.85rem;
-  margin-top: 0.2rem;
-}
-
-.create-form {
-  display: flex;
-  flex-direction: column;
-  gap: 1.75rem;
-}
-
-.form-section {
-  display: flex;
-  flex-direction: column;
-  gap: 0.85rem;
-  border-bottom: 1px solid var(--border-subtle);
-  padding-bottom: 1.5rem;
-}
-
-.section-title {
-  font-size: 1.05rem;
-  font-weight: 600;
-  color: var(--text-main);
-}
-
-.textarea-field {
-  resize: vertical;
-}
-
-.grid-3 {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 1rem;
-}
-
-@media (max-width: 640px) {
-  .grid-3 {
-    grid-template-columns: 1fr;
-  }
-}
-
-.amenities-picker {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
-
-.amenity-chip {
-  padding: 0.4rem 0.75rem;
-  background: var(--bg-subtle);
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-sm);
-  color: var(--text-muted);
-  font-size: 0.8rem;
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.amenity-chip:hover {
-  background: var(--bg-surface-hover);
-  color: var(--text-main);
-}
-
-.amenity-chip.selected {
-  background: var(--primary-subtle);
-  border-color: var(--primary);
-  color: #818cf8;
-  font-weight: 600;
-}
-
-.custom-amenity-row {
-  display: flex;
-  gap: 0.5rem;
-  max-width: 380px;
-}
-
-.input-sm {
-  padding: 0.45rem 0.75rem;
-  font-size: 0.85rem;
-}
-
-.btn-sm {
-  padding: 0.45rem 0.75rem;
-  font-size: 0.85rem;
-  gap: 0.3rem;
-}
-
-.mt-3 {
-  margin-top: 0.75rem;
-}
-
-.form-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 0.75rem;
-  margin-top: 0.5rem;
-}
-
-.loading-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 3rem 1rem;
-  color: var(--text-muted);
-}
-
-.loading-spinner {
-  width: 28px;
-  height: 28px;
-  border: 3px solid var(--border-subtle);
-  border-top-color: var(--primary);
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-</style>

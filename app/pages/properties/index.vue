@@ -10,7 +10,7 @@ import {
   RotateCcw,
   LayoutGrid,
   Map as MapIcon,
-  Columns2
+  Columns2,
 } from '@lucide/vue';
 import PropertiesMapExplorer from '../../components/common/PropertiesMapExplorer.vue';
 import AppPagination from '../../components/common/AppPagination.vue';
@@ -75,7 +75,8 @@ async function fetchProperties() {
       errorMessage.value = res.error?.message || 'Failed to load properties';
     }
   } catch (err: any) {
-    errorMessage.value = err?.data?.error?.message || err?.message || 'Network error loading properties';
+    errorMessage.value =
+      err?.data?.error?.message || err?.message || 'Network error loading properties';
   } finally {
     isLoading.value = false;
   }
@@ -123,18 +124,29 @@ function selectProperty(id: string) {
 }
 
 const PROPERTY_COVERS: Record<string, string> = {
-  'prop-skyline-01': 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=800&q=80',
-  'prop-oakwood-02': 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=800&q=80',
-  'prop-metropolitan-03': 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80',
-  'prop-peak-04': 'https://images.unsplash.com/photo-1574362848149-11496d93a7c7?auto=format&fit=crop&w=800&q=80',
-  'prop-toulkork-05': 'https://images.unsplash.com/photo-1580587771525-78b9dba3b914?auto=format&fit=crop&w=800&q=80',
-  'prop-chroy-06': 'https://images.unsplash.com/photo-1515263487990-61b07816b324?auto=format&fit=crop&w=800&q=80',
-  'prop-otres-07': 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&w=800&q=80',
-  'prop-kampot-08': 'https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=800&q=80',
+  'prop-skyline-01':
+    'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=800&q=80',
+  'prop-oakwood-02':
+    'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=800&q=80',
+  'prop-metropolitan-03':
+    'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80',
+  'prop-peak-04':
+    'https://images.unsplash.com/photo-1574362848149-11496d93a7c7?auto=format&fit=crop&w=800&q=80',
+  'prop-toulkork-05':
+    'https://images.unsplash.com/photo-1580587771525-78b9dba3b914?auto=format&fit=crop&w=800&q=80',
+  'prop-chroy-06':
+    'https://images.unsplash.com/photo-1515263487990-61b07816b324?auto=format&fit=crop&w=800&q=80',
+  'prop-otres-07':
+    'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&w=800&q=80',
+  'prop-kampot-08':
+    'https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=800&q=80',
 };
 
 function getPropertyThumbnail(property: Property): string {
-  return PROPERTY_COVERS[property.id] || 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=800&q=80';
+  return (
+    PROPERTY_COVERS[property.id] ||
+    'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=800&q=80'
+  );
 }
 
 onMounted(() => {
@@ -149,53 +161,91 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="properties-browse-page">
+  <div class="mx-auto flex max-w-7xl flex-col gap-6 px-4 py-10 pb-16 sm:px-6">
     <!-- Header Section -->
-    <section class="page-header">
-      <div class="header-container">
-        <h1>{{ t('properties.explore_title') }}</h1>
-        <p class="header-subtitle">
-          {{ t('properties.explore_subtitle') }}
-        </p>
-      </div>
+    <section class="mx-auto mb-2 max-w-2xl text-center">
+      <h1 class="text-3xl font-bold tracking-tight text-neutral-900 dark:text-white sm:text-4xl">
+        {{ t('properties.explore_title') }}
+      </h1>
+      <p class="mt-2 text-sm text-neutral-500 dark:text-neutral-400 sm:text-base">
+        {{ t('properties.explore_subtitle') }}
+      </p>
     </section>
 
     <!-- Filter & Search Toolbar -->
-    <section class="filter-toolbar card-flat">
-      <form @submit.prevent="handleSearch" class="filter-form">
-        <div class="search-box">
-          <Search :size="16" class="search-icon" />
-          <input v-model="searchKeyword" type="text" :placeholder="t('properties.search_input_placeholder')"
-            class="filter-input" />
+    <section
+      class="shadow-xs rounded-2xl border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900 sm:p-5"
+    >
+      <form
+        @submit.prevent="handleSearch"
+        class="flex flex-col items-stretch gap-4 lg:flex-row lg:items-center"
+      >
+        <div class="relative flex-1">
+          <Search
+            :size="16"
+            class="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-400 dark:text-neutral-500"
+          />
+          <input
+            v-model="searchKeyword"
+            type="text"
+            :placeholder="t('properties.search_input_placeholder')"
+            class="w-full rounded-lg border border-neutral-300 bg-neutral-50 py-2.5 pl-10 pr-4 text-sm text-neutral-900 transition-colors placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-blue-600 dark:border-neutral-700 dark:bg-neutral-950 dark:text-white dark:focus:ring-blue-500"
+          />
         </div>
 
-        <div class="filter-controls">
-          <div class="filter-group">
-            <label class="filter-label">{{ t('properties.city_filter') }}</label>
-            <select v-model="selectedCity" class="filter-select">
+        <div class="flex flex-wrap items-center gap-3">
+          <div class="flex items-center gap-2">
+            <label class="shrink-0 text-xs font-semibold text-neutral-500 dark:text-neutral-400"
+              >{{ t('properties.city_filter') }}:</label
+            >
+            <select
+              v-model="selectedCity"
+              class="rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm text-neutral-900 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-600 dark:border-neutral-700 dark:bg-neutral-950 dark:text-white dark:focus:ring-blue-500"
+            >
               <option value="">{{ t('properties.all_cities') }}</option>
               <option v-for="c in availableCities" :key="c" :value="c">{{ c }}</option>
             </select>
           </div>
 
-          <div class="filter-group">
-            <label class="filter-label">{{ t('properties.min_rent') }}</label>
-            <input v-model.number="minPrice" type="number" placeholder="$ Any" class="filter-input-sm" min="0"
-              step="50" />
+          <div class="flex items-center gap-2">
+            <label class="shrink-0 text-xs font-semibold text-neutral-500 dark:text-neutral-400"
+              >{{ t('properties.min_rent') }}:</label
+            >
+            <input
+              v-model.number="minPrice"
+              type="number"
+              :placeholder="t('properties.any_price')"
+              class="w-24 rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm text-neutral-900 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-600 dark:border-neutral-700 dark:bg-neutral-950 dark:text-white dark:focus:ring-blue-500"
+              min="0"
+              step="50"
+            />
           </div>
 
-          <div class="filter-group">
-            <label class="filter-label">{{ t('properties.max_rent') }}</label>
-            <input v-model.number="maxPrice" type="number" placeholder="$ Any" class="filter-input-sm" min="0"
-              step="50" />
+          <div class="flex items-center gap-2">
+            <label class="shrink-0 text-xs font-semibold text-neutral-500 dark:text-neutral-400"
+              >{{ t('properties.max_rent') }}:</label
+            >
+            <input
+              v-model.number="maxPrice"
+              type="number"
+              :placeholder="t('properties.any_price')"
+              class="w-24 rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm text-neutral-900 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-600 dark:border-neutral-700 dark:bg-neutral-950 dark:text-white dark:focus:ring-blue-500"
+              min="0"
+              step="50"
+            />
           </div>
 
-          <div class="filter-actions">
-            <button type="submit" class="btn-primary filter-btn">
+          <div class="ml-auto flex items-center gap-2">
+            <button type="submit" class="btn-primary">
               <SlidersHorizontal :size="14" />
               <span>{{ t('properties.apply_filters') }}</span>
             </button>
-            <button type="button" @click="resetFilters" class="btn-secondary filter-btn" :title="t('properties.reset_filters')">
+            <button
+              type="button"
+              @click="resetFilters"
+              class="btn-secondary"
+              :title="t('properties.reset_filters')"
+            >
               <RotateCcw :size="14" />
               <span>{{ t('common.reset') }}</span>
             </button>
@@ -205,24 +255,60 @@ onMounted(() => {
     </section>
 
     <!-- View Mode Switcher Bar -->
-    <section class="view-bar-row">
-      <div class="results-count">
-        <strong>{{ properties.length }}</strong> {{ properties.length === 1 ? t('properties.property_found_singular') : t('properties.properties_found', { count: properties.length }) }}
+    <section
+      class="flex flex-col items-start justify-between gap-4 py-1 sm:flex-row sm:items-center"
+    >
+      <div class="text-sm text-neutral-600 dark:text-neutral-400">
+        <strong class="text-neutral-900 dark:text-white">{{ properties.length }}</strong>
+        {{
+          properties.length === 1
+            ? t('properties.property_found_singular')
+            : t('properties.properties_found', { count: properties.length })
+        }}
       </div>
 
-      <div class="view-modes-group">
-        <button type="button" @click="viewMode = 'grid'" :class="['view-toggle-btn', { active: viewMode === 'grid' }]"
-          :title="t('properties.view_cards')">
+      <div
+        class="inline-flex items-center gap-1 rounded-lg border border-neutral-200 bg-neutral-200/60 p-1 dark:border-neutral-700/60 dark:bg-neutral-800/60"
+      >
+        <button
+          type="button"
+          @click="viewMode = 'grid'"
+          :class="[
+            'inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition-colors',
+            viewMode === 'grid'
+              ? 'shadow-xs bg-white text-neutral-900 dark:bg-neutral-900 dark:text-white'
+              : 'text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white',
+          ]"
+          :title="t('properties.view_cards')"
+        >
           <LayoutGrid :size="14" />
           <span>{{ t('properties.view_cards') }}</span>
         </button>
-        <button type="button" @click="viewMode = 'split'" :class="['view-toggle-btn', { active: viewMode === 'split' }]"
-          :title="t('properties.view_split_map')">
+        <button
+          type="button"
+          @click="viewMode = 'split'"
+          :class="[
+            'inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition-colors',
+            viewMode === 'split'
+              ? 'shadow-xs bg-white text-neutral-900 dark:bg-neutral-900 dark:text-white'
+              : 'text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white',
+          ]"
+          :title="t('properties.view_split_map')"
+        >
           <Columns2 :size="14" />
           <span>{{ t('properties.view_split_map') }}</span>
         </button>
-        <button type="button" @click="viewMode = 'map'" :class="['view-toggle-btn', { active: viewMode === 'map' }]"
-          :title="t('properties.view_map')">
+        <button
+          type="button"
+          @click="viewMode = 'map'"
+          :class="[
+            'inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition-colors',
+            viewMode === 'map'
+              ? 'shadow-xs bg-white text-neutral-900 dark:bg-neutral-900 dark:text-white'
+              : 'text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white',
+          ]"
+          :title="t('properties.view_map')"
+        >
           <MapIcon :size="14" />
           <span>{{ t('properties.view_map') }}</span>
         </button>
@@ -235,18 +321,29 @@ onMounted(() => {
     </div>
 
     <!-- Loading State -->
-    <div v-if="isLoading" class="loading-state">
-      <div class="loading-spinner"></div>
-      <p>{{ t('properties.loading') }}</p>
+    <div v-if="isLoading" class="flex flex-col items-center gap-3 py-20 text-center">
+      <div
+        class="h-8 w-8 animate-spin rounded-full border-2 border-neutral-300 border-t-blue-600"
+      />
+      <p class="text-sm text-neutral-500 dark:text-neutral-400">{{ t('properties.loading') }}</p>
     </div>
 
     <!-- Empty State -->
-    <div v-else-if="properties.length === 0" class="empty-state card-flat">
-      <div class="empty-icon-box">
+    <div
+      v-else-if="properties.length === 0"
+      class="flex flex-col items-center gap-3 rounded-2xl border border-neutral-200 bg-white px-4 py-16 text-center dark:border-neutral-800 dark:bg-neutral-900"
+    >
+      <div
+        class="flex h-14 w-14 items-center justify-center rounded-2xl bg-neutral-100 text-neutral-400 dark:bg-neutral-800 dark:text-neutral-500"
+      >
         <Building :size="32" />
       </div>
-      <h3>{{ t('properties.no_properties') }}</h3>
-      <p>{{ t('properties.no_properties_desc') }}</p>
+      <h3 class="text-lg font-bold text-neutral-900 dark:text-white">
+        {{ t('properties.no_properties') }}
+      </h3>
+      <p class="max-w-sm text-xs text-neutral-500 dark:text-neutral-400 sm:text-sm">
+        {{ t('properties.no_properties_desc') }}
+      </p>
       <button @click="resetFilters" class="btn-secondary mt-2">
         <RotateCcw :size="14" />
         <span>{{ t('properties.clear_all_filters') }}</span>
@@ -254,66 +351,117 @@ onMounted(() => {
     </div>
 
     <!-- 1. FULL MAP VIEW -->
-    <div v-else-if="viewMode === 'map'" class="full-map-container">
+    <div
+      v-else-if="viewMode === 'map'"
+      class="shadow-xs overflow-hidden rounded-2xl border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900"
+    >
       <ClientOnly>
-        <PropertiesMapExplorer :properties="properties" :selected-id="activePropertyId" height="650px"
-          @select="selectProperty" />
+        <PropertiesMapExplorer
+          :properties="properties"
+          :selected-id="activePropertyId"
+          height="650px"
+          @select="selectProperty"
+        />
         <template #fallback>
-          <div class="map-placeholder card-flat">{{ t('common.please_wait') }}</div>
+          <div class="p-10 text-center text-sm text-neutral-400">{{ t('common.please_wait') }}</div>
         </template>
       </ClientOnly>
     </div>
 
     <!-- 2. SPLIT VIEW (List on Left, Sticky Map on Right) -->
-    <div v-else-if="viewMode === 'split'" class="split-view-layout">
+    <div
+      v-else-if="viewMode === 'split'"
+      class="grid grid-cols-1 items-start gap-6 lg:grid-cols-12"
+    >
       <!-- Left: Property Cards Column -->
-      <div class="split-cards-col">
-        <article v-for="property in paginatedProperties" :key="property.id"
-          :class="['property-card card-flat', { 'is-active-card': activePropertyId === property.id }]"
-          @mouseenter="selectProperty(property.id)" @click="selectProperty(property.id)">
+      <div class="flex flex-col gap-4 lg:col-span-6">
+        <article
+          v-for="property in paginatedProperties"
+          :key="property.id"
+          :class="[
+            'shadow-xs group flex cursor-pointer flex-col overflow-hidden rounded-2xl border bg-white transition-all dark:bg-neutral-900',
+            activePropertyId === property.id
+              ? 'border-blue-600 ring-1 ring-blue-600 dark:border-blue-500'
+              : 'border-neutral-200 hover:border-neutral-300 dark:border-neutral-800 dark:hover:border-neutral-700',
+          ]"
+          @mouseenter="selectProperty(property.id)"
+          @click="selectProperty(property.id)"
+        >
           <!-- Card Image Header -->
-          <div class="card-hero-media">
-            <img :src="getPropertyThumbnail(property)" :alt="property.title" class="card-hero-img" loading="lazy" />
-            <div class="card-hero-overlay">
-              <span :class="['badge badge-pill', property.availableUnitsCount > 0 ? 'badge-success' : 'badge-warning']">
-                <span class="badge-dot"></span>
-                <span>{{ property.availableUnitsCount > 0 ? t('properties.unit_available_badge', { count: property.availableUnitsCount }) : t('properties.unit_fully_leased_badge') }}</span>
+          <div class="relative aspect-16/10 overflow-hidden bg-neutral-100 dark:bg-neutral-800">
+            <img
+              :src="getPropertyThumbnail(property)"
+              :alt="property.title"
+              class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+              loading="lazy"
+            />
+            <div class="absolute inset-x-3 top-3 flex items-center justify-between">
+              <span
+                :class="[
+                  'badge badge-pill',
+                  property.availableUnitsCount > 0 ? 'badge-success' : 'badge-warning',
+                ]"
+              >
+                <span class="badge-dot" />
+                <span>{{
+                  property.availableUnitsCount > 0
+                    ? t('properties.unit_available_badge', { count: property.availableUnitsCount })
+                    : t('properties.unit_fully_leased_badge')
+                }}</span>
               </span>
-              <span class="city-pill">{{ property.city }}</span>
+              <span
+                class="backdrop-blur-xs rounded-md bg-neutral-950/80 px-2 py-0.5 text-[11px] font-semibold text-white"
+                >{{ property.city }}</span
+              >
             </div>
           </div>
 
-          <div class="property-card-content">
-            <div class="property-body">
-              <h2 class="property-title">
+          <div class="flex flex-1 flex-col justify-between gap-3 p-5">
+            <div class="flex flex-col gap-1.5">
+              <h2
+                class="text-base font-bold text-neutral-900 transition-colors group-hover:text-blue-600 dark:text-white dark:group-hover:text-blue-400 sm:text-lg"
+              >
                 <NuxtLink :to="`/properties/${property.id}`">{{ property.title }}</NuxtLink>
               </h2>
 
-              <div class="property-location">
-                <MapPin :size="13" class="loc-icon" />
+              <div class="flex items-center gap-1.5 text-xs text-neutral-500 dark:text-neutral-400">
+                <MapPin :size="13" class="shrink-0 text-emerald-500" />
                 <span>{{ property.addressLine1 }}, {{ property.city }}</span>
               </div>
 
-              <p class="property-description">
+              <p
+                class="mt-1 line-clamp-2 text-xs leading-relaxed text-neutral-600 dark:text-neutral-300"
+              >
                 {{ property.description }}
               </p>
             </div>
 
-            <div class="property-footer">
-              <div class="price-box">
-                <span class="price-label">{{ t('properties.starting_from') }}</span>
-                <div class="price-val">
+            <div
+              class="flex items-center justify-between border-t border-neutral-100 pt-3 dark:border-neutral-800"
+            >
+              <div class="flex flex-col">
+                <span
+                  class="text-[10px] font-bold uppercase text-neutral-400 dark:text-neutral-500"
+                  >{{ t('properties.starting_from') }}</span
+                >
+                <div class="flex items-baseline gap-1">
                   <template v-if="property.minRent > 0">
-                    <span class="rent-highlight">${{ property.minRent.toLocaleString() }}</span>
-                    <span class="price-period">{{ t('properties.per_month_short') }}</span>
+                    <span class="text-base font-extrabold text-neutral-900 dark:text-white"
+                      >${{ property.minRent.toLocaleString() }}</span
+                    >
+                    <span class="text-xs text-neutral-500 dark:text-neutral-400">{{
+                      t('properties.per_month_short')
+                    }}</span>
                   </template>
                   <template v-else>
-                    <span class="price-inquire">{{ t('properties.inquire_rates') }}</span>
+                    <span class="text-xs font-semibold text-neutral-500">{{
+                      t('properties.inquire_rates')
+                    }}</span>
                   </template>
                 </div>
               </div>
 
-              <NuxtLink :to="`/properties/${property.id}`" class="btn-primary card-cta">
+              <NuxtLink :to="`/properties/${property.id}`" class="btn-primary btn-sm">
                 <span>{{ t('properties.view_cta') }}</span>
                 <ArrowRight :size="13" />
               </NuxtLink>
@@ -322,20 +470,35 @@ onMounted(() => {
         </article>
 
         <!-- Split View Pagination -->
-        <div class="split-pagination card-flat mt-4">
-          <AppPagination v-model:currentPage="currentPage" v-model:pageSize="pageSize" :pageSizeOptions="[4, 6, 8, 12]"
-            :totalItems="properties.length" :itemName="t('properties.units')" />
+        <div
+          class="rounded-xl border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900"
+        >
+          <AppPagination
+            v-model:currentPage="currentPage"
+            v-model:pageSize="pageSize"
+            :pageSizeOptions="[4, 6, 8, 12]"
+            :totalItems="properties.length"
+            :itemName="t('properties.units')"
+          />
         </div>
       </div>
 
       <!-- Right: Sticky OpenFreeMap Explorer -->
-      <div class="split-map-col">
-        <div class="sticky-map-wrapper">
+      <div class="lg:sticky lg:top-20 lg:col-span-6">
+        <div
+          class="shadow-xs overflow-hidden rounded-2xl border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900"
+        >
           <ClientOnly>
-            <PropertiesMapExplorer :properties="properties" :selected-id="activePropertyId" height="620px"
-              @select="selectProperty" />
+            <PropertiesMapExplorer
+              :properties="properties"
+              :selected-id="activePropertyId"
+              height="620px"
+              @select="selectProperty"
+            />
             <template #fallback>
-              <div class="map-placeholder card-flat">{{ t('common.please_wait') }}</div>
+              <div class="p-10 text-center text-sm text-neutral-400">
+                {{ t('common.please_wait') }}
+              </div>
             </template>
           </ClientOnly>
         </div>
@@ -343,66 +506,116 @@ onMounted(() => {
     </div>
 
     <!-- 3. STANDARD GRID CARDS VIEW -->
-    <div v-else class="properties-grid-container">
-      <div class="properties-grid">
-        <article v-for="property in paginatedProperties" :key="property.id" class="property-card card-flat">
+    <div v-else class="flex flex-col gap-6">
+      <div class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <article
+          v-for="property in paginatedProperties"
+          :key="property.id"
+          class="shadow-xs group flex flex-col justify-between overflow-hidden rounded-2xl border border-neutral-200 bg-white transition-all hover:border-neutral-300 dark:border-neutral-800 dark:bg-neutral-900 dark:hover:border-neutral-700"
+        >
           <!-- Card Image Header -->
-          <div class="card-hero-media">
-            <img :src="getPropertyThumbnail(property)" :alt="property.title" class="card-hero-img" loading="lazy" />
-            <div class="card-hero-overlay">
-              <span :class="['badge badge-pill', property.availableUnitsCount > 0 ? 'badge-success' : 'badge-warning']">
-                <span class="badge-dot"></span>
-                <span>{{ property.availableUnitsCount > 0 ? t('properties.unit_available_badge', { count: property.availableUnitsCount }) : t('properties.unit_fully_leased_badge') }}</span>
+          <div class="relative aspect-16/10 overflow-hidden bg-neutral-100 dark:bg-neutral-800">
+            <img
+              :src="getPropertyThumbnail(property)"
+              :alt="property.title"
+              class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+              loading="lazy"
+            />
+            <div class="absolute inset-x-3 top-3 flex items-center justify-between">
+              <span
+                :class="[
+                  'badge badge-pill',
+                  property.availableUnitsCount > 0 ? 'badge-success' : 'badge-warning',
+                ]"
+              >
+                <span class="badge-dot" />
+                <span>{{
+                  property.availableUnitsCount > 0
+                    ? t('properties.unit_available_badge', { count: property.availableUnitsCount })
+                    : t('properties.unit_fully_leased_badge')
+                }}</span>
               </span>
-              <span class="city-pill">{{ property.city }}</span>
+              <span
+                class="backdrop-blur-xs rounded-md bg-neutral-950/80 px-2 py-0.5 text-[11px] font-semibold text-white"
+                >{{ property.city }}</span
+              >
             </div>
           </div>
 
-          <div class="property-card-content">
-            <div class="property-body">
-              <h2 class="property-title">
+          <div class="flex flex-1 flex-col justify-between gap-3 p-5">
+            <div class="flex flex-col gap-1.5">
+              <h2
+                class="text-base font-bold text-neutral-900 transition-colors group-hover:text-blue-600 dark:text-white dark:group-hover:text-blue-400 sm:text-lg"
+              >
                 <NuxtLink :to="`/properties/${property.id}`">{{ property.title }}</NuxtLink>
               </h2>
 
-              <div class="property-location">
-                <MapPin :size="14" class="loc-icon" />
-                <span>{{ property.addressLine1 }}, {{ property.city }}, {{ property.state }} {{ property.postalCode }}</span>
+              <div class="flex items-center gap-1.5 text-xs text-neutral-500 dark:text-neutral-400">
+                <MapPin :size="14" class="shrink-0 text-emerald-500" />
+                <span
+                  >{{ property.addressLine1 }}, {{ property.city }}, {{ property.state }}
+                  {{ property.postalCode }}</span
+                >
               </div>
 
-              <p class="property-description">
+              <p
+                class="mt-1 line-clamp-2 text-xs leading-relaxed text-neutral-600 dark:text-neutral-300"
+              >
                 {{ property.description }}
               </p>
 
               <!-- Amenities list -->
-              <div v-if="property.amenities?.length" class="amenities-row">
-                <span v-for="amenity in property.amenities.slice(0, 4)" :key="amenity" class="amenity-tag">
-                  <Check :size="12" class="tag-check" />
+              <div v-if="property.amenities?.length" class="mt-2 flex flex-wrap gap-1">
+                <span
+                  v-for="amenity in property.amenities.slice(0, 4)"
+                  :key="amenity"
+                  class="inline-flex items-center gap-1 rounded bg-neutral-100 px-2 py-0.5 text-[10px] font-medium text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400"
+                >
+                  <Check :size="11" class="text-emerald-500" />
                   {{ amenity }}
                 </span>
-                <span v-if="property.amenities.length > 4" class="amenity-tag-more">
+                <span
+                  v-if="property.amenities.length > 4"
+                  class="rounded bg-neutral-100 px-1.5 py-0.5 text-[10px] font-medium text-neutral-500 dark:bg-neutral-800"
+                >
                   {{ t('properties.more_amenities', { count: property.amenities.length - 4 }) }}
                 </span>
               </div>
             </div>
 
-            <div class="property-footer">
-              <div class="price-box">
-                <span class="price-label">{{ t('properties.starting_from') }}</span>
-                <div class="price-val">
+            <div
+              class="flex items-center justify-between border-t border-neutral-100 pt-4 dark:border-neutral-800"
+            >
+              <div class="flex flex-col">
+                <span
+                  class="text-[10px] font-bold uppercase text-neutral-400 dark:text-neutral-500"
+                  >{{ t('properties.starting_from') }}</span
+                >
+                <div class="flex items-baseline gap-1">
                   <template v-if="property.minRent > 0">
-                    <span class="rent-highlight">${{ property.minRent.toLocaleString() }}</span>
-                    <span v-if="property.maxRent > property.minRent" class="price-range">
+                    <span
+                      class="text-base font-extrabold text-neutral-900 dark:text-white sm:text-lg"
+                      >${{ property.minRent.toLocaleString() }}</span
+                    >
+                    <span
+                      v-if="property.maxRent > property.minRent"
+                      class="text-xs text-neutral-500"
+                    >
                       – ${{ property.maxRent.toLocaleString() }}
                     </span>
-                    <span class="price-period">{{ t('properties.per_month_short') }}</span>
+                    <span class="text-xs text-neutral-500 dark:text-neutral-400">{{
+                      t('properties.per_month_short')
+                    }}</span>
                   </template>
                   <template v-else>
-                    <span class="price-inquire">{{ t('properties.inquire_rates') }}</span>
+                    <span class="text-xs font-semibold text-neutral-500">{{
+                      t('properties.inquire_rates')
+                    }}</span>
                   </template>
                 </div>
               </div>
 
-              <NuxtLink :to="`/properties/${property.id}`" class="btn-primary card-cta">
+              <NuxtLink :to="`/properties/${property.id}`" class="btn-primary">
                 <span>{{ t('properties.view_units') }}</span>
                 <ArrowRight :size="14" />
               </NuxtLink>
@@ -412,521 +625,17 @@ onMounted(() => {
       </div>
 
       <!-- Grid Cards Pagination -->
-      <div class="grid-pagination-wrapper card-flat mt-4">
-        <AppPagination v-model:currentPage="currentPage" v-model:pageSize="pageSize" :pageSizeOptions="[6, 12, 18, 24]"
-          :totalItems="properties.length" :itemName="t('properties.units')" />
+      <div
+        class="shadow-xs rounded-2xl border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900"
+      >
+        <AppPagination
+          v-model:currentPage="currentPage"
+          v-model:pageSize="pageSize"
+          :pageSizeOptions="[6, 12, 18, 24]"
+          :totalItems="properties.length"
+          :itemName="t('properties.units')"
+        />
       </div>
     </div>
   </div>
 </template>
-
-<style scoped>
-.properties-browse-page {
-  max-width: 1240px;
-  margin: 0 auto;
-  padding: 2.5rem 1.5rem 4rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1.75rem;
-}
-
-.page-header {
-  text-align: center;
-}
-
-.header-container {
-  max-width: 720px;
-  margin: 0 auto;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.page-header h1 {
-  font-size: 2.25rem;
-  letter-spacing: -0.02em;
-}
-
-.header-subtitle {
-  color: var(--text-muted);
-  font-size: 1rem;
-  line-height: 1.5;
-}
-
-.filter-toolbar {
-  padding: 1.25rem 1.5rem;
-  background: var(--bg-surface);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-md);
-}
-
-.filter-form {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.search-box {
-  position: relative;
-  display: flex;
-  align-items: center;
-}
-
-.search-icon {
-  position: absolute;
-  left: 0.85rem;
-  color: var(--text-dim);
-  pointer-events: none;
-}
-
-.filter-input {
-  width: 100%;
-  background: var(--bg-input);
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-sm);
-  padding: 0.65rem 0.85rem 0.65rem 2.5rem;
-  color: var(--text-main);
-  font-size: 0.9rem;
-}
-
-.filter-input:focus {
-  outline: none;
-  border-color: var(--border-focus);
-}
-
-.filter-controls {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-end;
-  gap: 0.85rem;
-}
-
-.filter-group {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-.filter-label {
-  font-size: 0.72rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--text-dim);
-}
-
-.filter-select,
-.filter-input-sm {
-  background: var(--bg-input);
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-sm);
-  padding: 0.55rem 0.75rem;
-  color: var(--text-main);
-  font-size: 0.875rem;
-}
-
-.filter-select:focus,
-.filter-input-sm:focus {
-  outline: none;
-  border-color: var(--border-focus);
-}
-
-.filter-input-sm {
-  width: 110px;
-}
-
-.filter-actions {
-  display: flex;
-  gap: 0.5rem;
-  margin-left: auto;
-}
-
-.filter-btn {
-  padding: 0.55rem 0.95rem;
-  font-size: 0.85rem;
-}
-
-/* View Mode Bar */
-.view-bar-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding-bottom: 0.5rem;
-  border-bottom: 1px solid var(--border-subtle);
-  flex-wrap: wrap;
-  gap: 12px;
-}
-
-.results-count {
-  font-size: 0.88rem;
-  color: var(--text-muted);
-}
-
-.results-count strong {
-  color: var(--text-main);
-}
-
-.view-modes-group {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  background: var(--bg-surface);
-  border: 1px solid var(--border-default);
-  padding: 3px;
-  border-radius: var(--radius-sm);
-}
-
-.view-toggle-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 0.76rem;
-  font-weight: 600;
-  color: var(--text-muted);
-  background: transparent;
-  border: none;
-  padding: 4px 10px;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.view-toggle-btn:hover {
-  color: var(--text-main);
-}
-
-.view-toggle-btn.active {
-  background: var(--primary);
-  color: #ffffff;
-}
-
-/* Split View Layout */
-.split-view-layout {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 1.5rem;
-}
-
-@media (min-width: 992px) {
-  .split-view-layout {
-    grid-template-columns: 480px 1fr;
-    align-items: start;
-  }
-}
-
-.split-cards-col {
-  display: flex;
-  flex-direction: column;
-  gap: 1.25rem;
-  max-height: 800px;
-  overflow-y: auto;
-  padding-right: 6px;
-}
-
-.split-cards-col::-webkit-scrollbar {
-  width: 6px;
-}
-
-.split-cards-col::-webkit-scrollbar-track {
-  background: var(--bg-surface);
-}
-
-.split-cards-col::-webkit-scrollbar-thumb {
-  background: var(--border-default);
-  border-radius: 3px;
-}
-
-.split-map-col {
-  width: 100%;
-}
-
-.sticky-map-wrapper {
-  position: sticky;
-  top: 90px;
-}
-
-.full-map-container {
-  width: 100%;
-}
-
-.is-active-card {
-  border-color: var(--primary) !important;
-  background: var(--bg-surface) !important;
-  box-shadow: 0 0 0 1px var(--primary);
-}
-
-.rent-highlight {
-  color: var(--accent-emerald) !important;
-  font-weight: 800;
-}
-
-.properties-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
-  gap: 1.5rem;
-}
-
-.property-card {
-  display: flex;
-  flex-direction: column;
-  padding: 0 !important;
-  background: var(--bg-surface);
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-md);
-  overflow: hidden;
-  transition: border-color 0.2s cubic-bezier(0.16, 1, 0.3, 1), transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-  cursor: pointer;
-}
-
-.property-card:hover {
-  border-color: var(--primary);
-  transform: translateY(-3px);
-  box-shadow: none;
-}
-
-.card-hero-media {
-  position: relative;
-  width: 100%;
-  height: 195px;
-  background: #0f172a;
-  overflow: hidden;
-}
-
-.card-hero-img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.property-card:hover .card-hero-img {
-  transform: scale(1.04);
-}
-
-.card-hero-overlay {
-  position: absolute;
-  top: 10px;
-  left: 10px;
-  right: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-}
-
-.city-pill {
-  font-size: 0.72rem;
-  font-weight: 600;
-  background: #18181b;
-  color: #ffffff;
-  padding: 3px 8px;
-  border-radius: var(--radius-sm);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  letter-spacing: 0.02em;
-}
-
-.property-card-content {
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  padding: 1.25rem;
-  flex: 1;
-}
-
-.property-body {
-  display: flex;
-  flex-direction: column;
-  gap: 0.65rem;
-  flex: 1;
-}
-
-.property-title {
-  font-size: 1.2rem;
-  font-weight: 700;
-  line-height: 1.3;
-}
-
-.property-title a {
-  color: var(--text-main);
-  transition: color 0.15s ease;
-}
-
-.property-title a:hover {
-  color: var(--primary);
-}
-
-.property-location {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  color: var(--text-muted);
-  font-size: 0.85rem;
-}
-
-.loc-icon {
-  color: var(--text-dim);
-  flex-shrink: 0;
-}
-
-.property-description {
-  color: var(--text-muted);
-  font-size: 0.875rem;
-  line-height: 1.5;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  margin-top: 0.25rem;
-}
-
-.amenities-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.4rem;
-  margin-top: 0.5rem;
-}
-
-.amenity-tag {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.25rem;
-  background: var(--bg-subtle);
-  border: 1px solid var(--border-default);
-  padding: 0.2rem 0.5rem;
-  border-radius: var(--radius-sm);
-  font-size: 0.72rem;
-  color: var(--text-muted);
-}
-
-.tag-check {
-  color: var(--accent-emerald);
-}
-
-.amenity-tag-more {
-  font-size: 0.72rem;
-  color: var(--text-dim);
-  align-self: center;
-  padding: 0.2rem 0.4rem;
-}
-
-.property-footer {
-  margin-top: 1.5rem;
-  padding-top: 1rem;
-  border-top: 1px solid var(--border-subtle);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.price-box {
-  display: flex;
-  flex-direction: column;
-}
-
-.price-label {
-  font-size: 0.7rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  color: var(--text-dim);
-  letter-spacing: 0.04em;
-}
-
-.price-val {
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: var(--text-main);
-  display: flex;
-  align-items: baseline;
-  gap: 0.2rem;
-}
-
-.price-range {
-  font-size: 1.15rem;
-}
-
-.price-period {
-  font-size: 0.8rem;
-  font-weight: 500;
-  color: var(--text-muted);
-}
-
-.price-inquire {
-  font-size: 0.9rem;
-  font-weight: 500;
-  color: var(--text-dim);
-}
-
-.card-cta {
-  padding: 0.55rem 0.95rem;
-  font-size: 0.85rem;
-}
-
-.map-placeholder {
-  padding: 3rem;
-  text-align: center;
-  color: var(--text-muted);
-}
-
-.loading-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 1rem;
-  padding: 4rem 1rem;
-  color: var(--text-muted);
-}
-
-.loading-spinner {
-  width: 32px;
-  height: 32px;
-  border: 3px solid var(--border-subtle);
-  border-top-color: var(--primary);
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-.empty-state {
-  text-align: center;
-  padding: 3.5rem 1.5rem;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.75rem;
-  color: var(--text-muted);
-}
-
-.empty-icon-box {
-  width: 56px;
-  height: 56px;
-  border-radius: var(--radius-sm);
-  background: var(--bg-subtle);
-  border: 1px solid var(--border-default);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--text-dim);
-  margin-bottom: 0.5rem;
-}
-
-.empty-state h3 {
-  font-size: 1.25rem;
-  color: var(--text-main);
-}
-
-.empty-state p {
-  max-width: 480px;
-  font-size: 0.9rem;
-}
-
-.mt-2 {
-  margin-top: 0.5rem;
-}
-</style>

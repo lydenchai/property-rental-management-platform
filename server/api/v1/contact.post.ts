@@ -42,7 +42,8 @@ export default defineEventHandler(async (event) => {
       referenceNumber,
       category: validatedInput.category,
       submittedAt: new Date().toISOString(),
-      message: 'Support request received successfully. Our team will review your inquiry within 1 business day.',
+      message:
+        'Support request received successfully. Our team will review your inquiry within 1 business day.',
     });
   } catch (error) {
     return handleApiError(event, error);

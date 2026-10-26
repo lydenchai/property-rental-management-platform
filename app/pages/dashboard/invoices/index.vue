@@ -8,11 +8,11 @@ import {
   CheckCircle2,
   AlertCircle,
   AlertTriangle,
-  Search,
   Plus,
   Receipt,
   FileText,
   Printer,
+  X,
 } from '@lucide/vue';
 import { useAuth } from '../../../composables/useAuth';
 import { useInvoiceStore } from '../../../stores/invoice.store';
@@ -43,13 +43,7 @@ const {
   overdueCount,
 } = invoiceStore;
 
-const {
-  fetchInvoices,
-  loadInvoices,
-  generateInvoice,
-  recordPayment,
-  viewReceipt,
-} = invoiceStore;
+const { fetchInvoices, loadInvoices, generateInvoice, recordPayment, viewReceipt } = invoiceStore;
 
 const successMessage = ref<string | null>(null);
 
@@ -106,10 +100,10 @@ watch([activeTab, searchQuery], () => {
 });
 
 async function executeGenerateInvoice() {
-  const res = await generateInvoice({
+  const res = (await generateInvoice({
     ...generateForm.value,
     dueDate: generateForm.value.dueDate!,
-  }) as any;
+  })) as any;
 
   if (res.success) {
     successMessage.value = res.message || 'Invoice generated successfully';
@@ -133,13 +127,13 @@ function openPayModal(inv: InvoiceItem) {
 
 async function executeRecordPayment() {
   if (!invoiceToPay.value) return;
-  const res = await recordPayment({
+  const res = (await recordPayment({
     invoiceId: invoiceToPay.value.id,
     amount: Number(paymentForm.value.amount),
     method: paymentForm.value.method,
     referenceNumber: paymentForm.value.referenceNumber || undefined,
     notes: paymentForm.value.notes || undefined,
-  }) as any;
+  })) as any;
 
   if (res.success) {
     successMessage.value = res.message || 'Payment recorded successfully';
@@ -159,980 +153,818 @@ function printReceipt() {
   window.print();
 }
 
-onMounted(() => {
-  loadInvoices();
+onMounted(async () => {
+  try {
+    await loadInvoices();
+  } catch (err: any) {
+    console.warn('Could not load invoices:', err);
+  }
 });
 </script>
 
 <template>
-  <div class="invoices-page">
+  <div class="space-y-6">
     <!-- Top Bar -->
-    <div class="page-top-bar">
+    <div class="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
       <div>
-        <h1>{{ t('invoices.title') }}</h1>
-        <p class="subtitle">
+        <h1 class="text-2xl font-bold tracking-tight text-neutral-900 dark:text-white">
+          {{ t('invoices.title') }}
+        </h1>
+        <p class="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
           {{ t('invoices.subtitle') }}
         </p>
       </div>
-      <button v-if="isLandlord || isAdmin" @click="isGenerateModalOpen = true" class="btn-primary">
-        <Plus :size="15" />
+      <button
+        v-if="isLandlord || isAdmin"
+        @click="isGenerateModalOpen = true"
+        class="shadow-xs inline-flex cursor-pointer items-center gap-2 rounded-lg bg-primary-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-primary-700"
+      >
+        <Plus :size="16" />
         <span>{{ t('invoices.generate_invoice') }}</span>
       </button>
     </div>
 
     <!-- Alert Notifications -->
-    <div v-if="successMessage" class="alert-success">
-      <CheckCircle2 :size="16" class="alert-icon" />
+    <div
+      v-if="successMessage"
+      class="flex items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800 dark:border-emerald-900/40 dark:bg-emerald-950/20 dark:text-emerald-300"
+    >
+      <CheckCircle2 :size="18" class="shrink-0 text-emerald-600 dark:text-emerald-400" />
       <span>{{ successMessage }}</span>
     </div>
 
-    <div v-if="errorMessage" class="alert-error">
-      <AlertCircle :size="16" class="alert-icon" />
-      <div class="alert-body">
+    <div
+      v-if="errorMessage"
+      class="flex items-center gap-3 rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800 dark:border-rose-900/40 dark:bg-rose-950/20 dark:text-rose-300"
+    >
+      <AlertCircle :size="18" class="shrink-0 text-rose-600 dark:text-rose-400" />
+      <div class="flex flex-1 flex-wrap items-center justify-between gap-2">
         <span>{{ errorMessage }}</span>
-        <NuxtLink v-if="errorMessage.toLowerCase().includes('logged in')"
-          :to="{ path: '/login', query: { redirect: $route.fullPath } }" class="alert-action-btn">
+        <NuxtLink
+          v-if="errorMessage.toLowerCase().includes('logged in')"
+          :to="{ path: '/login', query: { redirect: $route.fullPath } }"
+          class="font-semibold underline hover:text-rose-900 dark:hover:text-rose-200"
+        >
           {{ t('nav.sign_in') }}
         </NuxtLink>
       </div>
     </div>
 
     <!-- Financial Stats Cards -->
-    <div class="stats-grid">
-      <div class="stat-card card-flat">
-        <div class="stat-header">
-          <span class="stat-label">{{ t('invoices.total_outstanding') }}</span>
-          <div class="stat-icon-wrap outstanding">
+    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div
+        class="shadow-xs flex flex-col justify-between rounded-xl border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-900"
+      >
+        <div class="flex items-center justify-between">
+          <span
+            class="text-xs font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400"
+            >{{ t('invoices.total_outstanding') }}</span
+          >
+          <div
+            class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600 dark:bg-indigo-950/40 dark:text-indigo-400"
+          >
             <Clock :size="16" />
           </div>
         </div>
-        <div class="stat-value font-mono">${{ totalOutstanding.toLocaleString() }}</div>
-        <div class="stat-subtext">{{ t('invoices.unsettled_balance') }}</div>
+        <div class="mt-3">
+          <div class="font-mono text-2xl font-bold text-neutral-900 dark:text-white">
+            ${{ totalOutstanding.toLocaleString() }}
+          </div>
+          <div class="mt-0.5 text-xs text-neutral-500 dark:text-neutral-400">
+            {{ t('invoices.unsettled_balance') }}
+          </div>
+        </div>
       </div>
 
-      <div class="stat-card card-flat">
-        <div class="stat-header">
-          <span class="stat-label">{{ t('invoices.total_collected') }}</span>
-          <div class="stat-icon-wrap collected">
+      <div
+        class="shadow-xs flex flex-col justify-between rounded-xl border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-900"
+      >
+        <div class="flex items-center justify-between">
+          <span
+            class="text-xs font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400"
+            >{{ t('invoices.total_collected') }}</span
+          >
+          <div
+            class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400"
+          >
             <DollarSign :size="16" />
           </div>
         </div>
-        <div class="stat-value font-mono">${{ totalCollected.toLocaleString() }}</div>
-        <div class="stat-subtext">{{ t('invoices.verified_cleared') }}</div>
+        <div class="mt-3">
+          <div class="font-mono text-2xl font-bold text-neutral-900 dark:text-white">
+            ${{ totalCollected.toLocaleString() }}
+          </div>
+          <div class="mt-0.5 text-xs text-neutral-500 dark:text-neutral-400">
+            {{ t('invoices.verified_cleared') }}
+          </div>
+        </div>
       </div>
 
-      <div class="stat-card card-flat">
-        <div class="stat-header">
-          <span class="stat-label">{{ t('invoices.total_invoiced') }}</span>
-          <div class="stat-icon-wrap billed">
+      <div
+        class="shadow-xs flex flex-col justify-between rounded-xl border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-900"
+      >
+        <div class="flex items-center justify-between">
+          <span
+            class="text-xs font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400"
+            >{{ t('invoices.total_invoiced') }}</span
+          >
+          <div
+            class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400"
+          >
             <CreditCard :size="16" />
           </div>
         </div>
-        <div class="stat-value font-mono">${{ totalInvoiced.toLocaleString() }}</div>
-        <div class="stat-subtext">{{ invoices.length }} {{ t('invoices.title') }}</div>
+        <div class="mt-3">
+          <div class="font-mono text-2xl font-bold text-neutral-900 dark:text-white">
+            ${{ totalInvoiced.toLocaleString() }}
+          </div>
+          <div class="mt-0.5 text-xs text-neutral-500 dark:text-neutral-400">
+            {{ invoices.length }} {{ t('invoices.title') }}
+          </div>
+        </div>
       </div>
 
-      <div class="stat-card card-flat">
-        <div class="stat-header">
-          <span class="stat-label">{{ t('invoices.overdue_invoices') }}</span>
-          <div class="stat-icon-wrap overdue">
+      <div
+        class="shadow-xs flex flex-col justify-between rounded-xl border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-900"
+      >
+        <div class="flex items-center justify-between">
+          <span
+            class="text-xs font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400"
+            >{{ t('invoices.overdue_invoices') }}</span
+          >
+          <div
+            class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-rose-50 text-rose-600 dark:bg-rose-950/40 dark:text-rose-400"
+          >
             <AlertTriangle :size="16" />
           </div>
         </div>
-        <div class="stat-value font-mono" :class="{ 'text-danger': overdueCount > 0 }">
-          {{ overdueCount }}
+        <div class="mt-3">
+          <div
+            :class="[
+              'font-mono text-2xl font-bold',
+              overdueCount > 0
+                ? 'text-rose-600 dark:text-rose-400'
+                : 'text-neutral-900 dark:text-white',
+            ]"
+          >
+            {{ overdueCount }}
+          </div>
+          <div class="mt-0.5 text-xs text-neutral-500 dark:text-neutral-400">
+            {{ t('invoices.requiring_attention') }}
+          </div>
         </div>
-        <div class="stat-subtext">{{ t('invoices.requiring_attention') }}</div>
       </div>
     </div>
 
     <!-- Invoices Table using shared AppTableCard -->
-    <AppTableCard v-model:search="searchQuery" :search-placeholder="t('invoices.col_invoice_num')"
-      :is-loading="isLoading" :is-empty="filteredInvoices.length === 0" :empty-title="t('invoices.no_invoices')"
-      :empty-description="t('invoices.no_invoices_desc')" :empty-icon="FileText"
-      v-model:current-page="currentPage" v-model:page-size="pageSize" :total-items="filteredInvoices.length"
-      :item-name="t('common.records')">
+    <AppTableCard
+      v-model:search="searchQuery"
+      :search-placeholder="t('invoices.col_invoice_num')"
+      :is-loading="isLoading"
+      :is-empty="filteredInvoices.length === 0"
+      :empty-title="t('invoices.no_invoices')"
+      :empty-description="t('invoices.no_invoices_desc')"
+      :empty-icon="FileText"
+      v-model:current-page="currentPage"
+      v-model:page-size="pageSize"
+      :total-items="filteredInvoices.length"
+      :item-name="t('common.records')"
+    >
       <template #toolbar-start>
-        <div class="filter-btn-group status-tabs">
-          <button type="button" class="filter-btn tab-btn" :class="{ active: activeTab === 'ALL' }" @click="activeTab = 'ALL'">
+        <div class="inline-flex flex-wrap items-center gap-1.5">
+          <button
+            type="button"
+            @click="activeTab = 'ALL'"
+            :class="[
+              'inline-flex cursor-pointer items-center rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors',
+              activeTab === 'ALL'
+                ? 'shadow-xs border-primary-600 bg-primary-600 font-semibold text-white'
+                : 'border-neutral-200 bg-white text-neutral-600 hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-700',
+            ]"
+          >
             {{ t('invoices.filter_all') }}
           </button>
-          <button type="button" class="filter-btn tab-btn" :class="{ active: activeTab === 'UNPAID' }" @click="activeTab = 'UNPAID'">
+          <button
+            type="button"
+            @click="activeTab = 'UNPAID'"
+            :class="[
+              'inline-flex cursor-pointer items-center rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors',
+              activeTab === 'UNPAID'
+                ? 'shadow-xs border-primary-600 bg-primary-600 font-semibold text-white'
+                : 'border-neutral-200 bg-white text-neutral-600 hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-700',
+            ]"
+          >
             {{ t('invoices.filter_unpaid') }}
           </button>
-          <button type="button" class="filter-btn tab-btn" :class="{ active: activeTab === 'PARTIALLY_PAID' }"
-            @click="activeTab = 'PARTIALLY_PAID'">
+          <button
+            type="button"
+            @click="activeTab = 'PARTIALLY_PAID'"
+            :class="[
+              'inline-flex cursor-pointer items-center rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors',
+              activeTab === 'PARTIALLY_PAID'
+                ? 'shadow-xs border-primary-600 bg-primary-600 font-semibold text-white'
+                : 'border-neutral-200 bg-white text-neutral-600 hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-700',
+            ]"
+          >
             {{ t('invoices.filter_partially_paid') }}
           </button>
-          <button type="button" class="filter-btn tab-btn" :class="{ active: activeTab === 'PAID' }" @click="activeTab = 'PAID'">
+          <button
+            type="button"
+            @click="activeTab = 'PAID'"
+            :class="[
+              'inline-flex cursor-pointer items-center rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors',
+              activeTab === 'PAID'
+                ? 'shadow-xs border-primary-600 bg-primary-600 font-semibold text-white'
+                : 'border-neutral-200 bg-white text-neutral-600 hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-700',
+            ]"
+          >
             {{ t('invoices.filter_paid') }}
           </button>
-          <button type="button" class="filter-btn tab-btn" :class="{ active: activeTab === 'OVERDUE' }" @click="activeTab = 'OVERDUE'">
+          <button
+            type="button"
+            @click="activeTab = 'OVERDUE'"
+            :class="[
+              'inline-flex cursor-pointer items-center rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors',
+              activeTab === 'OVERDUE'
+                ? 'shadow-xs border-primary-600 bg-primary-600 font-semibold text-white'
+                : 'border-neutral-200 bg-white text-neutral-600 hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-700',
+            ]"
+          >
             {{ t('invoices.filter_overdue') }}
           </button>
         </div>
       </template>
 
-      <table class="data-table">
-        <thead>
-          <tr>
-            <th>{{ t('invoices.col_invoice_num') }}</th>
-            <th>{{ t('invoices.col_property_unit') }}</th>
-            <th>{{ t('invoices.col_tenant') }}</th>
-            <th>{{ t('invoices.col_due_date') }}</th>
-            <th>{{ t('invoices.col_amount') }}</th>
-            <th>{{ t('invoices.col_paid') }}</th>
-            <th>{{ t('invoices.col_status') }}</th>
-            <th class="text-right">{{ t('invoices.col_actions') }}</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="inv in paginatedInvoices" :key="inv.id">
-            <td>
-              <div class="invoice-num-cell">
-                <span class="font-mono font-semibold">{{ inv.invoiceNumber }}</span>
-                <span class="text-dim text-xs">{{ t('common.created_at') }}: {{ new Date(inv.issueDate).toLocaleDateString() }}</span>
-              </div>
-            </td>
-            <td>
-              <div class="unit-cell">
-                <span class="font-semibold">{{ t('dashboard.metrics.unit') }} {{ inv.lease?.unit?.unitNumber || '101A' }}</span>
-                <span class="text-dim text-xs">{{ inv.lease?.unit?.property?.title || 'Skyline Heights' }}</span>
-              </div>
-            </td>
-            <td>
-              <div class="tenant-cell">
-                <span>{{ inv.tenant?.fullName || 'Sarah Jenkins' }}</span>
-                <span class="text-dim text-xs">{{ inv.tenant?.email || 'tenant@example.com' }}</span>
-              </div>
-            </td>
-            <td>
-              <div class="date-cell">
-                <Calendar :size="13" class="text-dim" />
-                <span>{{ new Date(inv.dueDate).toLocaleDateString() }}</span>
-              </div>
-            </td>
-            <td class="font-mono font-semibold">
-              ${{ inv.amountDue.toLocaleString() }}
-            </td>
-            <td>
-              <div class="paid-cell font-mono">
-                <span>${{ inv.amountPaid.toLocaleString() }}</span>
-                <span v-if="inv.amountDue > inv.amountPaid" class="text-xs text-dim">
-                  (${{ (inv.amountDue - inv.amountPaid).toLocaleString() }} left)
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-sm text-neutral-700 dark:text-neutral-200">
+          <thead
+            class="border-b border-neutral-200 bg-neutral-50 text-xs font-semibold uppercase tracking-wider text-neutral-500 dark:border-neutral-800 dark:bg-neutral-800/60 dark:text-neutral-400"
+          >
+            <tr>
+              <th class="px-4 py-3">{{ t('invoices.col_invoice_num') }}</th>
+              <th class="px-4 py-3">{{ t('invoices.col_property_unit') }}</th>
+              <th class="px-4 py-3">{{ t('invoices.col_tenant') }}</th>
+              <th class="px-4 py-3">{{ t('invoices.col_due_date') }}</th>
+              <th class="px-4 py-3">{{ t('invoices.col_amount') }}</th>
+              <th class="px-4 py-3">{{ t('invoices.col_paid') }}</th>
+              <th class="px-4 py-3">{{ t('invoices.col_status') }}</th>
+              <th class="px-4 py-3 text-right">{{ t('invoices.col_actions') }}</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-neutral-200 dark:divide-neutral-800">
+            <tr
+              v-for="inv in paginatedInvoices"
+              :key="inv.id"
+              class="transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-800/40"
+            >
+              <td class="px-4 py-3.5">
+                <div class="flex flex-col">
+                  <span class="font-mono font-semibold text-neutral-900 dark:text-white">{{
+                    inv.invoiceNumber
+                  }}</span>
+                  <span class="text-xs text-neutral-500 dark:text-neutral-400"
+                    >{{ t('common.created_at') }}:
+                    {{ new Date(inv.issueDate).toLocaleDateString() }}</span
+                  >
+                </div>
+              </td>
+              <td class="px-4 py-3.5">
+                <div class="flex flex-col">
+                  <span class="font-semibold text-neutral-900 dark:text-white"
+                    >{{ t('dashboard.metrics.unit') }}
+                    {{ inv.lease?.unit?.unitNumber || '101A' }}</span
+                  >
+                  <span class="text-xs text-neutral-500 dark:text-neutral-400">{{
+                    inv.lease?.unit?.property?.title || 'Skyline Heights'
+                  }}</span>
+                </div>
+              </td>
+              <td class="px-4 py-3.5">
+                <div class="flex flex-col text-xs">
+                  <span class="font-medium text-neutral-900 dark:text-white">{{
+                    inv.tenant?.fullName || 'Sarah Jenkins'
+                  }}</span>
+                  <span class="text-neutral-500 dark:text-neutral-400">{{
+                    inv.tenant?.email || 'tenant@example.com'
+                  }}</span>
+                </div>
+              </td>
+              <td class="px-4 py-3.5">
+                <div
+                  class="flex items-center gap-1.5 text-xs text-neutral-600 dark:text-neutral-300"
+                >
+                  <Calendar :size="14" class="shrink-0 text-neutral-400" />
+                  <span>{{ new Date(inv.dueDate).toLocaleDateString() }}</span>
+                </div>
+              </td>
+              <td class="px-4 py-3.5 font-mono font-semibold text-neutral-900 dark:text-white">
+                ${{ inv.amountDue.toLocaleString() }}
+              </td>
+              <td class="px-4 py-3.5">
+                <div class="flex flex-col font-mono text-xs">
+                  <span class="font-semibold text-neutral-900 dark:text-white"
+                    >${{ inv.amountPaid.toLocaleString() }}</span
+                  >
+                  <span
+                    v-if="inv.amountDue > inv.amountPaid"
+                    class="text-neutral-500 dark:text-neutral-400"
+                  >
+                    (${{ (inv.amountDue - inv.amountPaid).toLocaleString() }} left)
+                  </span>
+                </div>
+              </td>
+              <td class="px-4 py-3.5">
+                <span
+                  :class="[
+                    'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium',
+                    inv.status === 'PAID'
+                      ? 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-400'
+                      : inv.status === 'PARTIALLY_PAID'
+                        ? 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-400'
+                        : inv.status === 'OVERDUE'
+                          ? 'border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-800 dark:bg-rose-950/30 dark:text-rose-400'
+                          : 'border-sky-200 bg-sky-50 text-sky-700 dark:border-sky-800 dark:bg-sky-950/30 dark:text-sky-400',
+                  ]"
+                >
+                  <span class="h-1.5 w-1.5 rounded-full bg-current"></span>
+                  <span>{{
+                    inv.status === 'PAID'
+                      ? t('invoices.status.paid')
+                      : inv.status === 'PARTIALLY_PAID'
+                        ? t('invoices.status.partially_paid')
+                        : inv.status === 'UNPAID'
+                          ? t('invoices.status.unpaid')
+                          : inv.status === 'OVERDUE'
+                            ? t('invoices.status.overdue')
+                            : inv.status
+                  }}</span>
                 </span>
-              </div>
-            </td>
-            <td>
-              <span class="badge badge-pill" :class="{
-                'badge-success': inv.status === 'PAID',
-                'badge-warning': inv.status === 'PARTIALLY_PAID',
-                'badge-info': inv.status === 'UNPAID',
-                'badge-danger': inv.status === 'OVERDUE',
-              }">
-                <span class="badge-dot"></span>
-                <span>{{ inv.status === 'PAID' ? t('invoices.status.paid') : inv.status === 'PARTIALLY_PAID' ? t('invoices.status.partially_paid') : inv.status === 'UNPAID' ? t('invoices.status.unpaid') : inv.status === 'OVERDUE' ? t('invoices.status.overdue') : inv.status }}</span>
-              </span>
-            </td>
-            <td class="text-right">
-              <div class="action-btn-group">
-                <!-- Pay / Record Button -->
-                <button v-if="inv.status !== 'PAID' && inv.status !== 'CANCELLED'" @click="openPayModal(inv)"
-                  class="btn-primary btn-sm">
-                  <CreditCard :size="13" />
-                  <span>{{ isTenant ? t('invoices.pay_now') : t('invoices.record_payment') }}</span>
-                </button>
+              </td>
+              <td class="px-4 py-3.5 text-right">
+                <div class="inline-flex items-center justify-end gap-1.5">
+                  <button
+                    v-if="inv.status !== 'PAID' && inv.status !== 'CANCELLED'"
+                    @click="openPayModal(inv)"
+                    class="shadow-xs inline-flex cursor-pointer items-center gap-1 rounded-lg bg-primary-600 px-2.5 py-1 text-xs font-medium text-white transition-colors hover:bg-primary-700"
+                  >
+                    <CreditCard :size="13" />
+                    <span>{{
+                      isTenant ? t('invoices.pay_now') : t('invoices.record_payment')
+                    }}</span>
+                  </button>
 
-                <!-- Receipt Button -->
-                <button v-if="inv.payments && inv.payments.length > 0" @click="viewReceipt(inv.payments[0]!.id)"
-                  class="btn-secondary btn-sm" :title="t('invoices.view_receipt')">
-                  <Receipt :size="13" />
-                  <span>{{ t('invoices.view_receipt') }}</span>
-                </button>
-              </div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+                  <button
+                    v-if="inv.payments && inv.payments.length > 0"
+                    @click="viewReceipt(inv.payments[0]!.id)"
+                    class="inline-flex cursor-pointer items-center gap-1 rounded-lg border border-neutral-300 px-2.5 py-1 text-xs font-medium text-neutral-700 transition-colors hover:bg-neutral-50 dark:border-neutral-700 dark:text-neutral-200 dark:hover:bg-neutral-800"
+                    :title="t('invoices.view_receipt')"
+                  >
+                    <Receipt :size="13" />
+                    <span>{{ t('invoices.view_receipt') }}</span>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </AppTableCard>
 
     <!-- Generate Invoice Modal -->
-    <div v-if="isGenerateModalOpen" class="modal-backdrop">
-      <div class="modal-card card-flat" style="max-width: 560px;">
-        <div class="modal-header">
-          <h3>Generate Rental Invoice</h3>
-          <button @click="isGenerateModalOpen = false" class="modal-close">&times;</button>
+    <Teleport to="body">
+      <div
+        v-if="isGenerateModalOpen"
+        class="backdrop-blur-xs fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+      >
+        <div
+          class="w-full max-w-lg overflow-hidden rounded-xl border border-neutral-200 bg-white shadow-xl dark:border-neutral-800 dark:bg-neutral-900"
+        >
+          <div
+            class="flex items-center justify-between border-b border-neutral-200 px-6 py-4 dark:border-neutral-800"
+          >
+            <h3 class="text-base font-semibold text-neutral-900 dark:text-white">
+              {{ t('invoices.generate_modal_title') }}
+            </h3>
+            <button
+              type="button"
+              @click="isGenerateModalOpen = false"
+              class="cursor-pointer text-neutral-400 transition-colors hover:text-neutral-600 dark:hover:text-neutral-200"
+            >
+              <X :size="18" />
+            </button>
+          </div>
+
+          <form @submit.prevent="executeGenerateInvoice" class="space-y-4 p-6">
+            <div class="space-y-1.5">
+              <label class="block text-xs font-medium text-neutral-700 dark:text-neutral-300">
+                {{ t('invoices.active_lease_select_label') }} *
+              </label>
+              <input
+                v-model="generateForm.leaseId"
+                type="text"
+                required
+                class="focus:outline-hidden w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 placeholder-neutral-400 focus:ring-2 focus:ring-primary-500 dark:border-neutral-700 dark:bg-neutral-800 dark:text-white"
+                placeholder="e.g. lease-skyline-101a"
+              />
+            </div>
+
+            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div class="space-y-1.5">
+                <label class="block text-xs font-medium text-neutral-700 dark:text-neutral-300">
+                  {{ t('invoices.due_date') }} *
+                </label>
+                <input
+                  v-model="generateForm.dueDate"
+                  type="date"
+                  required
+                  class="focus:outline-hidden w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 focus:ring-2 focus:ring-primary-500 dark:border-neutral-700 dark:bg-neutral-800 dark:text-white"
+                />
+              </div>
+              <div class="space-y-1.5">
+                <label class="block text-xs font-medium text-neutral-700 dark:text-neutral-300">
+                  {{ t('invoices.amount_due_label') }} *
+                </label>
+                <input
+                  v-model.number="generateForm.amountDue"
+                  type="number"
+                  min="1"
+                  step="0.01"
+                  required
+                  class="focus:outline-hidden w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 focus:ring-2 focus:ring-primary-500 dark:border-neutral-700 dark:bg-neutral-800 dark:text-white"
+                />
+              </div>
+            </div>
+
+            <div class="space-y-1.5">
+              <label class="block text-xs font-medium text-neutral-700 dark:text-neutral-300">
+                {{ t('invoices.invoice_memo_label') }}
+              </label>
+              <input
+                v-model="generateForm.notes"
+                type="text"
+                class="focus:outline-hidden w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 placeholder-neutral-400 focus:ring-2 focus:ring-primary-500 dark:border-neutral-700 dark:bg-neutral-800 dark:text-white"
+                :placeholder="t('invoices.invoice_memo_placeholder')"
+              />
+            </div>
+
+            <div class="flex items-center justify-end gap-3 pt-2">
+              <button
+                type="button"
+                @click="isGenerateModalOpen = false"
+                class="cursor-pointer rounded-lg border border-neutral-300 bg-white px-4 py-2 text-xs font-medium text-neutral-700 transition-colors hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-200 dark:hover:bg-neutral-700"
+              >
+                {{ t('common.cancel') }}
+              </button>
+              <button
+                type="submit"
+                :disabled="isGenerating"
+                class="shadow-xs inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-primary-600 px-4 py-2 text-xs font-medium text-white transition-colors hover:bg-primary-700 disabled:opacity-50"
+              >
+                <Plus :size="14" />
+                <span>{{
+                  isGenerating ? t('invoices.generating_btn') : t('invoices.create_invoice_btn')
+                }}</span>
+              </button>
+            </div>
+          </form>
         </div>
-
-        <form @submit.prevent="executeGenerateInvoice" class="modal-body">
-          <div class="form-group">
-            <label class="form-label">Active Lease Reference ID</label>
-            <input v-model="generateForm.leaseId" type="text" required class="form-control"
-              placeholder="e.g. lease-skyline-101a" />
-          </div>
-
-          <div class="grid-2-col">
-            <div class="form-group">
-              <label class="form-label">Due Date</label>
-              <input v-model="generateForm.dueDate" type="date" required class="form-control" />
-            </div>
-            <div class="form-group">
-              <label class="form-label">Amount Due ($)</label>
-              <input v-model.number="generateForm.amountDue" type="number" min="1" step="0.01" required
-                class="form-control" />
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label class="form-label">Invoice Description / Memo</label>
-            <input v-model="generateForm.notes" type="text" class="form-control"
-              placeholder="e.g. March 2026 Monthly Residential Rent" />
-          </div>
-
-          <div class="modal-actions">
-            <button type="button" @click="isGenerateModalOpen = false" class="btn-secondary">
-              Cancel
-            </button>
-            <button type="submit" :disabled="isGenerating" class="btn-primary">
-              <Plus :size="14" />
-              <span>{{ isGenerating ? 'Generating...' : 'Issue Invoice' }}</span>
-            </button>
-          </div>
-        </form>
       </div>
-    </div>
+    </Teleport>
 
     <!-- Record / Pay Modal -->
-    <div v-if="invoiceToPay" class="modal-backdrop">
-      <div class="modal-card card-flat" style="max-width: 540px;">
-        <div class="modal-header">
-          <h3>{{ isTenant ? 'Pay Rent Invoice' : 'Record Payment' }}</h3>
-          <button @click="invoiceToPay = null" class="modal-close">&times;</button>
+    <Teleport to="body">
+      <div
+        v-if="invoiceToPay"
+        class="backdrop-blur-xs fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+      >
+        <div
+          class="w-full max-w-lg overflow-hidden rounded-xl border border-neutral-200 bg-white shadow-xl dark:border-neutral-800 dark:bg-neutral-900"
+        >
+          <div
+            class="flex items-center justify-between border-b border-neutral-200 px-6 py-4 dark:border-neutral-800"
+          >
+            <h3 class="text-base font-semibold text-neutral-900 dark:text-white">
+              {{ isTenant ? t('invoices.pay_rent_invoice_title') : t('invoices.record_payment') }}
+            </h3>
+            <button
+              type="button"
+              @click="invoiceToPay = null"
+              class="cursor-pointer text-neutral-400 transition-colors hover:text-neutral-600 dark:hover:text-neutral-200"
+            >
+              <X :size="18" />
+            </button>
+          </div>
+
+          <form @submit.prevent="executeRecordPayment" class="space-y-4 p-6">
+            <div
+              class="space-y-1.5 rounded-lg border border-neutral-200 bg-neutral-50 p-4 text-xs text-neutral-700 dark:border-neutral-800 dark:bg-neutral-800/50 dark:text-neutral-300"
+            >
+              <div>
+                <strong class="text-neutral-900 dark:text-white"
+                  >{{ t('invoices.invoice_num_label') }}:</strong
+                >
+                {{ invoiceToPay.invoiceNumber }}
+              </div>
+              <div>
+                <strong class="text-neutral-900 dark:text-white"
+                  >{{ t('invoices.total_due_label') }}:</strong
+                >
+                ${{ invoiceToPay.amountDue.toLocaleString() }}
+              </div>
+              <div>
+                <strong class="text-neutral-900 dark:text-white"
+                  >{{ t('invoices.already_paid_label') }}:</strong
+                >
+                ${{ invoiceToPay.amountPaid.toLocaleString() }}
+              </div>
+              <div>
+                <strong class="text-neutral-900 dark:text-white"
+                  >{{ t('invoices.remaining_balance_label') }}:</strong
+                >
+                ${{ (invoiceToPay.amountDue - invoiceToPay.amountPaid).toLocaleString() }}
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div class="space-y-1.5">
+                <label class="block text-xs font-medium text-neutral-700 dark:text-neutral-300">
+                  {{ t('invoices.amount_to_pay') }} *
+                </label>
+                <input
+                  v-model.number="paymentForm.amount"
+                  type="number"
+                  min="1"
+                  :max="invoiceToPay.amountDue - invoiceToPay.amountPaid"
+                  step="0.01"
+                  required
+                  class="focus:outline-hidden w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 focus:ring-2 focus:ring-primary-500 dark:border-neutral-700 dark:bg-neutral-800 dark:text-white"
+                />
+              </div>
+
+              <div class="space-y-1.5">
+                <label class="block text-xs font-medium text-neutral-700 dark:text-neutral-300">
+                  {{ t('invoices.payment_method') }} *
+                </label>
+                <select
+                  v-model="paymentForm.method"
+                  required
+                  class="focus:outline-hidden w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 focus:ring-2 focus:ring-primary-500 dark:border-neutral-700 dark:bg-neutral-800 dark:text-white"
+                >
+                  <option value="BANK_TRANSFER">{{ t('invoices.payment_method_bank') }}</option>
+                  <option value="CREDIT_CARD">{{ t('invoices.payment_method_card') }}</option>
+                  <option value="STRIPE_MOCK">{{ t('invoices.payment_method_stripe') }}</option>
+                  <option v-if="isLandlord || isAdmin" value="CASH">
+                    {{ t('invoices.payment_method_cash') }}
+                  </option>
+                  <option v-if="isLandlord || isAdmin" value="CHECK">
+                    {{ t('invoices.payment_method_check') }}
+                  </option>
+                </select>
+              </div>
+            </div>
+
+            <div class="space-y-1.5">
+              <label class="block text-xs font-medium text-neutral-700 dark:text-neutral-300">
+                {{ t('invoices.reference_number') }}
+              </label>
+              <input
+                v-model="paymentForm.referenceNumber"
+                type="text"
+                class="focus:outline-hidden w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 placeholder-neutral-400 focus:ring-2 focus:ring-primary-500 dark:border-neutral-700 dark:bg-neutral-800 dark:text-white"
+                :placeholder="t('invoices.ref_code_placeholder')"
+              />
+            </div>
+
+            <div class="space-y-1.5">
+              <label class="block text-xs font-medium text-neutral-700 dark:text-neutral-300">
+                {{ t('invoices.payment_notes') }}
+              </label>
+              <input
+                v-model="paymentForm.notes"
+                type="text"
+                class="focus:outline-hidden w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 placeholder-neutral-400 focus:ring-2 focus:ring-primary-500 dark:border-neutral-700 dark:bg-neutral-800 dark:text-white"
+                :placeholder="t('invoices.payment_notes')"
+              />
+            </div>
+
+            <div class="flex items-center justify-end gap-3 pt-2">
+              <button
+                type="button"
+                @click="invoiceToPay = null"
+                class="cursor-pointer rounded-lg border border-neutral-300 bg-white px-4 py-2 text-xs font-medium text-neutral-700 transition-colors hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-200 dark:hover:bg-neutral-700"
+              >
+                {{ t('common.cancel') }}
+              </button>
+              <button
+                type="submit"
+                :disabled="isPaying"
+                class="shadow-xs inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-primary-600 px-4 py-2 text-xs font-medium text-white transition-colors hover:bg-primary-700 disabled:opacity-50"
+              >
+                <DollarSign :size="14" />
+                <span>{{
+                  isPaying ? t('invoices.processing_btn') : t('invoices.confirm_payment')
+                }}</span>
+              </button>
+            </div>
+          </form>
         </div>
-
-        <form @submit.prevent="executeRecordPayment" class="modal-body">
-          <div class="contract-summary">
-            <div><strong>Invoice:</strong> {{ invoiceToPay.invoiceNumber }}</div>
-            <div><strong>Total Due:</strong> ${{ invoiceToPay.amountDue.toLocaleString() }}</div>
-            <div><strong>Already Paid:</strong> ${{ invoiceToPay.amountPaid.toLocaleString() }}</div>
-            <div>
-              <strong>Remaining Balance:</strong>
-              ${{ (invoiceToPay.amountDue - invoiceToPay.amountPaid).toLocaleString() }}
-            </div>
-          </div>
-
-          <div class="grid-2-col">
-            <div class="form-group">
-              <label class="form-label">Payment Amount ($)</label>
-              <input v-model.number="paymentForm.amount" type="number" min="1"
-                :max="invoiceToPay.amountDue - invoiceToPay.amountPaid" step="0.01" required class="form-control" />
-            </div>
-
-            <div class="form-group">
-              <label class="form-label">Payment Method</label>
-              <select v-model="paymentForm.method" class="form-control" required>
-                <option value="BANK_TRANSFER">Bank Transfer (ACH/Wire)</option>
-                <option value="CREDIT_CARD">Credit / Debit Card</option>
-                <option value="STRIPE_MOCK">Stripe Gateway (Mock)</option>
-                <option v-if="isLandlord || isAdmin" value="CASH">Cash</option>
-                <option v-if="isLandlord || isAdmin" value="CHECK">Check</option>
-              </select>
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label class="form-label">Reference / Confirmation Code (Optional)</label>
-            <input v-model="paymentForm.referenceNumber" type="text" class="form-control"
-              placeholder="e.g. TXN-WIRE-9921 or Card Auth #4910" />
-          </div>
-
-          <div class="form-group">
-            <label class="form-label">Notes (Optional)</label>
-            <input v-model="paymentForm.notes" type="text" class="form-control"
-              placeholder="Payment notes or remittance info" />
-          </div>
-
-          <div class="modal-actions">
-            <button type="button" @click="invoiceToPay = null" class="btn-secondary">
-              Cancel
-            </button>
-            <button type="submit" :disabled="isPaying" class="btn-primary">
-              <DollarSign :size="14" />
-              <span>{{ isPaying ? 'Processing...' : 'Confirm Payment' }}</span>
-            </button>
-          </div>
-        </form>
       </div>
-    </div>
+    </Teleport>
 
     <!-- Official Printable Digital Receipt Modal -->
-    <div v-if="receiptData" class="modal-backdrop">
-      <div class="modal-card card-flat receipt-modal-box">
-        <div class="modal-header no-print">
-          <h3>Payment Receipt</h3>
-          <div class="header-action-group">
-            <button @click="printReceipt" class="btn-secondary btn-sm">
-              <Printer :size="14" />
-              <span>Print</span>
+    <Teleport to="body">
+      <div
+        v-if="receiptData"
+        class="backdrop-blur-xs fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 print:static print:bg-transparent print:p-0"
+      >
+        <div
+          class="max-h-[90vh] w-full max-w-xl overflow-y-auto rounded-xl border border-neutral-200 bg-white shadow-xl dark:border-neutral-800 dark:bg-neutral-900 print:max-w-full print:border-none print:p-0 print:shadow-none"
+        >
+          <div
+            class="flex items-center justify-between border-b border-neutral-200 px-6 py-4 dark:border-neutral-800 print:hidden"
+          >
+            <h3 class="text-base font-semibold text-neutral-900 dark:text-white">
+              {{ t('invoices.receipt_header_title') }}
+            </h3>
+            <div class="flex items-center gap-2">
+              <button
+                type="button"
+                @click="printReceipt"
+                class="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-neutral-300 bg-white px-3 py-1.5 text-xs font-medium text-neutral-700 transition-colors hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-200 dark:hover:bg-neutral-700"
+              >
+                <Printer :size="14" />
+                <span>{{ t('invoices.print_btn') }}</span>
+              </button>
+              <button
+                type="button"
+                @click="receiptData = null"
+                class="cursor-pointer text-neutral-400 transition-colors hover:text-neutral-600 dark:hover:text-neutral-200"
+              >
+                <X :size="18" />
+              </button>
+            </div>
+          </div>
+
+          <div class="space-y-5 p-6 print:p-0">
+            <div class="flex items-start justify-between">
+              <div>
+                <div class="text-xl font-bold tracking-tight text-neutral-900 dark:text-white">
+                  Rent<span class="text-primary-600">Ease</span>
+                </div>
+                <div class="text-xs text-neutral-500 dark:text-neutral-400">
+                  Property Rental Management System
+                </div>
+              </div>
+              <div
+                class="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-400"
+              >
+                <CheckCircle2 :size="14" />
+                <span>CONFIRMED RECEIPT</span>
+              </div>
+            </div>
+
+            <hr class="border-neutral-200 dark:border-neutral-800" />
+
+            <div class="grid grid-cols-1 gap-4 text-xs sm:grid-cols-2">
+              <div>
+                <span
+                  class="block text-[10px] font-semibold uppercase text-neutral-500 dark:text-neutral-400"
+                  >Receipt Number</span
+                >
+                <strong class="font-mono text-sm text-neutral-900 dark:text-white">{{
+                  receiptData.receiptNumber
+                }}</strong>
+              </div>
+              <div>
+                <span
+                  class="block text-[10px] font-semibold uppercase text-neutral-500 dark:text-neutral-400"
+                  >Payment Date</span
+                >
+                <span class="text-neutral-800 dark:text-neutral-200">{{
+                  new Date(receiptData.paidAt).toLocaleString()
+                }}</span>
+              </div>
+              <div>
+                <span
+                  class="block text-[10px] font-semibold uppercase text-neutral-500 dark:text-neutral-400"
+                  >Payment Method</span
+                >
+                <span class="text-neutral-800 dark:text-neutral-200">{{
+                  receiptData.method.replace('_', ' ')
+                }}</span>
+              </div>
+              <div>
+                <span
+                  class="block text-[10px] font-semibold uppercase text-neutral-500 dark:text-neutral-400"
+                  >Reference Number</span
+                >
+                <span class="font-mono text-neutral-800 dark:text-neutral-200">{{
+                  receiptData.referenceNumber || 'N/A'
+                }}</span>
+              </div>
+            </div>
+
+            <div
+              class="grid grid-cols-1 gap-4 rounded-lg border border-neutral-200 bg-neutral-50 p-4 text-xs dark:border-neutral-800 dark:bg-neutral-800/40 sm:grid-cols-2"
+            >
+              <div class="space-y-0.5">
+                <span
+                  class="block text-[10px] font-semibold uppercase text-neutral-500 dark:text-neutral-400"
+                  >Tenant</span
+                >
+                <strong class="block text-neutral-900 dark:text-white">{{
+                  receiptData.tenant?.fullName
+                }}</strong>
+                <span class="text-neutral-500 dark:text-neutral-400">{{
+                  receiptData.tenant?.email
+                }}</span>
+              </div>
+              <div class="space-y-0.5">
+                <span
+                  class="block text-[10px] font-semibold uppercase text-neutral-500 dark:text-neutral-400"
+                  >Property & Unit</span
+                >
+                <strong class="block text-neutral-900 dark:text-white"
+                  >{{ receiptData.property?.title }} — Unit
+                  {{ receiptData.property?.unitNumber }}</strong
+                >
+                <span class="text-neutral-500 dark:text-neutral-400">{{
+                  receiptData.property?.address
+                }}</span>
+              </div>
+            </div>
+
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-xs text-neutral-700 dark:text-neutral-300">
+                <thead>
+                  <tr
+                    class="border-b border-neutral-200 text-[10px] font-semibold uppercase text-neutral-500 dark:border-neutral-800 dark:text-neutral-400"
+                  >
+                    <th class="py-2">Description</th>
+                    <th class="py-2 text-right">Amount</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-neutral-200 dark:divide-neutral-800">
+                  <tr>
+                    <td class="py-3">
+                      <span class="font-medium text-neutral-900 dark:text-white"
+                        >Invoice {{ receiptData.invoice?.invoiceNumber }}</span
+                      >
+                      <span class="mt-0.5 block text-neutral-500 dark:text-neutral-400"
+                        >Due:
+                        {{ new Date(receiptData.invoice?.dueDate).toLocaleDateString() }}</span
+                      >
+                    </td>
+                    <td
+                      class="py-3 text-right font-mono font-semibold text-neutral-900 dark:text-white"
+                    >
+                      ${{ Number(receiptData.amount).toFixed(2) }}
+                    </td>
+                  </tr>
+                </tbody>
+                <tfoot>
+                  <tr class="border-t border-neutral-200 dark:border-neutral-800">
+                    <td class="py-2.5 font-semibold text-neutral-900 dark:text-white">
+                      Total Paid
+                    </td>
+                    <td
+                      class="py-2.5 text-right font-mono font-bold text-emerald-600 dark:text-emerald-400"
+                    >
+                      ${{ Number(receiptData.amount).toFixed(2) }}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="py-1 text-neutral-500 dark:text-neutral-400">
+                      Remaining Invoice Balance
+                    </td>
+                    <td class="py-1 text-right font-mono text-neutral-700 dark:text-neutral-300">
+                      ${{ Number(receiptData.invoice?.remainingBalance || 0).toFixed(2) }}
+                    </td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+
+            <div class="border-t border-neutral-200 pt-2 text-center dark:border-neutral-800">
+              <span class="text-[11px] text-neutral-400 dark:text-neutral-500">
+                This is a computer-generated digital receipt and official proof of payment recorded
+                within the RentEase platform.
+              </span>
+            </div>
+          </div>
+
+          <div
+            class="flex justify-end border-t border-neutral-200 px-6 py-4 dark:border-neutral-800 print:hidden"
+          >
+            <button
+              @click="receiptData = null"
+              class="rounded-lg border border-neutral-300 bg-white px-4 py-2 text-xs font-medium text-neutral-700 transition-colors hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-200 dark:hover:bg-neutral-700"
+            >
+              Close
             </button>
-            <button @click="receiptData = null" class="modal-close">&times;</button>
           </div>
-        </div>
-
-        <div class="receipt-printable-content">
-          <div class="receipt-top-header">
-            <div>
-              <div class="receipt-brand">Rent<span class="brand-accent">Ease</span></div>
-              <div class="text-xs text-dim">Property Rental Management System</div>
-            </div>
-            <div class="receipt-badge-status">
-              <CheckCircle2 :size="14" />
-              <span>CONFIRMED RECEIPT</span>
-            </div>
-          </div>
-
-          <hr class="receipt-divider" />
-
-          <div class="receipt-info-grid">
-            <div>
-              <span class="info-label">Receipt Number</span>
-              <strong class="font-mono">{{ receiptData.receiptNumber }}</strong>
-            </div>
-            <div>
-              <span class="info-label">Payment Date</span>
-              <span>{{ new Date(receiptData.paidAt).toLocaleString() }}</span>
-            </div>
-            <div>
-              <span class="info-label">Payment Method</span>
-              <span>{{ receiptData.method.replace('_', ' ') }}</span>
-            </div>
-            <div>
-              <span class="info-label">Reference Number</span>
-              <span class="font-mono">{{ receiptData.referenceNumber || 'N/A' }}</span>
-            </div>
-          </div>
-
-          <div class="receipt-parties-box">
-            <div class="party-col">
-              <span class="party-label">Tenant</span>
-              <strong>{{ receiptData.tenant?.fullName }}</strong>
-              <span class="text-xs text-dim">{{ receiptData.tenant?.email }}</span>
-            </div>
-            <div class="party-col">
-              <span class="party-label">Property & Unit</span>
-              <strong>{{ receiptData.property?.title }} — Unit {{ receiptData.property?.unitNumber }}</strong>
-              <span class="text-xs text-dim">{{ receiptData.property?.address }}</span>
-            </div>
-          </div>
-
-          <table class="receipt-table">
-            <thead>
-              <tr>
-                <th>Description</th>
-                <th class="text-right">Amount</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td>
-                  Invoice {{ receiptData.invoice?.invoiceNumber }}
-                  <span class="text-xs text-dim block">Due: {{ new
-                    Date(receiptData.invoice?.dueDate).toLocaleDateString()
-                    }}</span>
-                </td>
-                <td class="text-right font-mono font-semibold">
-                  ${{ Number(receiptData.amount).toFixed(2) }}
-                </td>
-              </tr>
-            </tbody>
-            <tfoot>
-              <tr>
-                <td class="font-semibold">Total Paid</td>
-                <td class="text-right font-mono font-bold text-success">
-                  ${{ Number(receiptData.amount).toFixed(2) }}
-                </td>
-              </tr>
-              <tr>
-                <td class="text-dim text-sm">Remaining Invoice Balance</td>
-                <td class="text-right font-mono text-sm">
-                  ${{ Number(receiptData.invoice?.remainingBalance || 0).toFixed(2) }}
-                </td>
-              </tr>
-            </tfoot>
-          </table>
-
-          <div class="receipt-footer">
-            <span class="text-xs text-dim">
-              This is a computer-generated digital receipt and official proof of payment recorded within the RentEase
-              platform.
-            </span>
-          </div>
-        </div>
-
-        <div class="modal-actions no-print">
-          <button @click="receiptData = null" class="btn-secondary">
-            Close
-          </button>
         </div>
       </div>
-    </div>
+    </Teleport>
   </div>
 </template>
-
-<style scoped>
-.invoices-page {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
-
-.page-top-bar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 1rem;
-}
-
-.page-top-bar h1 {
-  font-size: 1.6rem;
-}
-
-.subtitle {
-  color: var(--text-muted);
-  font-size: 0.875rem;
-  margin-top: 0.2rem;
-}
-
-/* Stats Cards */
-.stats-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 1rem;
-}
-
-@media (min-width: 640px) {
-  .stats-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-@media (min-width: 1024px) {
-  .stats-grid {
-    grid-template-columns: repeat(4, 1fr);
-  }
-}
-
-.stat-card {
-  padding: 1.25rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-md);
-  background: var(--bg-surface);
-}
-
-.stat-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.stat-label {
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: var(--text-dim);
-  text-transform: uppercase;
-}
-
-.stat-icon-wrap {
-  width: 32px;
-  height: 32px;
-  border-radius: var(--radius-sm);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.stat-icon-wrap.outstanding {
-  background: rgba(99, 102, 241, 0.12);
-  color: var(--primary);
-}
-
-.stat-icon-wrap.collected {
-  background: var(--accent-emerald-subtle);
-  color: #34d399;
-}
-
-.stat-icon-wrap.billed {
-  background: rgba(59, 130, 246, 0.12);
-  color: #60a5fa;
-}
-
-.stat-icon-wrap.overdue {
-  background: rgba(239, 68, 68, 0.12);
-  color: #f87171;
-}
-
-.stat-value {
-  font-size: 1.5rem;
-  font-weight: 700;
-}
-
-.stat-subtext {
-  font-size: 0.75rem;
-  color: var(--text-muted);
-}
-
-/* Table Shell */
-.table-shell {
-  padding: 1.25rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.table-top-actions {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 1rem;
-}
-
-.filter-btn-group,
-.status-tabs {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.375rem;
-  flex-wrap: wrap;
-}
-
-.filter-btn,
-.tab-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.4rem;
-  padding: 0.42rem 0.85rem;
-  font-size: 0.825rem;
-  font-weight: 500;
-  line-height: 1.25;
-  color: var(--text-muted);
-  background-color: var(--bg-surface);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  transition: all 0.15s ease;
-  white-space: nowrap;
-}
-
-.filter-btn:hover,
-.tab-btn:hover {
-  color: var(--text-main);
-  background-color: var(--bg-surface-hover);
-  border-color: var(--border-default);
-}
-
-.filter-btn.active,
-.tab-btn.active {
-  color: #ffffff !important;
-  background-color: var(--primary) !important;
-  border-color: var(--primary) !important;
-  font-weight: 600;
-  box-shadow: 0 1px 2px rgba(37, 99, 235, 0.2);
-}
-
-.search-wrap {
-  position: relative;
-  width: 100%;
-  max-width: 300px;
-}
-
-.search-icon {
-  position: absolute;
-  left: 0.75rem;
-  top: 50%;
-  transform: translateY(-50%);
-  color: var(--text-dim);
-}
-
-.table-search-input {
-  width: 100%;
-  background: var(--bg-input);
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-sm);
-  padding: 0.45rem 0.75rem 0.45rem 2.2rem;
-  color: var(--text-main);
-  font-size: 0.85rem;
-}
-
-.table-search-input:focus {
-  outline: none;
-  border-color: var(--border-focus);
-}
-
-.invoice-num-cell,
-.unit-cell,
-.tenant-cell,
-.paid-cell {
-  display: flex;
-  flex-direction: column;
-}
-
-.date-cell {
-  display: flex;
-  align-items: center;
-  gap: 0.35rem;
-  font-size: 0.85rem;
-}
-
-.action-btn-group {
-  display: inline-flex;
-  gap: 0.4rem;
-}
-
-.btn-sm {
-  padding: 0.35rem 0.65rem;
-  font-size: 0.8rem;
-  gap: 0.3rem;
-}
-
-.text-right {
-  text-align: right;
-}
-
-.text-success {
-  color: #34d399;
-}
-
-.text-danger {
-  color: #f87171;
-}
-
-.text-dim {
-  color: var(--text-dim);
-}
-
-.text-xs {
-  font-size: 0.75rem;
-}
-
-.text-sm {
-  font-size: 0.825rem;
-}
-
-.font-mono {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-}
-
-.font-semibold {
-  font-weight: 600;
-}
-
-.font-bold {
-  font-weight: 700;
-}
-
-.block {
-  display: block;
-}
-
-/* Modals */
-.modal-backdrop {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.75);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 100;
-  padding: 1.5rem;
-}
-
-.modal-card {
-  width: 100%;
-  background: var(--bg-surface);
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-md);
-  padding: 1.5rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1.25rem;
-  max-height: 90vh;
-  overflow-y: auto;
-}
-
-.modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border-bottom: 1px solid var(--border-subtle);
-  padding-bottom: 0.75rem;
-}
-
-.header-action-group {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.modal-close {
-  background: none;
-  border: none;
-  color: var(--text-muted);
-  font-size: 1.5rem;
-  cursor: pointer;
-}
-
-.modal-body {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.contract-summary {
-  background: var(--bg-subtle);
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-sm);
-  padding: 0.85rem 1rem;
-  font-size: 0.85rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-}
-
-.grid-2-col {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1rem;
-}
-
-.form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-}
-
-.form-label {
-  font-size: 0.8rem;
-  font-weight: 500;
-  color: var(--text-dim);
-}
-
-.form-control {
-  background: var(--bg-input);
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-sm);
-  padding: 0.5rem 0.75rem;
-  color: var(--text-main);
-  font-size: 0.85rem;
-  width: 100%;
-}
-
-.form-control:focus {
-  outline: none;
-  border-color: var(--border-focus);
-}
-
-.modal-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 0.75rem;
-  margin-top: 0.5rem;
-}
-
-/* Receipt Modal Styles */
-.receipt-modal-box {
-  max-width: 600px;
-}
-
-.receipt-printable-content {
-  background: var(--bg-canvas);
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-sm);
-  padding: 1.5rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1.25rem;
-}
-
-.receipt-top-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.receipt-brand {
-  font-size: 1.3rem;
-  font-weight: 700;
-}
-
-.receipt-badge-status {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  background: var(--accent-emerald-subtle);
-  color: var(--color-emerald-accent);
-  border: 1px solid rgba(5, 150, 105, 0.25);
-  font-size: 0.725rem;
-  font-weight: 500;
-  padding: 0.2rem 0.55rem;
-  border-radius: var(--radius-sm);
-}
-
-.receipt-divider {
-  border: 0;
-  border-top: 1px solid var(--border-subtle);
-  margin: 0;
-}
-
-.receipt-info-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.75rem;
-  font-size: 0.825rem;
-}
-
-.info-label {
-  display: block;
-  font-size: 0.7rem;
-  color: var(--text-dim);
-  text-transform: uppercase;
-}
-
-.receipt-parties-box {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1rem;
-  background: var(--bg-surface);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-sm);
-  padding: 0.85rem 1rem;
-}
-
-.party-col {
-  display: flex;
-  flex-direction: column;
-  gap: 0.2rem;
-  font-size: 0.85rem;
-}
-
-.party-label {
-  font-size: 0.7rem;
-  color: var(--text-dim);
-  text-transform: uppercase;
-  font-weight: 600;
-}
-
-.receipt-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.receipt-table th {
-  text-align: left;
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  color: var(--text-dim);
-  border-bottom: 1px solid var(--border-default);
-  padding-bottom: 0.5rem;
-}
-
-.receipt-table td {
-  padding: 0.75rem 0;
-  border-bottom: 1px solid var(--border-subtle);
-  font-size: 0.85rem;
-}
-
-.receipt-table tfoot td {
-  padding-top: 0.5rem;
-  border-bottom: none;
-}
-
-.receipt-footer {
-  text-align: center;
-  padding-top: 0.5rem;
-  border-top: 1px solid var(--border-subtle);
-}
-
-/* Loading & Empty States */
-.empty-state {
-  text-align: center;
-  padding: 3.5rem 1rem;
-  color: var(--text-muted);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.empty-icon {
-  color: var(--text-dim);
-  margin-bottom: 0.5rem;
-}
-
-.loading-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 3rem 1rem;
-  color: var(--text-muted);
-}
-
-.loading-spinner {
-  width: 28px;
-  height: 28px;
-  border: 3px solid var(--border-subtle);
-  border-top-color: var(--primary);
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-@media (max-width: 900px) {
-  .stats-grid {
-    grid-template-columns: 1fr 1fr;
-  }
-}
-
-@media (max-width: 640px) {
-  .stats-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .grid-2-col,
-  .receipt-info-grid,
-  .receipt-parties-box {
-    grid-template-columns: 1fr;
-  }
-}
-
-@media print {
-  .no-print {
-    display: none !important;
-  }
-
-  .modal-backdrop {
-    position: static;
-    background: none;
-    padding: 0;
-  }
-
-  .modal-card {
-    border: none;
-    padding: 0;
-    max-width: 100%;
-  }
-}
-</style>

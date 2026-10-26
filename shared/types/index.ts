@@ -11,3 +11,4 @@ export * from './dashboard';
 export * from './report';
 export * from './user';
 export * from './audit-log';
+export * from './navigation';

@@ -1,9 +1,9 @@
 import { reactive, toRefs, toRef, computed } from 'vue';
-import type { 
-  InvoiceItem, 
-  GenerateInvoiceInput, 
-  RecordPaymentInput, 
-  PaymentReceipt 
+import type {
+  InvoiceItem,
+  GenerateInvoiceInput,
+  RecordPaymentInput,
+  PaymentReceipt,
 } from '~~/shared/types';
 
 export function useInvoiceStore() {
@@ -19,23 +19,31 @@ export function useInvoiceStore() {
 
   // Computed summary metrics
   const totalInvoices = computed(() => state.invoices.length);
-  const paidInvoicesCount = computed(() => state.invoices.filter((i) => i.status === 'PAID').length);
-  const pendingInvoicesCount = computed(() => state.invoices.filter((i) => i.status === 'PENDING').length);
-  const overdueInvoicesCount = computed(() => state.invoices.filter((i) => i.status === 'OVERDUE').length);
+  const paidInvoicesCount = computed(
+    () => state.invoices.filter((i) => i.status === 'PAID').length
+  );
+  const pendingInvoicesCount = computed(
+    () => state.invoices.filter((i) => i.status === 'PENDING').length
+  );
+  const overdueInvoicesCount = computed(
+    () => state.invoices.filter((i) => i.status === 'OVERDUE').length
+  );
 
-  const totalReceivables = computed(() => 
+  const totalReceivables = computed(() =>
     state.invoices.reduce((sum, inv) => sum + (Number(inv.amountDue) || 0), 0)
   );
 
-  const totalCollected = computed(() => 
+  const totalCollected = computed(() =>
     state.invoices.reduce((sum, inv) => sum + (Number(inv.amountPaid) || 0), 0)
   );
 
-  const totalOutstanding = computed(() => 
+  const totalOutstanding = computed(() =>
     Math.max(0, totalReceivables.value - totalCollected.value)
   );
 
-  async function fetchInvoices(filter: { tenantId?: string; leaseId?: string; status?: string } = {}) {
+  async function fetchInvoices(
+    filter: { tenantId?: string; leaseId?: string; status?: string } = {}
+  ) {
     state.isLoading = true;
     state.error = null;
 
@@ -45,7 +53,9 @@ export function useInvoiceStore() {
       if (filter.leaseId) queryParams.leaseId = filter.leaseId;
       if (filter.status) queryParams.status = filter.status;
 
+      const headers = import.meta.server ? useRequestHeaders(['cookie']) : undefined;
       const { data, error }: any = await useFetch('/api/v1/invoices', {
+        headers,
         query: queryParams,
       });
 
@@ -57,7 +67,7 @@ export function useInvoiceStore() {
       }
     } catch (err: any) {
       state.error = err?.data?.error?.message || err?.message || 'Failed to fetch invoices';
-      throw err;
+      return [];
     } finally {
       state.isLoading = false;
     }
@@ -68,7 +78,10 @@ export function useInvoiceStore() {
     state.error = null;
 
     try {
-      const { data, error }: any = await useFetch(`/api/v1/invoices/${id}`);
+      const headers = import.meta.server ? useRequestHeaders(['cookie']) : undefined;
+      const { data, error }: any = await useFetch(`/api/v1/invoices/${id}`, {
+        headers,
+      });
 
       if (data.value) {
         state.selectedInvoice = data.value.data?.invoice || data.value.data;
@@ -78,7 +91,7 @@ export function useInvoiceStore() {
       }
     } catch (err: any) {
       state.error = err?.data?.error?.message || err?.message || 'Failed to fetch invoice details';
-      throw err;
+      return null;
     } finally {
       state.isLoading = false;
     }
@@ -157,7 +170,10 @@ export function useInvoiceStore() {
     state.error = null;
 
     try {
-      const { data, error }: any = await useFetch(`/api/v1/payments/${paymentId}/receipt`);
+      const headers = import.meta.server ? useRequestHeaders(['cookie']) : undefined;
+      const { data, error }: any = await useFetch(`/api/v1/payments/${paymentId}/receipt`, {
+        headers,
+      });
 
       if (data.value) {
         state.receiptData = data.value.data?.receipt || data.value.data;
@@ -167,7 +183,7 @@ export function useInvoiceStore() {
       }
     } catch (err: any) {
       state.error = err?.data?.error?.message || err?.message || 'Failed to fetch payment receipt';
-      throw err;
+      return null;
     } finally {
       state.isLoading = false;
     }

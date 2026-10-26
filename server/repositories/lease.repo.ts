@@ -48,7 +48,8 @@ const inMemoryLeases: LeaseEntity[] = [
     status: LeaseStatus.ACTIVE,
     tenantSignedAt: new Date('2026-01-02T12:00:00Z'),
     landlordSignedAt: new Date('2026-01-02T14:00:00Z'),
-    termsAndConditions: 'Standard 12-month residential contract. Rent due on the 1st of every month with a 5-day grace period. Quiet hours observed after 10:00 PM.',
+    termsAndConditions:
+      'Standard 12-month residential contract. Rent due on the 1st of every month with a 5-day grace period. Quiet hours observed after 10:00 PM.',
     createdAt: new Date('2026-01-02T10:30:00Z'),
     updatedAt: new Date('2026-01-02T14:00:00Z'),
   },
@@ -155,12 +156,14 @@ export class LeaseRepository {
     }
   }
 
-  async findAll(filter: {
-    tenantId?: string;
-    landlordId?: string;
-    unitId?: string;
-    status?: LeaseStatus;
-  } = {}): Promise<LeaseEntity[]> {
+  async findAll(
+    filter: {
+      tenantId?: string;
+      landlordId?: string;
+      unitId?: string;
+      status?: LeaseStatus;
+    } = {}
+  ): Promise<LeaseEntity[]> {
     try {
       const where: any = {};
       if (filter.tenantId) where.tenantId = filter.tenantId;
@@ -201,12 +204,14 @@ export class LeaseRepository {
     }
   }
 
-  async findMany(filter: {
-    tenantId?: string;
-    landlordId?: string;
-    unitId?: string;
-    status?: LeaseStatus;
-  } = {}): Promise<LeaseEntity[]> {
+  async findMany(
+    filter: {
+      tenantId?: string;
+      landlordId?: string;
+      unitId?: string;
+      status?: LeaseStatus;
+    } = {}
+  ): Promise<LeaseEntity[]> {
     return this.findAll(filter);
   }
 
@@ -233,7 +238,7 @@ export class LeaseRepository {
       if (idx === -1) return null;
       inMemoryLeases[idx] = {
         ...inMemoryLeases[idx],
-        ...data as any,
+        ...(data as any),
         updatedAt: new Date(),
       };
       return inMemoryLeases[idx]!;

@@ -13,7 +13,8 @@ import {
   FileText,
   DollarSign,
   Calendar,
-  MessageSquare
+  MessageSquare,
+  X,
 } from '@lucide/vue';
 import { useAuth } from '../../../composables/useAuth';
 import { useApplicationStore } from '../../../stores/application.store';
@@ -41,11 +42,7 @@ const {
   rejectedCount,
 } = applicationStore;
 
-const {
-  fetchApplications,
-  loadApplications,
-  reviewApplication,
-} = applicationStore;
+const { fetchApplications, loadApplications, reviewApplication } = applicationStore;
 
 const successMessage = ref<string | null>(null);
 const activeTab = ref<'ALL' | 'PENDING' | 'APPROVED' | 'REJECTED'>('ALL');
@@ -86,20 +83,22 @@ watch([activeTab, searchQuery], () => {
 function openReviewModal(app: ApplicationItem, decision: 'APPROVED' | 'REJECTED') {
   appToReview.value = app;
   reviewDecision.value = decision;
-  reviewReason.value = decision === 'APPROVED'
-    ? 'Application meets credit and income criteria. Lease agreement drafted.'
-    : 'Unable to approve application at this time based on qualification criteria.';
+  reviewReason.value =
+    decision === 'APPROVED'
+      ? 'Application meets credit and income criteria. Lease agreement drafted.'
+      : 'Unable to approve application at this time based on qualification criteria.';
 }
 
 async function submitReview() {
   if (!appToReview.value) return;
-  const res = await reviewApplication(appToReview.value.id, {
+  const res = (await reviewApplication(appToReview.value.id, {
     status: reviewDecision.value,
     reason: reviewReason.value,
-  }) as any;
+  })) as any;
 
   if (res.success) {
-    successMessage.value = res.message || `Application ${reviewDecision.value.toLowerCase()} successfully.`;
+    successMessage.value =
+      res.message || `Application ${reviewDecision.value.toLowerCase()} successfully.`;
     appToReview.value = null;
     setTimeout(() => {
       successMessage.value = null;
@@ -113,11 +112,14 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="applications-page">
-    <div class="page-top-bar">
+  <div class="space-y-6">
+    <!-- Header -->
+    <div class="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
       <div>
-        <h1>{{ t('applications.title') }}</h1>
-        <p class="subtitle">
+        <h1 class="text-2xl font-bold tracking-tight text-neutral-900 dark:text-white">
+          {{ t('applications.title') }}
+        </h1>
+        <p class="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
           <template v-if="isTenant">
             {{ t('applications.tenant_subtitle') }}
           </template>
@@ -127,506 +129,404 @@ onMounted(() => {
         </p>
       </div>
 
-      <NuxtLink v-if="isTenant" to="/properties" class="btn-primary">
-        <Building :size="15" />
+      <NuxtLink
+        v-if="isTenant"
+        to="/properties"
+        class="shadow-xs inline-flex items-center gap-2 rounded-lg bg-primary-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-primary-700"
+      >
+        <Building :size="16" />
         <span>{{ t('dashboard.metrics.browse_available_units') }}</span>
       </NuxtLink>
     </div>
 
     <!-- Alert Messages -->
-    <div v-if="successMessage" class="alert-success">
-      <CheckCircle2 :size="16" class="alert-icon" />
+    <div
+      v-if="successMessage"
+      class="flex items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800 dark:border-emerald-900/40 dark:bg-emerald-950/20 dark:text-emerald-300"
+    >
+      <CheckCircle2 :size="18" class="shrink-0 text-emerald-600 dark:text-emerald-400" />
       <span>{{ successMessage }}</span>
     </div>
 
-    <div v-if="errorMessage" class="alert-error">
-      <AlertCircle :size="16" class="alert-icon" />
-      <div class="alert-body">
+    <div
+      v-if="errorMessage"
+      class="flex items-center gap-3 rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800 dark:border-rose-900/40 dark:bg-rose-950/20 dark:text-rose-300"
+    >
+      <AlertCircle :size="18" class="shrink-0 text-rose-600 dark:text-rose-400" />
+      <div class="flex flex-1 flex-wrap items-center justify-between gap-2">
         <span>{{ errorMessage }}</span>
-        <NuxtLink v-if="errorMessage.toLowerCase().includes('logged in')"
-          :to="{ path: '/login', query: { redirect: $route.fullPath } }" class="alert-action-btn">
+        <NuxtLink
+          v-if="errorMessage.toLowerCase().includes('logged in')"
+          :to="{ path: '/login', query: { redirect: $route.fullPath } }"
+          class="font-semibold underline hover:text-rose-900 dark:hover:text-rose-200"
+        >
           {{ t('nav.sign_in') }}
         </NuxtLink>
       </div>
     </div>
 
     <!-- Applications Table using shared AppTableCard -->
-    <AppTableCard v-model:search="searchQuery" :search-placeholder="t('applications.title')"
-      :is-loading="isLoading" :is-empty="filteredApplications.length === 0" :empty-title="t('applications.no_applications')"
+    <AppTableCard
+      v-model:search="searchQuery"
+      :search-placeholder="t('applications.title')"
+      :is-loading="isLoading"
+      :is-empty="filteredApplications.length === 0"
+      :empty-title="t('applications.no_applications')"
       :empty-description="t('applications.no_applications_desc')"
-      :empty-icon="ClipboardList" v-model:current-page="currentPage" v-model:page-size="pageSize"
-      :total-items="filteredApplications.length" :item-name="t('common.records')">
+      :empty-icon="ClipboardList"
+      v-model:current-page="currentPage"
+      v-model:page-size="pageSize"
+      :total-items="filteredApplications.length"
+      :item-name="t('common.records')"
+    >
       <template #toolbar-start>
-        <div class="filter-btn-group tab-pill-group">
-          <button type="button" @click="activeTab = 'ALL'" :class="['filter-btn tab-pill', { active: activeTab === 'ALL' }]">
+        <div class="inline-flex flex-wrap items-center gap-1.5">
+          <button
+            type="button"
+            @click="activeTab = 'ALL'"
+            :class="[
+              'inline-flex cursor-pointer items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors',
+              activeTab === 'ALL'
+                ? 'shadow-xs border-primary-600 bg-primary-600 font-semibold text-white'
+                : 'border-neutral-200 bg-white text-neutral-600 hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-700',
+            ]"
+          >
             <span>{{ t('applications.filter_all') }}</span>
-            <span class="filter-count">{{ applications.length }}</span>
+            <span
+              :class="[
+                'rounded-full px-1.5 py-0.5 text-[10px]',
+                activeTab === 'ALL'
+                  ? 'bg-primary-700 text-white'
+                  : 'bg-neutral-100 text-neutral-600 dark:bg-neutral-700 dark:text-neutral-300',
+              ]"
+              >{{ applications.length }}</span
+            >
           </button>
-          <button type="button" @click="activeTab = 'PENDING'" :class="['filter-btn tab-pill', { active: activeTab === 'PENDING' }]">
+          <button
+            type="button"
+            @click="activeTab = 'PENDING'"
+            :class="[
+              'inline-flex cursor-pointer items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors',
+              activeTab === 'PENDING'
+                ? 'shadow-xs border-primary-600 bg-primary-600 font-semibold text-white'
+                : 'border-neutral-200 bg-white text-neutral-600 hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-700',
+            ]"
+          >
             <span>{{ t('applications.filter_pending') }}</span>
-            <span class="filter-count">{{ applications.filter(a => a.status === 'PENDING').length }}</span>
+            <span
+              :class="[
+                'rounded-full px-1.5 py-0.5 text-[10px]',
+                activeTab === 'PENDING'
+                  ? 'bg-primary-700 text-white'
+                  : 'bg-neutral-100 text-neutral-600 dark:bg-neutral-700 dark:text-neutral-300',
+              ]"
+              >{{ applications.filter((a) => a.status === 'PENDING').length }}</span
+            >
           </button>
-          <button type="button" @click="activeTab = 'APPROVED'" :class="['filter-btn tab-pill', { active: activeTab === 'APPROVED' }]">
+          <button
+            type="button"
+            @click="activeTab = 'APPROVED'"
+            :class="[
+              'inline-flex cursor-pointer items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors',
+              activeTab === 'APPROVED'
+                ? 'shadow-xs border-primary-600 bg-primary-600 font-semibold text-white'
+                : 'border-neutral-200 bg-white text-neutral-600 hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-700',
+            ]"
+          >
             <span>{{ t('applications.filter_approved') }}</span>
-            <span class="filter-count">{{ applications.filter(a => a.status === 'APPROVED').length }}</span>
+            <span
+              :class="[
+                'rounded-full px-1.5 py-0.5 text-[10px]',
+                activeTab === 'APPROVED'
+                  ? 'bg-primary-700 text-white'
+                  : 'bg-neutral-100 text-neutral-600 dark:bg-neutral-700 dark:text-neutral-300',
+              ]"
+              >{{ applications.filter((a) => a.status === 'APPROVED').length }}</span
+            >
           </button>
-          <button type="button" @click="activeTab = 'REJECTED'" :class="['filter-btn tab-pill', { active: activeTab === 'REJECTED' }]">
+          <button
+            type="button"
+            @click="activeTab = 'REJECTED'"
+            :class="[
+              'inline-flex cursor-pointer items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors',
+              activeTab === 'REJECTED'
+                ? 'shadow-xs border-primary-600 bg-primary-600 font-semibold text-white'
+                : 'border-neutral-200 bg-white text-neutral-600 hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-700',
+            ]"
+          >
             <span>{{ t('applications.filter_rejected') }}</span>
-            <span class="filter-count">{{ applications.filter(a => a.status === 'REJECTED').length }}</span>
+            <span
+              :class="[
+                'rounded-full px-1.5 py-0.5 text-[10px]',
+                activeTab === 'REJECTED'
+                  ? 'bg-primary-700 text-white'
+                  : 'bg-neutral-100 text-neutral-600 dark:bg-neutral-700 dark:text-neutral-300',
+              ]"
+              >{{ applications.filter((a) => a.status === 'REJECTED').length }}</span
+            >
           </button>
         </div>
       </template>
 
-      <table class="data-table">
-        <thead>
-          <tr>
-            <th>{{ t('applications.col_property') }}</th>
-            <th v-if="!isTenant">{{ t('applications.col_applicant') }}</th>
-            <th>{{ t('applications.col_move_in') }}</th>
-            <th>{{ t('leases.col_rent') }}</th>
-            <th>{{ t('applications.col_status') }}</th>
-            <th>{{ t('applications.col_submitted') }}</th>
-            <th class="text-right">{{ t('applications.col_actions') }}</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="app in paginatedApplications" :key="app.id">
-            <td>
-              <div class="unit-cell">
-                <span class="font-semibold">{{ t('dashboard.metrics.unit') }} {{ app.unit?.unitNumber || 'N/A' }}</span>
-                <span class="text-dim text-sm">{{ app.property?.title || 'Skyline Complex' }}</span>
-              </div>
-            </td>
-            <td v-if="!isTenant">
-              <div class="applicant-cell">
-                <span class="font-medium">{{ app.tenant?.fullName || 'Prospective Tenant' }}</span>
-                <span class="text-dim text-xs">{{ app.tenant?.email }}</span>
-              </div>
-            </td>
-            <td>
-              <div class="date-cell">
-                <Calendar :size="13" class="text-dim" />
-                <span>{{ new Date(app.desiredMoveInDate).toLocaleDateString() }}</span>
-              </div>
-            </td>
-            <td class="font-semibold">
-              ${{ app.proposedRent.toLocaleString() }} {{ t('properties.rent_per_month') }}
-            </td>
-            <td>
-              <span :class="[
-                'badge badge-pill',
-                app.status === 'APPROVED' ? 'badge-success' :
-                  app.status === 'PENDING' ? 'badge-warning' :
-                    app.status === 'REJECTED' ? 'badge-danger' : 'badge-subtle'
-              ]">
-                <span class="badge-dot"></span>
-                <span>{{ app.status === 'PENDING' ? t('applications.status.pending') : app.status === 'APPROVED' ? t('applications.status.approved') : app.status === 'REJECTED' ? t('applications.status.rejected') : app.status }}</span>
-              </span>
-            </td>
-            <td class="text-muted text-sm">
-              {{ new Date(app.createdAt).toLocaleDateString() }}
-            </td>
-            <td class="text-right">
-              <!-- Tenant Actions -->
-              <div v-if="isTenant">
-                <span v-if="app.status === 'APPROVED'" class="text-emerald text-sm font-semibold">
-                  {{ t('applications.status.approved') }}
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-sm text-neutral-700 dark:text-neutral-200">
+          <thead
+            class="border-b border-neutral-200 bg-neutral-50 text-xs font-semibold uppercase tracking-wider text-neutral-500 dark:border-neutral-800 dark:bg-neutral-800/60 dark:text-neutral-400"
+          >
+            <tr>
+              <th class="px-4 py-3">{{ t('applications.col_property') }}</th>
+              <th v-if="!isTenant" class="px-4 py-3">{{ t('applications.col_applicant') }}</th>
+              <th class="px-4 py-3">{{ t('applications.col_move_in') }}</th>
+              <th class="px-4 py-3">{{ t('leases.col_rent') }}</th>
+              <th class="px-4 py-3">{{ t('applications.col_status') }}</th>
+              <th class="px-4 py-3">{{ t('applications.col_submitted') }}</th>
+              <th class="px-4 py-3 text-right">{{ t('applications.col_actions') }}</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-neutral-200 dark:divide-neutral-800">
+            <tr
+              v-for="app in paginatedApplications"
+              :key="app.id"
+              class="transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-800/40"
+            >
+              <td class="px-4 py-3.5">
+                <div class="flex flex-col">
+                  <span class="font-semibold text-neutral-900 dark:text-white"
+                    >{{ t('dashboard.metrics.unit') }} {{ app.unit?.unitNumber || 'N/A' }}</span
+                  >
+                  <span class="text-xs text-neutral-500 dark:text-neutral-400">{{
+                    app.property?.title || 'Skyline Complex'
+                  }}</span>
+                </div>
+              </td>
+              <td v-if="!isTenant" class="px-4 py-3.5">
+                <div class="flex flex-col">
+                  <span class="font-medium text-neutral-900 dark:text-white">{{
+                    app.tenant?.fullName || 'Prospective Tenant'
+                  }}</span>
+                  <span class="text-xs text-neutral-500 dark:text-neutral-400">{{
+                    app.tenant?.email
+                  }}</span>
+                </div>
+              </td>
+              <td class="px-4 py-3.5">
+                <div
+                  class="flex items-center gap-1.5 text-xs text-neutral-600 dark:text-neutral-300"
+                >
+                  <Calendar :size="14" class="shrink-0 text-neutral-400" />
+                  <span>{{ new Date(app.desiredMoveInDate).toLocaleDateString() }}</span>
+                </div>
+              </td>
+              <td class="px-4 py-3.5 font-semibold text-neutral-900 dark:text-white">
+                ${{ app.proposedRent.toLocaleString() }}
+                <span class="text-xs font-normal text-neutral-500">{{
+                  t('properties.rent_per_month')
+                }}</span>
+              </td>
+              <td class="px-4 py-3.5">
+                <span
+                  :class="[
+                    'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium',
+                    app.status === 'APPROVED'
+                      ? 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-400'
+                      : app.status === 'PENDING'
+                        ? 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-400'
+                        : app.status === 'REJECTED'
+                          ? 'border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-800 dark:bg-rose-950/30 dark:text-rose-400'
+                          : 'border-neutral-200 bg-neutral-100 text-neutral-700',
+                  ]"
+                >
+                  <span class="h-1.5 w-1.5 rounded-full bg-current"></span>
+                  <span>{{
+                    app.status === 'PENDING'
+                      ? t('applications.status.pending')
+                      : app.status === 'APPROVED'
+                        ? t('applications.status.approved')
+                        : app.status === 'REJECTED'
+                          ? t('applications.status.rejected')
+                          : app.status
+                  }}</span>
                 </span>
-                <span v-else-if="app.status === 'PENDING'" class="text-amber text-sm">
-                  {{ t('applications.status.pending') }}
-                </span>
-                <span v-else class="text-dim text-sm">
-                  {{ t('applications.status.rejected') }}
-                </span>
-              </div>
+              </td>
+              <td class="px-4 py-3.5 text-xs text-neutral-500 dark:text-neutral-400">
+                {{ new Date(app.createdAt).toLocaleDateString() }}
+              </td>
+              <td class="px-4 py-3.5 text-right">
+                <!-- Tenant Actions -->
+                <div v-if="isTenant">
+                  <span
+                    v-if="app.status === 'APPROVED'"
+                    class="text-xs font-semibold text-emerald-600 dark:text-emerald-400"
+                  >
+                    {{ t('applications.status.approved') }}
+                  </span>
+                  <span
+                    v-else-if="app.status === 'PENDING'"
+                    class="text-xs text-amber-600 dark:text-amber-400"
+                  >
+                    {{ t('applications.status.pending') }}
+                  </span>
+                  <span v-else class="text-xs text-neutral-500 dark:text-neutral-400">
+                    {{ t('applications.status.rejected') }}
+                  </span>
+                </div>
 
-              <!-- Landlord / Admin Review Actions -->
-              <div v-else class="action-btn-group">
-                <template v-if="app.status === 'PENDING'">
-                  <button @click="openReviewModal(app, 'APPROVED')" class="btn-primary btn-sm btn-approve"
-                    :title="t('applications.approve')">
-                    <CheckCircle2 :size="13" />
-                    <span>{{ t('applications.approve') }}</span>
-                  </button>
-                  <button @click="openReviewModal(app, 'REJECTED')" class="btn-secondary btn-sm text-danger"
-                    :title="t('applications.reject')">
-                    <XCircle :size="13" />
-                    <span>{{ t('applications.reject') }}</span>
-                  </button>
-                </template>
-                <span v-else-if="app.status === 'APPROVED'" class="text-emerald text-xs font-semibold">
-                  Lease Drafted
-                </span>
-                <span v-else class="text-dim text-xs">
-                  Rejected
-                </span>
-              </div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+                <!-- Landlord / Admin Review Actions -->
+                <div v-else class="inline-flex items-center justify-end gap-1.5">
+                  <template v-if="app.status === 'PENDING'">
+                    <button
+                      @click="openReviewModal(app, 'APPROVED')"
+                      class="shadow-xs inline-flex items-center gap-1 rounded-lg bg-emerald-600 px-2.5 py-1 text-xs font-medium text-white transition-colors hover:bg-emerald-700"
+                      :title="t('applications.approve')"
+                    >
+                      <CheckCircle2 :size="13" />
+                      <span>{{ t('applications.approve') }}</span>
+                    </button>
+                    <button
+                      @click="openReviewModal(app, 'REJECTED')"
+                      class="inline-flex items-center gap-1 rounded-lg border border-rose-200 px-2.5 py-1 text-xs font-medium text-rose-600 transition-colors hover:bg-rose-50 dark:border-rose-800 dark:text-rose-400 dark:hover:bg-rose-950/30"
+                      :title="t('applications.reject')"
+                    >
+                      <XCircle :size="13" />
+                      <span>{{ t('applications.reject') }}</span>
+                    </button>
+                  </template>
+                  <span
+                    v-else-if="app.status === 'APPROVED'"
+                    class="text-xs font-medium text-emerald-600 dark:text-emerald-400"
+                  >
+                    Lease Drafted
+                  </span>
+                  <span v-else class="text-xs text-neutral-400 dark:text-neutral-500">
+                    Rejected
+                  </span>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </AppTableCard>
 
     <!-- Review Decision Modal -->
-    <div v-if="appToReview" class="modal-backdrop">
-      <div class="modal-card card-flat">
-        <div class="modal-header">
-          <h3>
-            {{ reviewDecision === 'APPROVED' ? 'Approve Application & Draft Lease' : 'Reject Application' }}
-          </h3>
-          <button @click="appToReview = null" class="modal-close">&times;</button>
+    <Teleport to="body">
+      <div
+        v-if="appToReview"
+        class="backdrop-blur-xs fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+      >
+        <div
+          class="w-full max-w-lg overflow-hidden rounded-xl border border-neutral-200 bg-white shadow-xl dark:border-neutral-800 dark:bg-neutral-900"
+        >
+          <div
+            class="flex items-center justify-between border-b border-neutral-200 px-6 py-4 dark:border-neutral-800"
+          >
+            <h3 class="text-base font-semibold text-neutral-900 dark:text-white">
+              {{
+                reviewDecision === 'APPROVED'
+                  ? t('applications.approve_modal_title')
+                  : t('applications.reject_modal_title')
+              }}
+            </h3>
+            <button
+              type="button"
+              @click="appToReview = null"
+              class="cursor-pointer text-neutral-400 transition-colors hover:text-neutral-600 dark:hover:text-neutral-200"
+            >
+              <X :size="18" />
+            </button>
+          </div>
+
+          <form @submit.prevent="submitReview" class="space-y-4 p-6">
+            <div
+              class="space-y-1.5 rounded-lg border border-neutral-200 bg-neutral-50 p-4 text-xs text-neutral-700 dark:border-neutral-800 dark:bg-neutral-800/50 dark:text-neutral-300"
+            >
+              <div>
+                <strong class="text-neutral-900 dark:text-white"
+                  >{{ t('applications.applicant_label') }}:</strong
+                >
+                {{ appToReview.tenant?.fullName || 'Tenant' }} ({{ appToReview.tenant?.email }})
+              </div>
+              <div>
+                <strong class="text-neutral-900 dark:text-white"
+                  >{{ t('applications.unit_label') }}:</strong
+                >
+                Unit {{ appToReview.unit?.unitNumber }} ({{ appToReview.property?.title }})
+              </div>
+              <div>
+                <strong class="text-neutral-900 dark:text-white"
+                  >{{ t('applications.desired_move_in_label') }}:</strong
+                >
+                {{ new Date(appToReview.desiredMoveInDate).toLocaleDateString() }}
+              </div>
+              <div>
+                <strong class="text-neutral-900 dark:text-white"
+                  >{{ t('applications.proposed_rent_label') }}:</strong
+                >
+                ${{ appToReview.proposedRent }}/month
+              </div>
+              <div class="mt-2 border-t border-neutral-200 pt-2 dark:border-neutral-700">
+                <span
+                  class="mb-1 block text-[10px] font-bold uppercase tracking-wider text-neutral-500 dark:text-neutral-400"
+                  >{{ t('applications.credentials_label') }}:</span
+                >
+                <p class="text-neutral-800 dark:text-neutral-200">
+                  {{ appToReview.employmentDetails }}
+                </p>
+              </div>
+            </div>
+
+            <div class="space-y-1.5">
+              <label class="block text-xs font-semibold text-neutral-700 dark:text-neutral-300">
+                {{ t('applications.review_notes_label') }}
+              </label>
+              <textarea
+                v-model="reviewReason"
+                rows="3"
+                required
+                class="focus:outline-hidden w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 placeholder-neutral-400 focus:ring-2 focus:ring-primary-500 dark:border-neutral-700 dark:bg-neutral-800 dark:text-white"
+                :placeholder="t('applications.review_notes_placeholder')"
+              ></textarea>
+            </div>
+
+            <p
+              v-if="reviewDecision === 'APPROVED'"
+              class="text-xs leading-relaxed text-neutral-500 dark:text-neutral-400"
+            >
+              {{
+                t('applications.approval_auto_note', { unit: appToReview.unit?.unitNumber || '' })
+              }}
+            </p>
+
+            <div class="flex items-center justify-end gap-3 pt-2">
+              <button
+                type="button"
+                @click="appToReview = null"
+                class="cursor-pointer rounded-lg border border-neutral-300 bg-white px-4 py-2 text-xs font-medium text-neutral-700 transition-colors hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-200 dark:hover:bg-neutral-700"
+              >
+                {{ t('common.cancel') }}
+              </button>
+              <button
+                type="submit"
+                :disabled="isSubmittingReview"
+                :class="[
+                  'shadow-xs cursor-pointer rounded-lg px-4 py-2 text-xs font-medium text-white transition-colors disabled:opacity-50',
+                  reviewDecision === 'REJECTED'
+                    ? 'bg-rose-600 hover:bg-rose-700'
+                    : 'bg-primary-600 hover:bg-primary-700',
+                ]"
+              >
+                <span>{{
+                  isSubmittingReview
+                    ? t('applications.processing_btn')
+                    : reviewDecision === 'APPROVED'
+                      ? t('applications.confirm_approval_btn')
+                      : t('applications.confirm_rejection_btn')
+                }}</span>
+              </button>
+            </div>
+          </form>
         </div>
-
-        <form @submit.prevent="submitReview" class="modal-body">
-          <div class="app-summary-card">
-            <div><strong>Applicant:</strong> {{ appToReview.tenant?.fullName || 'Tenant' }} ({{
-              appToReview.tenant?.email
-              }})</div>
-            <div><strong>Unit:</strong> Unit {{ appToReview.unit?.unitNumber }} ({{ appToReview.property?.title }})
-            </div>
-            <div><strong>Desired Move-in:</strong> {{ new Date(appToReview.desiredMoveInDate).toLocaleDateString() }}
-            </div>
-            <div><strong>Proposed Rent:</strong> ${{ appToReview.proposedRent }}/month</div>
-            <div class="employment-box mt-2">
-              <span class="box-label">Employment & Income Credentials:</span>
-              <p>{{ appToReview.employmentDetails }}</p>
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label class="form-label">Review Decision Notes / Message to Tenant *</label>
-            <textarea v-model="reviewReason" rows="3" required class="input-field"
-              placeholder="Provide confirmation notes or reason for rejection..."></textarea>
-          </div>
-
-          <p v-if="reviewDecision === 'APPROVED'" class="approval-notice text-sm text-muted">
-            Approving this application will automatically mark Unit {{ appToReview.unit?.unitNumber }} as
-            <strong>RESERVED</strong> and generate a digital lease agreement ready for signature.
-          </p>
-
-          <div class="modal-actions">
-            <button type="button" @click="appToReview = null" class="btn-secondary">
-              Cancel
-            </button>
-            <button type="submit" :disabled="isSubmittingReview"
-              :class="['btn-primary', reviewDecision === 'REJECTED' ? 'btn-danger-action' : '']">
-              <span>{{ isSubmittingReview ? 'Processing...' : (reviewDecision === 'APPROVED' ? 'Confirm Approval' : 'Confirm Rejection') }}</span>
-            </button>
-          </div>
-        </form>
       </div>
-    </div>
+    </Teleport>
   </div>
 </template>
-
-<style scoped>
-.applications-page {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
-
-.page-top-bar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 1rem;
-}
-
-.page-top-bar h1 {
-  font-size: 1.6rem;
-}
-
-.subtitle {
-  color: var(--text-muted);
-  font-size: 0.875rem;
-  margin-top: 0.2rem;
-}
-
-.table-shell {
-  padding: 1.25rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.table-toolbar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 1rem;
-}
-
-.filter-btn-group,
-.tab-pill-group {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.375rem;
-  flex-wrap: wrap;
-}
-
-.filter-btn,
-.tab-pill {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.4rem;
-  padding: 0.42rem 0.85rem;
-  font-size: 0.825rem;
-  font-weight: 500;
-  line-height: 1.25;
-  color: var(--text-muted);
-  background-color: var(--bg-surface);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  transition: all 0.15s ease;
-  white-space: nowrap;
-}
-
-.filter-btn:hover,
-.tab-pill:hover {
-  color: var(--text-main);
-  background-color: var(--bg-surface-hover);
-  border-color: var(--border-default);
-}
-
-.filter-btn.active,
-.tab-pill.active {
-  color: #ffffff !important;
-  background-color: var(--primary) !important;
-  border-color: var(--primary) !important;
-  font-weight: 600;
-  box-shadow: 0 1px 2px rgba(37, 99, 235, 0.2);
-}
-
-.search-wrap {
-  position: relative;
-  width: 100%;
-  max-width: 300px;
-}
-
-.search-icon {
-  position: absolute;
-  left: 0.75rem;
-  top: 50%;
-  transform: translateY(-50%);
-  color: var(--text-dim);
-}
-
-.table-search-input {
-  width: 100%;
-  background: var(--bg-input);
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-sm);
-  padding: 0.45rem 0.75rem 0.45rem 2.2rem;
-  color: var(--text-main);
-  font-size: 0.85rem;
-}
-
-.table-search-input:focus {
-  outline: none;
-  border-color: var(--border-focus);
-}
-
-.unit-cell,
-.applicant-cell {
-  display: flex;
-  flex-direction: column;
-}
-
-.date-cell {
-  display: flex;
-  align-items: center;
-  gap: 0.35rem;
-  font-size: 0.85rem;
-}
-
-.font-semibold {
-  font-weight: 600;
-}
-
-.font-medium {
-  font-weight: 500;
-}
-
-.text-dim {
-  color: var(--text-dim);
-}
-
-.text-sm {
-  font-size: 0.825rem;
-}
-
-.text-xs {
-  font-size: 0.75rem;
-}
-
-.text-right {
-  text-align: right;
-}
-
-.text-emerald {
-  color: var(--color-emerald-accent);
-}
-
-.text-amber {
-  color: var(--color-amber-accent);
-}
-
-.text-danger {
-  color: #f87171;
-}
-
-.action-btn-group {
-  display: inline-flex;
-  gap: 0.35rem;
-}
-
-.btn-sm {
-  padding: 0.35rem 0.65rem;
-  font-size: 0.8rem;
-  gap: 0.3rem;
-}
-
-.btn-approve {
-  background-color: var(--accent-emerald);
-}
-
-.btn-approve:hover {
-  background-color: #059669;
-}
-
-.empty-state {
-  text-align: center;
-  padding: 3.5rem 1rem;
-  color: var(--text-muted);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.empty-icon {
-  color: var(--text-dim);
-  margin-bottom: 0.5rem;
-}
-
-.loading-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 3rem 1rem;
-  color: var(--text-muted);
-}
-
-.loading-spinner {
-  width: 28px;
-  height: 28px;
-  border: 3px solid var(--border-subtle);
-  border-top-color: var(--primary);
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-/* Modal */
-.modal-backdrop {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.75);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 100;
-  padding: 1.5rem;
-}
-
-.modal-card {
-  width: 100%;
-  max-width: 520px;
-  background: var(--bg-surface);
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-md);
-  padding: 1.5rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1.25rem;
-}
-
-.modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border-bottom: 1px solid var(--border-subtle);
-  padding-bottom: 0.75rem;
-}
-
-.modal-close {
-  background: none;
-  border: none;
-  color: var(--text-muted);
-  font-size: 1.5rem;
-  cursor: pointer;
-}
-
-.modal-body {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.app-summary-card {
-  background: var(--bg-subtle);
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-sm);
-  padding: 0.85rem 1rem;
-  font-size: 0.85rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-}
-
-.employment-box {
-  border-top: 1px solid var(--border-subtle);
-  padding-top: 0.5rem;
-}
-
-.box-label {
-  font-size: 0.75rem;
-  font-weight: 700;
-  color: var(--text-dim);
-  text-transform: uppercase;
-}
-
-.employment-box p {
-  color: var(--text-main);
-  margin-top: 0.2rem;
-}
-
-.modal-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 0.75rem;
-  margin-top: 0.5rem;
-}
-
-.btn-danger-action {
-  background-color: var(--accent-rose);
-}
-
-.btn-danger-action:hover {
-  background-color: #dc2626;
-}
-</style>

@@ -5,7 +5,6 @@ import { RegisterInput, LoginInput } from '../../shared/schemas/auth.schema';
 import { badRequestError, unauthorizedError, forbiddenError } from '../utils/errors';
 import { UserRole } from '~~/shared/types/enums/user-role.enum';
 
-
 const SESSION_DURATION_DAYS = 7;
 
 export class AuthService {

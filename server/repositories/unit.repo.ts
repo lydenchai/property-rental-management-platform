@@ -360,13 +360,15 @@ export class UnitRepository {
     }
   }
 
-  async findAll(filter: {
-    propertyId?: string;
-    status?: UnitStatus;
-    minRent?: number;
-    maxRent?: number;
-    bedrooms?: number;
-  } = {}): Promise<UnitEntity[]> {
+  async findAll(
+    filter: {
+      propertyId?: string;
+      status?: UnitStatus;
+      minRent?: number;
+      maxRent?: number;
+      bedrooms?: number;
+    } = {}
+  ): Promise<UnitEntity[]> {
     try {
       const where: any = { deletedAt: null };
       if (filter.propertyId) where.propertyId = filter.propertyId;

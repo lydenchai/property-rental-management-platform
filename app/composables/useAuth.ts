@@ -22,7 +22,9 @@ export function useAuth() {
     error.value = null;
     try {
       const headers = import.meta.server ? useRequestHeaders(['cookie']) : undefined;
-      const response = await $fetch<ApiResponse<{ user: AuthUser }>>('/api/v1/auth/me', { headers });
+      const response = await $fetch<ApiResponse<{ user: AuthUser }>>('/api/v1/auth/me', {
+        headers,
+      });
       if (response?.success && response?.data?.user) {
         user.value = response.data.user;
       } else {

@@ -5,7 +5,7 @@ export const ContactCategorySchema = z.enum([
   'LANDLORD_ONBOARDING',
   'TENANT_SUPPORT',
   'TECHNICAL_SECURITY',
-  'BILLING'
+  'BILLING',
 ]);
 
 export type ContactCategory = z.infer<typeof ContactCategorySchema>;
@@ -16,11 +16,7 @@ export const ContactInputSchema = z.object({
     .min(2, 'Name must be at least 2 characters')
     .max(100, 'Name must not exceed 100 characters')
     .trim(),
-  email: z
-    .string()
-    .email('Please provide a valid email address')
-    .toLowerCase()
-    .trim(),
+  email: z.string().email('Please provide a valid email address').toLowerCase().trim(),
   category: ContactCategorySchema.default('GENERAL'),
   propertyReference: z
     .string()

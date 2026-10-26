@@ -9,7 +9,7 @@ import {
   Maximize2,
   Minimize2,
   Copy,
-  Check
+  Check,
 } from '@lucide/vue';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { useTheme } from '../../composables/useTheme';
@@ -143,7 +143,7 @@ async function initMap() {
     isLoading.value = true;
     mapError.value = null;
 
-    const maplibregl = (await import('maplibre-gl') as any).default;
+    const maplibregl = ((await import('maplibre-gl')) as any).default;
 
     // Clean up previous instance
     if (mapInstance) {
@@ -152,8 +152,9 @@ async function initMap() {
       markerInstance = null;
     }
 
-    const currentStyleUrl = MAP_STYLES.find(s => s.id === selectedStyle.value)?.url
-      || 'https://tiles.openfreemap.org/styles/bright';
+    const currentStyleUrl =
+      MAP_STYLES.find((s) => s.id === selectedStyle.value)?.url ||
+      'https://tiles.openfreemap.org/styles/bright';
 
     const map = new maplibregl.Map({
       container: mapContainer.value,
@@ -164,7 +165,10 @@ async function initMap() {
     });
 
     // Add navigation controls (zoom only) in top-left matching screenshot
-    map.addControl(new maplibregl.NavigationControl({ showCompass: false, showZoom: true }), 'top-left');
+    map.addControl(
+      new maplibregl.NavigationControl({ showCompass: false, showZoom: true }),
+      'top-left'
+    );
 
     const addMarkerAndPopup = () => {
       if (markerInstance) {
@@ -172,8 +176,9 @@ async function initMap() {
       }
 
       const el = createMarkerElement();
-      const popup = new maplibregl.Popup({ offset: 25, closeButton: true })
-        .setHTML(createPopupContent());
+      const popup = new maplibregl.Popup({ offset: 25, closeButton: true }).setHTML(
+        createPopupContent()
+      );
 
       markerInstance = new maplibregl.Marker({ element: el, anchor: 'bottom' })
         .setLngLat([lng, lat])
@@ -206,10 +211,10 @@ async function initMap() {
         if (mapInstance) mapInstance.resize();
       }, 250);
     });
-
   } catch (err: any) {
     console.error('Error initializing OpenFreeMap:', err);
-    mapError.value = 'Map rendering is currently unavailable. Please use the direct map links below.';
+    mapError.value =
+      'Map rendering is currently unavailable. Please use the direct map links below.';
     isLoading.value = false;
   }
 }
@@ -217,7 +222,7 @@ async function initMap() {
 function changeStyle(styleId: string, fromUser: boolean = true) {
   if (fromUser) isUserStyleChoice.value = true;
   selectedStyle.value = styleId;
-  const target = MAP_STYLES.find(s => s.id === styleId);
+  const target = MAP_STYLES.find((s) => s.id === styleId);
   if (!mapInstance || !target) return;
 
   try {
@@ -291,9 +296,12 @@ onMounted(() => {
   }
 });
 
-watch(() => [props.latitude, props.longitude], () => {
-  initMap();
-});
+watch(
+  () => [props.latitude, props.longitude],
+  () => {
+    initMap();
+  }
+);
 
 onUnmounted(() => {
   document.removeEventListener('fullscreenchange', handleFullscreenChange);
@@ -317,8 +325,13 @@ onUnmounted(() => {
           <MapPin :size="16" class="pin-icon" />
           <span class="map-title-text">Location & Neighborhood</span>
         </div>
-        <button v-if="formattedCoords" type="button" @click="copyCoordinates" class="coord-badge"
-          title="Click to copy latitude and longitude">
+        <button
+          v-if="formattedCoords"
+          type="button"
+          @click="copyCoordinates"
+          class="coord-badge"
+          title="Click to copy latitude and longitude"
+        >
           <span>{{ formattedCoords }}</span>
           <Check v-if="copiedCoords" :size="12" class="text-emerald-400" />
           <Copy v-else :size="11" class="text-slate-400" />
@@ -328,8 +341,14 @@ onUnmounted(() => {
       <div class="map-header-actions">
         <!-- Style Switcher Pills -->
         <div class="style-switcher">
-          <button v-for="st in MAP_STYLES" :key="st.id" type="button" @click="changeStyle(st.id)"
-            :class="['style-pill-btn', { active: selectedStyle === st.id }]" :title="`Switch map style to ${st.name}`">
+          <button
+            v-for="st in MAP_STYLES"
+            :key="st.id"
+            type="button"
+            @click="changeStyle(st.id)"
+            :class="['style-pill-btn', { active: selectedStyle === st.id }]"
+            :title="`Switch map style to ${st.name}`"
+          >
             {{ st.name }}
           </button>
         </div>
@@ -339,13 +358,23 @@ onUnmounted(() => {
           <span>Reset</span>
         </button>
 
-        <button type="button" @click="toggleFullscreen" class="map-btn" title="Toggle full-screen map">
+        <button
+          type="button"
+          @click="toggleFullscreen"
+          class="map-btn"
+          title="Toggle full-screen map"
+        >
           <Minimize2 v-if="isFullscreen" :size="13" />
           <Maximize2 v-else :size="13" />
         </button>
 
-        <a :href="googleMapsUrl" target="_blank" rel="noopener noreferrer" class="map-btn map-btn-primary"
-          title="Open in Google Maps for directions">
+        <a
+          :href="googleMapsUrl"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="map-btn map-btn-primary"
+          title="Open in Google Maps for directions"
+        >
           <Navigation :size="13" />
           <span>Directions</span>
         </a>
@@ -362,13 +391,18 @@ onUnmounted(() => {
 
       <!-- Fallback when WebGL or network completely fails -->
       <div v-if="mapError" class="map-fallback-view">
-        <MapPin :size="36" class="text-slate-400 mb-2" />
-        <h4 class="font-semibold text-slate-200 mb-1">Map View Unavailable</h4>
-        <p class="text-sm text-slate-400 mb-4 max-w-sm text-center">
+        <MapPin :size="36" class="mb-2 text-slate-400" />
+        <h4 class="mb-1 font-semibold text-slate-200">Map View Unavailable</h4>
+        <p class="mb-4 max-w-sm text-center text-sm text-slate-400">
           {{ address || city || title }} <span v-if="formattedCoords">({{ formattedCoords }})</span>
         </p>
         <div class="flex gap-2">
-          <a :href="googleMapsUrl" target="_blank" rel="noopener noreferrer" class="btn-primary btn-sm">
+          <a
+            :href="googleMapsUrl"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="btn-primary btn-sm"
+          >
             <ExternalLink :size="14" />
             <span>Open in Google Maps</span>
           </a>
@@ -386,10 +420,22 @@ onUnmounted(() => {
     <!-- Map Footer with OpenFreeMap & OpenStreetMap Attributions -->
     <div class="map-footer">
       <span class="map-attribution">
-        Map data &copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer"
-          class="hover:underline">OpenStreetMap</a> contributors &bull; Vector tiles by <a
-          href="https://openfreemap.org" target="_blank" rel="noopener noreferrer"
-          class="hover:underline font-medium text-emerald-400">OpenFreeMap</a>
+        Map data &copy;
+        <a
+          href="https://www.openstreetmap.org/copyright"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="hover:underline"
+          >OpenStreetMap</a
+        >
+        contributors &bull; Vector tiles by
+        <a
+          href="https://openfreemap.org"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="font-medium text-emerald-400 hover:underline"
+          >OpenFreeMap</a
+        >
       </span>
       <div class="footer-pills">
         <span class="map-status-pill">Free & Open Source</span>
@@ -644,207 +690,5 @@ onUnmounted(() => {
 .map-sublink:hover {
   color: var(--text-main, #f8fafc);
   text-decoration: underline;
-}
-</style>
-
-<style>
-/* -------------------------------------------------------------
- * Custom Pin Marker with "ទីតាំង" Speech Bubble (Matches Screenshot)
- * ------------------------------------------------------------- */
-.user-pin-marker-wrapper {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  cursor: pointer;
-  user-select: none;
-  position: relative;
-  transition: transform 0.15s ease;
-}
-
-.pin-speech-bubble {
-  background: #ffffff;
-  border: 1px solid #d1d5db;
-  border-radius: 5px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
-  padding: 2px 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-  margin-bottom: 3px;
-  white-space: nowrap;
-}
-
-.pin-bubble-title {
-  font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, sans-serif;
-  font-size: 13px;
-  font-weight: 700;
-  color: #111827;
-  line-height: 1.25;
-  letter-spacing: -0.01em;
-}
-
-.pin-bubble-triangle {
-  position: absolute;
-  bottom: -5px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 0;
-  height: 0;
-  border-left: 5px solid transparent;
-  border-right: 5px solid transparent;
-  border-top: 5px solid #ffffff;
-}
-
-.pin-teardrop-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  filter: drop-shadow(0 3px 5px rgba(0, 0, 0, 0.35));
-  transition: transform 0.15s ease;
-}
-
-.user-pin-marker-wrapper:hover .pin-teardrop-icon {
-  transform: scale(1.1);
-}
-
-/* MapLibre Top-Left Zoom Controls */
-.maplibre-container .maplibregl-ctrl-top-left {
-  top: 10px;
-  left: 10px;
-}
-
-.maplibre-container .maplibregl-ctrl-group {
-  background: #ffffff !important;
-  border: 1px solid #d1d5db !important;
-  border-radius: 6px !important;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2) !important;
-  overflow: hidden !important;
-}
-
-.maplibre-container .maplibregl-ctrl-group button {
-  width: 32px !important;
-  height: 32px !important;
-  background-color: #ffffff !important;
-  border-bottom: 1px solid #e5e7eb !important;
-}
-
-.maplibre-container .maplibregl-ctrl-group button:last-child {
-  border-bottom: none !important;
-}
-
-.maplibre-container .maplibregl-ctrl-group button:hover {
-  background-color: #f3f4f6 !important;
-}
-
-/* MapLibre Compact Attribution */
-.maplibre-container .maplibregl-ctrl-attrib {
-  background-color: rgba(255, 255, 255, 0.85) !important;
-  color: #374151 !important;
-  font-size: 11px !important;
-  padding: 2px 6px !important;
-  border-radius: 4px !important;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1) !important;
-  margin: 0 10px 10px 0 !important;
-}
-
-.maplibre-container .maplibregl-ctrl-attrib a {
-  color: #1f2937 !important;
-  text-decoration: none !important;
-}
-
-.maplibre-container .maplibregl-ctrl-attrib a:hover {
-  text-decoration: underline !important;
-}
-
-/* MapLibre Popup */
-.maplibregl-popup-content {
-  background: #ffffff !important;
-  color: #0f172a !important;
-  border-radius: 8px !important;
-  padding: 12px 14px !important;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15) !important;
-  border: 1px solid #e2e8f0 !important;
-  font-family: inherit !important;
-}
-
-html.dark .maplibregl-popup-content {
-  background: #141c2e !important;
-  color: #f8fafc !important;
-  border-color: #334155 !important;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5) !important;
-}
-
-.maplibregl-popup-anchor-bottom .maplibregl-popup-tip {
-  border-top-color: #ffffff !important;
-}
-
-html.dark .maplibregl-popup-anchor-bottom .maplibregl-popup-tip {
-  border-top-color: #141c2e !important;
-}
-
-.maplibregl-popup-close-button {
-  color: #64748b !important;
-  font-size: 16px !important;
-  padding: 4px 8px !important;
-}
-
-.maplibregl-popup-close-button:hover {
-  color: #0f172a !important;
-  background: transparent !important;
-}
-
-html.dark .maplibregl-popup-close-button:hover {
-  color: #ffffff !important;
-}
-
-.map-popup-card {
-  min-width: 180px;
-}
-
-.popup-title {
-  font-weight: 600;
-  font-size: 0.88rem;
-  color: #0f172a;
-  margin-bottom: 3px;
-}
-
-html.dark .popup-title {
-  color: #f8fafc;
-}
-
-.popup-address {
-  font-size: 0.78rem;
-  color: #64748b;
-  margin-bottom: 8px;
-}
-
-html.dark .popup-address {
-  color: #94a3b8;
-}
-
-.popup-actions {
-  display: flex;
-  gap: 8px;
-}
-
-.popup-link {
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: #2563eb;
-  text-decoration: none;
-}
-
-.popup-link:hover {
-  text-decoration: underline;
-  color: #1d4ed8;
-}
-
-html.dark .popup-link {
-  color: #38bdf8;
-}
-
-html.dark .popup-link:hover {
-  color: #7dd3fc;
 }
 </style>

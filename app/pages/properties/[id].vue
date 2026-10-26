@@ -12,7 +12,8 @@ import {
   LayoutGrid,
   List,
   Image as ImageIcon,
-  AlertCircle
+  AlertCircle,
+  X,
 } from '@lucide/vue';
 import PropertyMap from '../../components/common/PropertyMap.vue';
 import UnitGalleryModal, { type UnitDetail } from '../../components/units/UnitGalleryModal.vue';
@@ -110,7 +111,7 @@ function getRoomLabel(index: number): string {
     t('gallery.living_area'),
     t('gallery.master_bedroom'),
     t('gallery.modern_kitchen'),
-    t('gallery.bathroom_balcony')
+    t('gallery.bathroom_balcony'),
   ];
   return labels[index % labels.length]!;
 }
@@ -132,14 +133,17 @@ async function fetchProperty() {
   isLoading.value = true;
   errorMessage.value = null;
   try {
-    const res = await $fetch<ApiResponse<{ property: PropertyDetail }>>(`/api/v1/properties/${propertyId}`);
+    const res = await $fetch<ApiResponse<{ property: PropertyDetail }>>(
+      `/api/v1/properties/${propertyId}`
+    );
     if (res.success && res.data) {
       property.value = res.data.property;
     } else {
       errorMessage.value = res.error?.message || 'Property not found';
     }
   } catch (err: any) {
-    errorMessage.value = err?.data?.error?.message || err?.message || 'Error loading property details';
+    errorMessage.value =
+      err?.data?.error?.message || err?.message || 'Error loading property details';
   } finally {
     isLoading.value = false;
   }
@@ -173,16 +177,19 @@ async function submitApplication() {
   applyErrorMessage.value = null;
 
   try {
-    const res = await $fetch<ApiResponse<{ application: any; message: string }>>('/api/v1/applications', {
-      method: 'POST',
-      body: {
-        unitId: selectedUnitForApply.value.id,
-        desiredMoveInDate: new Date(applyForm.value.desiredMoveInDate).toISOString(),
-        proposedRent: applyForm.value.proposedRent,
-        employmentDetails: applyForm.value.employmentDetails,
-        notes: applyForm.value.notes || null,
-      },
-    });
+    const res = await $fetch<ApiResponse<{ application: any; message: string }>>(
+      '/api/v1/applications',
+      {
+        method: 'POST',
+        body: {
+          unitId: selectedUnitForApply.value.id,
+          desiredMoveInDate: new Date(applyForm.value.desiredMoveInDate).toISOString(),
+          proposedRent: applyForm.value.proposedRent,
+          employmentDetails: applyForm.value.employmentDetails,
+          notes: applyForm.value.notes || null,
+        },
+      }
+    );
 
     if (res.success) {
       applySuccessMessage.value = `Your application for Unit ${selectedUnitForApply.value.unitNumber} has been received! You can track the landlord's review under your dashboard.`;
@@ -190,7 +197,8 @@ async function submitApplication() {
       applyErrorMessage.value = res.error?.message || 'Failed to submit application';
     }
   } catch (err: any) {
-    applyErrorMessage.value = err?.data?.error?.message || err?.message || 'Error submitting rental application';
+    applyErrorMessage.value =
+      err?.data?.error?.message || err?.message || 'Error submitting rental application';
   } finally {
     isSubmittingApply.value = false;
   }
@@ -198,21 +206,36 @@ async function submitApplication() {
 
 function formatUnitStatus(status: string) {
   switch (status) {
-    case 'AVAILABLE': return t('properties.status.vacant');
-    case 'OCCUPIED': return t('properties.status.occupied');
-    case 'RESERVED': return t('properties.status.reserved');
-    case 'MAINTENANCE': return t('properties.status.maintenance');
-    default: return status ? status.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase()) : 'Unknown';
+    case 'AVAILABLE':
+      return t('properties.status.vacant');
+    case 'OCCUPIED':
+      return t('properties.status.occupied');
+    case 'RESERVED':
+      return t('properties.status.reserved');
+    case 'MAINTENANCE':
+      return t('properties.status.maintenance');
+    default:
+      return status
+        ? status
+            .replace(/_/g, ' ')
+            .toLowerCase()
+            .replace(/\b\w/g, (c) => c.toUpperCase())
+        : 'Unknown';
   }
 }
 
 function getUnitBadgeClass(status: string) {
   switch (status) {
-    case 'AVAILABLE': return 'badge-success';
-    case 'OCCUPIED': return 'badge-warning';
-    case 'RESERVED': return 'badge-info';
-    case 'MAINTENANCE': return 'badge-danger';
-    default: return 'badge-subtle';
+    case 'AVAILABLE':
+      return 'badge-success';
+    case 'OCCUPIED':
+      return 'badge-warning';
+    case 'RESERVED':
+      return 'badge-info';
+    case 'MAINTENANCE':
+      return 'badge-danger';
+    default:
+      return 'badge-subtle';
   }
 }
 
@@ -222,10 +245,13 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="property-detail-page">
+  <div class="mx-auto flex max-w-7xl flex-col gap-6 px-4 py-8 pb-16 sm:px-6">
     <!-- Back Navigation -->
-    <div class="nav-back-bar">
-      <NuxtLink to="/properties" class="back-btn">
+    <div class="flex items-center">
+      <NuxtLink
+        to="/properties"
+        class="inline-flex items-center gap-1.5 text-xs font-medium text-neutral-500 transition-colors hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white sm:text-sm"
+      >
         <ArrowLeft :size="16" />
         <span>{{ t('properties.back_to_all_properties') }}</span>
       </NuxtLink>
@@ -237,48 +263,86 @@ onMounted(() => {
     </div>
 
     <!-- Loading State -->
-    <div v-if="isLoading" class="loading-state">
-      <div class="loading-spinner"></div>
-      <p>{{ t('properties.loading_property_details') }}</p>
+    <div v-if="isLoading" class="flex flex-col items-center gap-3 py-20 text-center">
+      <div
+        class="h-8 w-8 animate-spin rounded-full border-2 border-neutral-300 border-t-blue-600"
+      />
+      <p class="text-sm text-neutral-500 dark:text-neutral-400">
+        {{ t('properties.loading_property_details') }}
+      </p>
     </div>
 
-    <div v-else-if="property" class="property-content-layout">
+    <div v-else-if="property" class="flex flex-col gap-8">
       <!-- Property Header & Overview -->
-      <section class="property-overview card-flat">
-        <div class="overview-header">
-          <div class="title-block">
-            <span class="property-type-pill">{{ t('properties.residential_complex') }}</span>
-            <h1>{{ property.title }}</h1>
-            <div class="address-row">
-              <MapPin :size="15" class="loc-icon" />
-              <span>{{ property.addressLine1 }}, {{ property.city }}, {{ property.state }} {{ property.postalCode }}, {{
-                property.country }}</span>
+      <section
+        class="shadow-xs flex flex-col gap-6 rounded-2xl border border-neutral-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-900 sm:p-8"
+      >
+        <div class="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
+          <div class="flex flex-col gap-2">
+            <span
+              class="inline-flex items-center text-[11px] font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400"
+            >
+              {{ t('properties.residential_complex') }}
+            </span>
+            <h1 class="text-2xl font-extrabold text-neutral-900 dark:text-white sm:text-3xl">
+              {{ property.title }}
+            </h1>
+            <div
+              class="flex items-center gap-1.5 text-xs text-neutral-500 dark:text-neutral-400 sm:text-sm"
+            >
+              <MapPin :size="15" class="shrink-0 text-emerald-500" />
+              <span
+                >{{ property.addressLine1 }}, {{ property.city }}, {{ property.state }}
+                {{ property.postalCode }}, {{ property.country }}</span
+              >
             </div>
           </div>
 
-          <div class="units-badge-block">
+          <div class="shrink-0">
             <span v-if="property.availableUnitsCount > 0" class="badge badge-pill badge-success">
-              <span class="badge-dot"></span>
-              <span>{{ t('properties.units_available_ratio', { available: property.availableUnitsCount, total: property.unitsCount }) }}</span>
+              <span class="badge-dot" />
+              <span>{{
+                t('properties.units_available_ratio', {
+                  available: property.availableUnitsCount,
+                  total: property.unitsCount,
+                })
+              }}</span>
             </span>
             <span v-else class="badge badge-pill badge-warning">
-              <span class="badge-dot"></span>
+              <span class="badge-dot" />
               <span>{{ t('properties.all_units_leased') }}</span>
             </span>
           </div>
         </div>
 
-        <div class="overview-description">
-          <h3>{{ t('properties.about_property') }}</h3>
-          <p>{{ property.description }}</p>
+        <div class="flex flex-col gap-2 border-t border-neutral-100 pt-6 dark:border-neutral-800">
+          <h3
+            class="text-xs font-bold uppercase tracking-wider text-neutral-400 dark:text-neutral-500"
+          >
+            {{ t('properties.about_property') }}
+          </h3>
+          <p class="text-sm leading-relaxed text-neutral-600 dark:text-neutral-300">
+            {{ property.description }}
+          </p>
         </div>
 
         <!-- Amenities -->
-        <div v-if="property.amenities?.length" class="amenities-section">
-          <h3>{{ t('properties.included_amenities') }}</h3>
-          <div class="amenities-grid">
-            <div v-for="amenity in property.amenities" :key="amenity" class="amenity-item">
-              <Check :size="14" class="amenity-check" />
+        <div
+          v-if="property.amenities?.length"
+          class="flex flex-col gap-3 border-t border-neutral-100 pt-6 dark:border-neutral-800"
+        >
+          <h3
+            class="text-xs font-bold uppercase tracking-wider text-neutral-400 dark:text-neutral-500"
+          >
+            {{ t('properties.included_amenities') }}
+          </h3>
+          <div class="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-4">
+            <div
+              v-for="amenity in property.amenities"
+              :key="amenity"
+              class="flex items-center gap-2 rounded-lg border border-neutral-200 bg-neutral-50 p-2 text-xs text-neutral-700 dark:border-neutral-700/60 dark:bg-neutral-800/60 dark:text-neutral-300"
+            >
+              <Check :size="14" class="shrink-0 text-emerald-500" />
               <span>{{ amenity }}</span>
             </div>
           </div>
@@ -286,112 +350,202 @@ onMounted(() => {
       </section>
 
       <!-- Location & Neighborhood Map (OpenFreeMap) -->
-      <section class="location-map-section">
+      <section
+        class="shadow-xs overflow-hidden rounded-2xl border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900"
+      >
         <ClientOnly>
-          <PropertyMap :latitude="property.latitude ?? 11.5516" :longitude="property.longitude ?? 104.9224"
-            :title="property.title" :address="property.addressLine1" :city="property.city" />
+          <PropertyMap
+            :latitude="property.latitude ?? 11.5516"
+            :longitude="property.longitude ?? 104.9224"
+            :title="property.title"
+            :address="property.addressLine1"
+            :city="property.city"
+          />
           <template #fallback>
-            <div class="map-placeholder card-flat">
-              <p>{{ t('common.please_wait') }}</p>
+            <div class="p-10 text-center text-sm text-neutral-400">
+              {{ t('common.please_wait') }}
             </div>
           </template>
         </ClientOnly>
       </section>
 
       <!-- Units & Floor Plans Section -->
-      <section class="units-section">
-        <div class="section-title-row">
+      <section class="flex flex-col gap-6">
+        <div class="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
           <div>
-            <h2>{{ t('properties.units_floor_plans') }}</h2>
-            <p class="section-desc">{{ t('properties.units_floor_plans_desc') }}</p>
+            <h2 class="text-xl font-bold text-neutral-900 dark:text-white sm:text-2xl">
+              {{ t('properties.units_floor_plans') }}
+            </h2>
+            <p class="mt-0.5 text-xs text-neutral-500 dark:text-neutral-400 sm:text-sm">
+              {{ t('properties.units_floor_plans_desc') }}
+            </p>
           </div>
-          <div class="view-toggle-bar">
-            <button type="button" @click="unitViewMode = 'grid'"
-              :class="['toggle-btn', { active: unitViewMode === 'grid' }]" :title="t('properties.visual_cards')">
+          <div
+            class="inline-flex items-center gap-1 self-start rounded-lg border border-neutral-200 bg-neutral-200/60 p-1 dark:border-neutral-700/60 dark:bg-neutral-800/60 sm:self-auto"
+          >
+            <button
+              type="button"
+              @click="unitViewMode = 'grid'"
+              :class="[
+                'inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition-colors',
+                unitViewMode === 'grid'
+                  ? 'shadow-xs bg-white text-neutral-900 dark:bg-neutral-900 dark:text-white'
+                  : 'text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white',
+              ]"
+              :title="t('properties.visual_cards')"
+            >
               <LayoutGrid :size="14" />
               <span>{{ t('properties.visual_cards') }}</span>
             </button>
-            <button type="button" @click="unitViewMode = 'table'"
-              :class="['toggle-btn', { active: unitViewMode === 'table' }]" :title="t('properties.table_view')">
+            <button
+              type="button"
+              @click="unitViewMode = 'table'"
+              :class="[
+                'inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition-colors',
+                unitViewMode === 'table'
+                  ? 'shadow-xs bg-white text-neutral-900 dark:bg-neutral-900 dark:text-white'
+                  : 'text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white',
+              ]"
+              :title="t('properties.table_view')"
+            >
               <List :size="14" />
               <span>{{ t('properties.table_view') }}</span>
             </button>
           </div>
         </div>
 
-        <div v-if="!property.units || property.units.length === 0" class="empty-units card-flat">
+        <div
+          v-if="!property.units || property.units.length === 0"
+          class="rounded-2xl border border-neutral-200 bg-white p-8 text-center text-neutral-500 dark:border-neutral-800 dark:bg-neutral-900"
+        >
           <p>{{ t('properties.no_units_listed') }}</p>
         </div>
 
         <!-- Visual Cards Grid View -->
-        <div v-else-if="unitViewMode === 'grid'" class="unit-cards-grid">
-          <div v-for="unit in property.units" :key="unit.id" class="unit-card card-flat">
+        <div
+          v-else-if="unitViewMode === 'grid'"
+          class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3"
+        >
+          <div
+            v-for="unit in property.units"
+            :key="unit.id"
+            class="shadow-xs group flex flex-col justify-between overflow-hidden rounded-2xl border border-neutral-200 bg-white transition-all hover:border-neutral-300 dark:border-neutral-800 dark:bg-neutral-900 dark:hover:border-neutral-700"
+          >
             <!-- Card Image & Hero Thumbnail -->
-            <div class="unit-card-media">
-              <img :src="getCardActiveImage(unit)" :alt="`Unit ${unit.unitNumber}`" class="unit-card-hero-img"
-                @click="openGalleryModal(unit, activeCardThumbnails[unit.id] ?? 0)" />
-              <div class="unit-media-badge">
+            <div
+              class="relative aspect-16/10 cursor-pointer overflow-hidden bg-neutral-100 dark:bg-neutral-800"
+              @click="openGalleryModal(unit, activeCardThumbnails[unit.id] ?? 0)"
+            >
+              <img
+                :src="getCardActiveImage(unit)"
+                :alt="`Unit ${unit.unitNumber}`"
+                class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+              />
+              <div
+                class="backdrop-blur-xs absolute left-2.5 top-2.5 inline-flex items-center gap-1 rounded-md bg-neutral-950/80 px-2 py-0.5 text-[11px] font-medium text-white"
+              >
                 <ImageIcon :size="12" />
                 <span>{{ t('properties.photos_count', { count: unit.images?.length || 1 }) }}</span>
               </div>
-              <div class="room-indicator">
+              <div
+                class="backdrop-blur-xs absolute bottom-2.5 right-2.5 rounded-md bg-neutral-950/80 px-2 py-0.5 text-[11px] font-semibold text-white"
+              >
                 {{ getRoomLabel(activeCardThumbnails[unit.id] ?? 0) }}
               </div>
             </div>
 
             <!-- Thumbnail Strip under Card Hero -->
-            <div v-if="unit.images && unit.images.length > 1" class="unit-card-thumbs">
-              <button v-for="(img, idx) in unit.images.slice(0, 4)" :key="idx" type="button"
-                @mouseenter="setCardThumbnail(unit.id, idx)" @click="openGalleryModal(unit, idx)"
-                :class="['unit-mini-thumb', { active: (activeCardThumbnails[unit.id] ?? 0) === idx }]"
-                :title="`View ${getRoomLabel(idx)}`">
-                <img :src="img" :alt="`Thumbnail ${idx + 1}`" />
+            <div
+              v-if="unit.images && unit.images.length > 1"
+              class="flex items-center gap-1.5 border-b border-neutral-100 bg-neutral-50 p-2 dark:border-neutral-800 dark:bg-neutral-950/60"
+            >
+              <button
+                v-for="(img, idx) in unit.images.slice(0, 4)"
+                :key="idx"
+                type="button"
+                @mouseenter="setCardThumbnail(unit.id, idx)"
+                @click="openGalleryModal(unit, idx)"
+                :class="[
+                  'h-9 w-12 shrink-0 overflow-hidden rounded border transition-colors',
+                  (activeCardThumbnails[unit.id] ?? 0) === idx
+                    ? 'border-blue-600 ring-1 ring-blue-600'
+                    : 'border-neutral-200 hover:border-neutral-400 dark:border-neutral-700',
+                ]"
+                :title="`View ${getRoomLabel(idx)}`"
+              >
+                <img :src="img" :alt="`Thumbnail ${idx + 1}`" class="h-full w-full object-cover" />
               </button>
             </div>
 
             <!-- Card Details Content -->
-            <div class="unit-card-body">
-              <div class="unit-card-header">
-                <div>
-                  <h3 class="unit-number-title">{{ t('properties.unit_label', { number: unit.unitNumber }) }}</h3>
-                  <span class="unit-floor-text">{{ t('properties.level', { floor: unit.floor }) }}</span>
+            <div class="flex flex-1 flex-col justify-between gap-4 p-5">
+              <div class="flex flex-col gap-3">
+                <div class="flex items-center justify-between">
+                  <div>
+                    <h3 class="text-base font-bold text-neutral-900 dark:text-white">
+                      {{ t('properties.unit_label', { number: unit.unitNumber }) }}
+                    </h3>
+                    <span class="text-xs text-neutral-500 dark:text-neutral-400">{{
+                      t('properties.level', { floor: unit.floor })
+                    }}</span>
+                  </div>
+                  <span :class="['badge badge-pill', getUnitBadgeClass(unit.status)]">
+                    <span class="badge-dot" />
+                    <span>{{ formatUnitStatus(unit.status) }}</span>
+                  </span>
                 </div>
-                <span :class="['badge badge-pill', getUnitBadgeClass(unit.status)]">
-                  <span class="badge-dot"></span>
-                  <span>{{ formatUnitStatus(unit.status) }}</span>
-                </span>
-              </div>
 
-              <!-- Specs Badges -->
-              <div class="unit-card-specs">
-                <div class="spec-item">
-                  <Maximize2 :size="13" class="spec-icon" />
-                  <span>{{ t('properties.sq_m', { size: unit.sizeSqFt }) }}</span>
-                </div>
-                <div class="spec-item">
-                  <Bed :size="13" class="spec-icon" />
-                  <span>{{ unit.bedrooms === 0 ? t('properties.studio') : t('properties.bed_short', { count: unit.bedrooms }) }}</span>
-                </div>
-                <div class="spec-item">
-                  <Bath :size="13" class="spec-icon" />
-                  <span>{{ t('properties.bath_short', { count: unit.bathrooms }) }}</span>
+                <!-- Specs Badges -->
+                <div
+                  class="flex items-center gap-3 border-y border-neutral-100 py-2 text-xs text-neutral-600 dark:border-neutral-800 dark:text-neutral-300"
+                >
+                  <div class="flex items-center gap-1">
+                    <Maximize2 :size="13" class="text-neutral-400" />
+                    <span>{{ t('properties.sq_m', { size: unit.sizeSqFt }) }}</span>
+                  </div>
+                  <div class="flex items-center gap-1">
+                    <Bed :size="13" class="text-neutral-400" />
+                    <span>{{
+                      unit.bedrooms === 0
+                        ? t('properties.studio')
+                        : t('properties.bed_short', { count: unit.bedrooms })
+                    }}</span>
+                  </div>
+                  <div class="flex items-center gap-1">
+                    <Bath :size="13" class="text-neutral-400" />
+                    <span>{{ t('properties.bath_short', { count: unit.bathrooms }) }}</span>
+                  </div>
                 </div>
               </div>
 
               <!-- Price and Actions -->
-              <div class="unit-card-footer">
-                <div class="unit-pricing">
-                  <div class="unit-price-amount">${{ unit.rentAmount.toLocaleString() }} <span
-                      class="unit-price-period">{{ t('properties.per_month_short') }}</span></div>
-                  <div class="unit-deposit-text">{{ t('properties.deposit') }}: ${{ unit.depositAmount.toLocaleString() }}</div>
+              <div class="flex items-center justify-between pt-1">
+                <div class="flex flex-col">
+                  <div class="text-base font-extrabold text-neutral-900 dark:text-white">
+                    ${{ unit.rentAmount.toLocaleString() }}
+                    <span class="text-xs font-normal text-neutral-500">{{
+                      t('properties.per_month_short')
+                    }}</span>
+                  </div>
+                  <div class="text-[11px] text-neutral-400">
+                    {{ t('properties.deposit') }}: ${{ unit.depositAmount.toLocaleString() }}
+                  </div>
                 </div>
 
-                <div class="unit-actions">
-                  <button v-if="unit.status === 'AVAILABLE'" @click="openApplyModal(unit)" class="btn-primary btn-sm">
+                <div>
+                  <button
+                    v-if="unit.status === 'AVAILABLE'"
+                    @click="openApplyModal(unit)"
+                    class="btn-primary btn-sm"
+                  >
                     <FileSignature :size="13" />
                     <span>{{ t('properties.apply') }}</span>
                   </button>
-                  <span v-else class="unavailable-text">{{ t('properties.unavailable') }}</span>
+                  <span
+                    v-else
+                    class="text-xs font-semibold text-neutral-400 dark:text-neutral-500"
+                    >{{ t('properties.unavailable') }}</span
+                  >
                 </div>
               </div>
             </div>
@@ -403,7 +557,7 @@ onMounted(() => {
           <table class="data-table">
             <thead>
               <tr>
-                <th style="width: 80px;">{{ t('properties.preview') }}</th>
+                <th style="width: 80px">{{ t('properties.preview') }}</th>
                 <th>{{ t('properties.col_unit_number') }}</th>
                 <th>{{ t('properties.col_floor') }}</th>
                 <th>{{ t('properties.floor_area') }}</th>
@@ -417,42 +571,75 @@ onMounted(() => {
             <tbody>
               <tr v-for="unit in property.units" :key="unit.id">
                 <td>
-                  <button type="button" class="table-unit-thumb-btn" @click="openGalleryModal(unit, 0)"
-                    :title="t('properties.photos')">
+                  <button
+                    type="button"
+                    class="relative h-9 w-12 overflow-hidden rounded border border-neutral-200 dark:border-neutral-700"
+                    @click="openGalleryModal(unit, 0)"
+                    :title="t('properties.photos')"
+                  >
                     <img
-                      :src="unit.images?.[0] || 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=400&q=80'"
-                      :alt="`Unit ${unit.unitNumber}`" />
-                    <span class="table-thumb-count">{{ unit.images?.length || 1 }}</span>
+                      :src="
+                        unit.images?.[0] ||
+                        'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=400&q=80'
+                      "
+                      :alt="`Unit ${unit.unitNumber}`"
+                      class="h-full w-full object-cover"
+                    />
+                    <span
+                      class="absolute bottom-0 right-0 bg-black/75 px-1 text-[9px] font-bold text-white"
+                      >{{ unit.images?.length || 1 }}</span
+                    >
                   </button>
                 </td>
-                <td class="font-medium">{{ t('properties.unit_label', { number: unit.unitNumber }) }}</td>
+                <td class="font-medium text-neutral-900 dark:text-white">
+                  {{ t('properties.unit_label', { number: unit.unitNumber }) }}
+                </td>
                 <td>{{ t('properties.level', { floor: unit.floor }) }}</td>
                 <td>{{ t('properties.sq_m', { size: unit.sizeSqFt }) }}</td>
                 <td>
-                  <span class="spec-text">
-                    {{ unit.bedrooms === 0 ? t('properties.studio') : t('properties.bed_short', { count: unit.bedrooms }) }} / {{ t('properties.bath_short', { count: unit.bathrooms }) }}
+                  <span class="text-xs">
+                    {{
+                      unit.bedrooms === 0
+                        ? t('properties.studio')
+                        : t('properties.bed_short', { count: unit.bedrooms })
+                    }}
+                    / {{ t('properties.bath_short', { count: unit.bathrooms }) }}
                   </span>
                 </td>
-                <td class="rent-cell">${{ unit.rentAmount.toLocaleString() }} {{ t('properties.per_month_short') }}</td>
+                <td class="font-semibold text-neutral-900 dark:text-white">
+                  ${{ unit.rentAmount.toLocaleString() }} {{ t('properties.per_month_short') }}
+                </td>
                 <td>${{ unit.depositAmount.toLocaleString() }}</td>
                 <td>
                   <span :class="['badge badge-pill', getUnitBadgeClass(unit.status)]">
-                    <span class="badge-dot"></span>
+                    <span class="badge-dot" />
                     <span>{{ formatUnitStatus(unit.status) }}</span>
                   </span>
                 </td>
                 <td>
                   <div class="flex items-center gap-1.5">
-                    <button type="button" @click="openGalleryModal(unit, 0)" class="btn-secondary btn-sm"
-                      :title="t('properties.photos')">
+                    <button
+                      type="button"
+                      @click="openGalleryModal(unit, 0)"
+                      class="btn-secondary btn-sm"
+                      :title="t('properties.photos')"
+                    >
                       <ImageIcon :size="13" />
                       <span>{{ t('properties.photos') }}</span>
                     </button>
-                    <button v-if="unit.status === 'AVAILABLE'" @click="openApplyModal(unit)" class="btn-primary btn-sm">
+                    <button
+                      v-if="unit.status === 'AVAILABLE'"
+                      @click="openApplyModal(unit)"
+                      class="btn-primary btn-sm"
+                    >
                       <FileSignature :size="13" />
                       <span>{{ t('properties.apply') }}</span>
                     </button>
-                    <span v-else class="unavailable-text">{{ t('properties.unavailable') }}</span>
+                    <span
+                      v-else
+                      class="text-xs font-medium text-neutral-400 dark:text-neutral-500"
+                      >{{ t('properties.unavailable') }}</span
+                    >
                   </div>
                 </td>
               </tr>
@@ -463,676 +650,164 @@ onMounted(() => {
     </div>
 
     <!-- Application Modal -->
-    <div v-if="selectedUnitForApply" class="modal-backdrop">
-      <div class="modal-card card-flat">
-        <div class="modal-header">
-          <h3>{{ t('properties.apply_for_unit', { number: selectedUnitForApply.unitNumber }) }}</h3>
-          <button @click="selectedUnitForApply = null" class="modal-close">&times;</button>
-        </div>
+    <Teleport to="body">
+      <div
+        v-if="selectedUnitForApply"
+        class="backdrop-blur-xs fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+      >
+        <div
+          class="flex w-full max-w-lg flex-col gap-5 rounded-2xl border border-neutral-200 bg-white p-6 shadow-xl dark:border-neutral-800 dark:bg-neutral-900"
+        >
+          <div
+            class="flex items-center justify-between border-b border-neutral-100 pb-3 dark:border-neutral-800"
+          >
+            <h3 class="text-lg font-bold text-neutral-900 dark:text-white">
+              {{ t('properties.apply_for_unit', { number: selectedUnitForApply.unitNumber }) }}
+            </h3>
+            <button
+              @click="selectedUnitForApply = null"
+              class="cursor-pointer text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200"
+            >
+              <X :size="18" />
+            </button>
+          </div>
 
-        <div v-if="applySuccessMessage" class="alert-success">
-          <div class="success-content">
-            <div class="success-row">
-              <CheckCircle2 :size="18" />
-              <span>{{ applySuccessMessage }}</span>
+          <div v-if="applySuccessMessage" class="alert-success">
+            <div class="flex flex-col gap-3">
+              <div class="flex items-start gap-2">
+                <CheckCircle2 :size="18" class="mt-0.5 shrink-0" />
+                <span>{{ applySuccessMessage }}</span>
+              </div>
+              <div class="mt-2 flex items-center gap-2">
+                <NuxtLink to="/dashboard/applications" class="btn-primary btn-sm">
+                  <span>{{ t('properties.view_my_applications') }}</span>
+                </NuxtLink>
+                <button @click="selectedUnitForApply = null" class="btn-secondary btn-sm">
+                  {{ t('common.close') }}
+                </button>
+              </div>
             </div>
-            <div class="modal-actions mt-3">
-              <NuxtLink to="/dashboard/applications" class="btn-primary">
-                <span>{{ t('properties.view_my_applications') }}</span>
-              </NuxtLink>
-              <button @click="selectedUnitForApply = null" class="btn-secondary">
-                {{ t('common.close') }}
+          </div>
+
+          <form v-else @submit.prevent="submitApplication" class="flex flex-col gap-4">
+            <div v-if="applyErrorMessage" class="alert-error">
+              <AlertCircle :size="15" />
+              <span>{{ applyErrorMessage }}</span>
+            </div>
+
+            <div
+              class="flex flex-col gap-1 rounded-xl border border-neutral-200 bg-neutral-50 p-3.5 text-xs text-neutral-600 dark:border-neutral-700/60 dark:bg-neutral-800/60 dark:text-neutral-300"
+            >
+              <div>
+                <strong>{{ t('properties.unit_singular') }}:</strong>
+                {{ t('properties.unit_label', { number: selectedUnitForApply.unitNumber }) }} ({{
+                  property?.title
+                }})
+              </div>
+              <div>
+                <strong>{{ t('properties.col_monthly_rent') }}:</strong> ${{
+                  selectedUnitForApply.rentAmount.toLocaleString()
+                }}{{ t('properties.per_month_short') }} &bull;
+                <strong>{{ t('properties.col_deposit') }}:</strong> ${{
+                  selectedUnitForApply.depositAmount.toLocaleString()
+                }}
+              </div>
+              <div>
+                <strong>{{ t('properties.col_size') }}:</strong>
+                {{
+                  selectedUnitForApply.bedrooms === 0
+                    ? t('properties.studio')
+                    : t('properties.bed_short', { count: selectedUnitForApply.bedrooms })
+                }}
+                / {{ t('properties.bath_short', { count: selectedUnitForApply.bathrooms }) }} ({{
+                  t('properties.sq_m', { size: selectedUnitForApply.sizeSqFt })
+                }})
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div class="flex flex-col gap-1.5">
+                <label
+                  class="text-xs font-semibold uppercase tracking-wider text-neutral-900 dark:text-neutral-100"
+                  >{{ t('properties.desired_move_in') }}</label
+                >
+                <input
+                  v-model="applyForm.desiredMoveInDate"
+                  type="date"
+                  required
+                  class="input-field"
+                />
+              </div>
+
+              <div class="flex flex-col gap-1.5">
+                <label
+                  class="text-xs font-semibold uppercase tracking-wider text-neutral-900 dark:text-neutral-100"
+                  >{{ t('properties.proposed_monthly_rent') }}</label
+                >
+                <input
+                  v-model.number="applyForm.proposedRent"
+                  type="number"
+                  min="1"
+                  required
+                  class="input-field"
+                />
+              </div>
+            </div>
+
+            <div class="flex flex-col gap-1.5">
+              <label
+                class="text-xs font-semibold uppercase tracking-wider text-neutral-900 dark:text-neutral-100"
+                >{{ t('properties.employment_income_credentials') }}</label
+              >
+              <textarea
+                v-model="applyForm.employmentDetails"
+                rows="3"
+                :placeholder="t('properties.employment_placeholder')"
+                required
+                class="input-field"
+              ></textarea>
+            </div>
+
+            <div class="flex flex-col gap-1.5">
+              <label
+                class="text-xs font-semibold uppercase tracking-wider text-neutral-900 dark:text-neutral-100"
+                >{{ t('properties.additional_notes_optional') }}</label
+              >
+              <input
+                v-model="applyForm.notes"
+                type="text"
+                :placeholder="t('properties.additional_notes_placeholder')"
+                class="input-field"
+              />
+            </div>
+
+            <div
+              class="flex items-center justify-end gap-2 border-t border-neutral-100 pt-2 dark:border-neutral-800"
+            >
+              <button type="button" @click="selectedUnitForApply = null" class="btn-secondary">
+                {{ t('common.cancel') }}
+              </button>
+              <button type="submit" :disabled="isSubmittingApply" class="btn-primary">
+                <FileSignature :size="14" />
+                <span>{{
+                  isSubmittingApply
+                    ? t('properties.submitting_application')
+                    : t('properties.submit_application')
+                }}</span>
               </button>
             </div>
-          </div>
+          </form>
         </div>
-
-        <form v-else @submit.prevent="submitApplication" class="modal-body">
-          <div v-if="applyErrorMessage" class="alert-error">
-            <AlertCircle :size="15" />
-            <span>{{ applyErrorMessage }}</span>
-          </div>
-
-          <div class="unit-summary-pill">
-            <div><strong>{{ t('properties.unit_singular') }}:</strong> {{ t('properties.unit_label', { number: selectedUnitForApply.unitNumber }) }} ({{ property?.title }})</div>
-            <div><strong>{{ t('properties.col_monthly_rent') }}:</strong> ${{ selectedUnitForApply.rentAmount.toLocaleString() }}{{ t('properties.per_month_short') }} &bull;
-              <strong>{{ t('properties.col_deposit') }}:</strong> ${{ selectedUnitForApply.depositAmount.toLocaleString() }}
-            </div>
-            <div><strong>{{ t('properties.col_size') }}:</strong> {{ selectedUnitForApply.bedrooms === 0 ? t('properties.studio') :
-              t('properties.bed_short', { count: selectedUnitForApply.bedrooms }) }} / {{ t('properties.bath_short', { count: selectedUnitForApply.bathrooms }) }} ({{
-                t('properties.sq_m', { size: selectedUnitForApply.sizeSqFt }) }})</div>
-          </div>
-
-          <div class="grid-2">
-            <div class="form-group">
-              <label class="form-label">{{ t('properties.desired_move_in') }}</label>
-              <input v-model="applyForm.desiredMoveInDate" type="date" required class="input-field" />
-            </div>
-
-            <div class="form-group">
-              <label class="form-label">{{ t('properties.proposed_monthly_rent') }}</label>
-              <input v-model.number="applyForm.proposedRent" type="number" min="1" required class="input-field" />
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label class="form-label">{{ t('properties.employment_income_credentials') }}</label>
-            <textarea v-model="applyForm.employmentDetails" rows="3"
-              :placeholder="t('properties.employment_placeholder')"
-              required class="input-field"></textarea>
-          </div>
-
-          <div class="form-group">
-            <label class="form-label">{{ t('properties.additional_notes_optional') }}</label>
-            <input v-model="applyForm.notes" type="text"
-              :placeholder="t('properties.additional_notes_placeholder')" class="input-field" />
-          </div>
-
-          <div class="modal-actions">
-            <button type="button" @click="selectedUnitForApply = null" class="btn-secondary">
-              {{ t('common.cancel') }}
-            </button>
-            <button type="submit" :disabled="isSubmittingApply" class="btn-primary">
-              <FileSignature :size="14" />
-              <span>{{ isSubmittingApply ? t('properties.submitting_application') : t('properties.submit_application') }}</span>
-            </button>
-          </div>
-        </form>
       </div>
-    </div>
+    </Teleport>
 
     <!-- Unit Photo Gallery Modal -->
-    <UnitGalleryModal v-if="selectedUnitForGallery" :unit="selectedUnitForGallery" :initial-index="initialGalleryIndex"
-      @close="closeGalleryModal" @apply="handleApplyFromGallery" />
+    <UnitGalleryModal
+      v-if="selectedUnitForGallery"
+      :unit="selectedUnitForGallery"
+      :initial-index="initialGalleryIndex"
+      @close="closeGalleryModal"
+      @apply="handleApplyFromGallery"
+    />
   </div>
 </template>
-
-<style scoped>
-.property-detail-page {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 2rem 1.5rem 4rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1.75rem;
-}
-
-.nav-back-bar {
-  display: flex;
-  align-items: center;
-}
-
-.back-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  color: var(--text-muted);
-  font-size: 0.875rem;
-  font-weight: 500;
-  transition: color 0.15s ease;
-}
-
-.back-btn:hover {
-  color: var(--text-main);
-}
-
-.property-content-layout {
-  display: flex;
-  flex-direction: column;
-  gap: 2rem;
-}
-
-.property-overview {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-  padding: 1.75rem;
-}
-
-.overview-header {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  border-bottom: 1px solid var(--border-subtle);
-  padding-bottom: 1.25rem;
-}
-
-@media (min-width: 768px) {
-  .overview-header {
-    flex-direction: row;
-    justify-content: space-between;
-    align-items: flex-start;
-  }
-}
-
-.title-block {
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-}
-
-.property-type-pill {
-  font-size: 0.72rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: #818cf8;
-}
-
-.title-block h1 {
-  font-size: 2rem;
-  line-height: 1.2;
-}
-
-.address-row {
-  display: flex;
-  align-items: center;
-  gap: 0.35rem;
-  color: var(--text-muted);
-  font-size: 0.9rem;
-  margin-top: 0.2rem;
-}
-
-.loc-icon {
-  color: var(--text-dim);
-  flex-shrink: 0;
-}
-
-.overview-description h3,
-.amenities-section h3 {
-  font-size: 1.1rem;
-  font-weight: 600;
-  margin-bottom: 0.5rem;
-}
-
-.overview-description p {
-  color: var(--text-muted);
-  font-size: 0.95rem;
-  line-height: 1.6;
-}
-
-.amenities-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 0.65rem;
-}
-
-.amenity-item {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  background: var(--bg-subtle);
-  border: 1px solid var(--border-default);
-  padding: 0.5rem 0.75rem;
-  border-radius: var(--radius-sm);
-  font-size: 0.85rem;
-  color: var(--text-main);
-}
-
-.amenity-check {
-  color: var(--accent-emerald);
-  flex-shrink: 0;
-}
-
-.units-section {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.section-title-row h2 {
-  font-size: 1.4rem;
-}
-
-.section-desc {
-  color: var(--text-muted);
-  font-size: 0.875rem;
-  margin-top: 0.2rem;
-}
-
-.font-medium {
-  font-weight: 600;
-}
-
-.rent-cell {
-  font-weight: 700;
-  color: #10b981 !important;
-}
-
-.spec-text {
-  color: var(--text-muted);
-}
-
-.btn-sm {
-  padding: 0.4rem 0.75rem;
-  font-size: 0.8rem;
-  gap: 0.35rem;
-}
-
-.unavailable-text {
-  font-size: 0.8rem;
-  color: var(--text-dim);
-}
-
-.empty-units {
-  padding: 2.5rem;
-  text-align: center;
-  color: var(--text-muted);
-}
-
-.loading-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 1rem;
-  padding: 4rem 1rem;
-  color: var(--text-muted);
-}
-
-.loading-spinner {
-  width: 32px;
-  height: 32px;
-  border: 3px solid var(--border-subtle);
-  border-top-color: var(--primary);
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-/* Modal styles */
-.modal-backdrop {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.75);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 100;
-  padding: 1.5rem;
-}
-
-.modal-card {
-  width: 100%;
-  max-width: 500px;
-  background: var(--bg-surface);
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-md);
-  padding: 1.5rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1.25rem;
-}
-
-.modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border-bottom: 1px solid var(--border-subtle);
-  padding-bottom: 0.75rem;
-}
-
-.modal-header h3 {
-  font-size: 1.2rem;
-}
-
-.modal-close {
-  background: none;
-  border: none;
-  color: var(--text-muted);
-  font-size: 1.5rem;
-  cursor: pointer;
-}
-
-.modal-body {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.unit-summary-pill {
-  background: var(--bg-subtle);
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-sm);
-  padding: 0.75rem 1rem;
-  font-size: 0.85rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-}
-
-.apply-notice {
-  font-size: 0.85rem;
-  color: var(--text-muted);
-  line-height: 1.5;
-}
-
-.modal-actions {
-  display: flex;
-  gap: 0.75rem;
-  margin-top: 0.5rem;
-}
-
-/* Location Map Section */
-.location-map-section {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.map-placeholder {
-  height: 380px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--text-muted);
-  font-size: 0.9rem;
-}
-
-/* View Toggle Bar */
-.view-toggle-bar {
-  margin-top: 16px;
-  display: flex;
-  gap: 6px;
-  background: var(--bg-subtle, #f1f5f9);
-  padding: 4px;
-  border-radius: 6px;
-  border: 1px solid var(--border-default, #e2e8f0);
-}
-
-.toggle-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 5px 12px;
-  font-size: 0.78rem;
-  font-weight: 500;
-  color: var(--text-muted, #64748b);
-  border: none;
-  background: transparent;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.toggle-btn.active {
-  background: var(--bg-surface, #ffffff);
-  color: var(--text-main, #0f172a);
-  font-weight: 600;
-  border: 1px solid var(--border-default, #cbd5e1);
-  box-shadow: none;
-}
-
-/* Visual Cards Grid */
-.unit-cards-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
-  gap: 1.25rem;
-}
-
-.unit-card {
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  border-radius: var(--radius-md);
-  background: var(--bg-surface);
-  border: 1px solid var(--border-default);
-  transition: border-color 0.2s cubic-bezier(0.16, 1, 0.3, 1), transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.unit-card:hover {
-  border-color: var(--primary);
-  transform: translateY(-2px);
-  box-shadow: none;
-}
-
-.unit-card-media {
-  position: relative;
-  height: 210px;
-  background: #0f172a;
-  cursor: pointer;
-  overflow: hidden;
-}
-
-.unit-card-hero-img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transition: transform 0.3s ease;
-}
-
-.unit-card:hover .unit-card-hero-img {
-  transform: scale(1.04);
-}
-
-.unit-media-badge {
-  position: absolute;
-  top: 10px;
-  left: 10px;
-  background: #18181b;
-  color: #ffffff;
-  padding: 3px 8px;
-  border-radius: var(--radius-sm);
-  font-size: 0.72rem;
-  font-weight: 500;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-}
-
-.expand-gallery-btn {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  background: #18181b;
-  color: #ffffff;
-  padding: 3px 8px;
-  border-radius: var(--radius-sm);
-  font-size: 0.72rem;
-  font-weight: 500;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  cursor: pointer;
-  opacity: 0;
-  transform: translateY(-3px);
-  transition: all 0.2s ease;
-}
-
-.unit-card:hover .expand-gallery-btn {
-  opacity: 1;
-  transform: translateY(0);
-}
-
-.room-indicator {
-  position: absolute;
-  bottom: 8px;
-  left: 10px;
-  background: #18181b;
-  color: #f8fafc;
-  padding: 2px 8px;
-  border-radius: var(--radius-sm);
-  font-size: 0.7rem;
-  font-weight: 500;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-}
-
-.unit-card-thumbs {
-  display: flex;
-  gap: 6px;
-  padding: 8px 12px;
-  background: var(--bg-surface);
-  border-bottom: 1px solid var(--border-subtle);
-}
-
-.unit-mini-thumb {
-  width: 52px;
-  height: 36px;
-  border-radius: 4px;
-  overflow: hidden;
-  border: 2px solid transparent;
-  padding: 0;
-  cursor: pointer;
-  background: var(--bg-subtle);
-  transition: all 0.15s ease;
-  flex-shrink: 0;
-}
-
-.unit-mini-thumb img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  opacity: 0.8;
-  transition: opacity 0.15s ease;
-}
-
-.unit-mini-thumb:hover img,
-.unit-mini-thumb.active img {
-  opacity: 1;
-}
-
-.unit-mini-thumb.active {
-  border-color: var(--primary);
-  transform: scale(1.05);
-}
-
-.unit-card-body {
-  display: flex;
-  flex-direction: column;
-  gap: 0.85rem;
-  padding: 1.25rem;
-  flex: 1;
-}
-
-.unit-card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-}
-
-.unit-number-title {
-  font-size: 1.15rem;
-  font-weight: 700;
-  color: var(--text-main, #f8fafc);
-  margin: 0;
-}
-
-.unit-floor-text {
-  font-size: 0.78rem;
-  color: var(--text-muted, #94a3b8);
-}
-
-.unit-card-specs {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 8px 12px;
-  background: var(--bg-subtle, #1e293b);
-  border: 1px solid var(--border-subtle, #1e293b);
-  border-radius: 6px;
-  font-size: 0.8rem;
-  color: var(--text-main, #f8fafc);
-}
-
-.spec-item {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.spec-icon {
-  color: var(--text-muted, #94a3b8);
-}
-
-.unit-card-footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-end;
-  margin-top: auto;
-  padding-top: 0.75rem;
-  border-top: 1px solid var(--border-subtle, #1e293b);
-}
-
-.unit-pricing {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.unit-price-amount {
-  font-size: 1.35rem;
-  font-weight: 800;
-  color: #10b981 !important;
-  /* Luminous emerald green for high contrast on dark card */
-  line-height: 1.2;
-  display: flex;
-  align-items: baseline;
-  gap: 4px;
-  letter-spacing: -0.01em;
-}
-
-.unit-price-period {
-  font-size: 0.82rem;
-  font-weight: 500;
-  color: #94a3b8 !important;
-}
-
-.unit-deposit-text {
-  font-size: 0.76rem;
-  color: #94a3b8 !important;
-  margin-top: 2px;
-}
-
-.unit-actions {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.table-unit-thumb-btn {
-  position: relative;
-  width: 56px;
-  height: 38px;
-  border-radius: 4px;
-  overflow: hidden;
-  border: 1px solid var(--border-default, #cbd5e1);
-  background: #f1f5f9;
-  cursor: pointer;
-  padding: 0;
-  display: block;
-  transition: transform 0.15s ease;
-}
-
-.table-unit-thumb-btn:hover {
-  transform: scale(1.08);
-  border-color: #0284c7;
-}
-
-.table-unit-thumb-btn img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.table-thumb-count {
-  position: absolute;
-  bottom: 1px;
-  right: 1px;
-  background: rgba(0, 0, 0, 0.7);
-  color: #ffffff;
-  font-size: 0.58rem;
-  font-weight: 600;
-  padding: 0 3px;
-  border-radius: 2px;
-}
-</style>

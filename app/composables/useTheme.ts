@@ -43,9 +43,15 @@ export function useTheme() {
     // Check both reactive state and active DOM class to guarantee inversion
     let isCurrentDark = theme.value === 'dark';
     if (typeof document !== 'undefined') {
-      if (document.documentElement.classList.contains('light') && !document.documentElement.classList.contains('dark')) {
+      if (
+        document.documentElement.classList.contains('light') &&
+        !document.documentElement.classList.contains('dark')
+      ) {
         isCurrentDark = false;
-      } else if (document.documentElement.classList.contains('dark') && !document.documentElement.classList.contains('light')) {
+      } else if (
+        document.documentElement.classList.contains('dark') &&
+        !document.documentElement.classList.contains('light')
+      ) {
         isCurrentDark = true;
       }
     }
@@ -67,7 +73,8 @@ export function useTheme() {
       if (saved === 'light' || saved === 'dark') {
         setTheme(saved);
       } else {
-        const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+        const prefersDark =
+          window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
         setTheme(prefersDark ? 'dark' : 'light');
       }
     } catch {

@@ -18,7 +18,7 @@ describe('Session and Password Utilities', () => {
   it('should hash a password and verify it correctly', () => {
     const rawPassword = 'StrongPassword@2026!';
     const hash = hashPassword(rawPassword);
-    
+
     expect(hash).toContain(':');
     const isValid = verifyPassword(rawPassword, hash);
     expect(isValid).toBe(true);

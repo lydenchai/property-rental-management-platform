@@ -31,7 +31,14 @@ export function handleApiError(event: H3Event, error: unknown): ApiResponse<neve
   return {
     success: false,
     error: {
-      code: statusCode === 401 ? 'UNAUTHORIZED' : statusCode === 403 ? 'FORBIDDEN' : statusCode === 404 ? 'NOT_FOUND' : 'INTERNAL_SERVER_ERROR',
+      code:
+        statusCode === 401
+          ? 'UNAUTHORIZED'
+          : statusCode === 403
+            ? 'FORBIDDEN'
+            : statusCode === 404
+              ? 'NOT_FOUND'
+              : 'INTERNAL_SERVER_ERROR',
       message: err.statusMessage || err.message || 'An unexpected error occurred',
     },
   };

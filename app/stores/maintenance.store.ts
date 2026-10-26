@@ -1,10 +1,10 @@
 import { reactive, toRefs, toRef, computed } from 'vue';
-import type { 
-  MaintenanceItem, 
-  CreateMaintenanceInput, 
-  AssignTechnicianInput, 
-  UpdateProgressInput, 
-  ConfirmResolutionInput 
+import type {
+  MaintenanceItem,
+  CreateMaintenanceInput,
+  AssignTechnicianInput,
+  UpdateProgressInput,
+  ConfirmResolutionInput,
 } from '~~/shared/types';
 
 export function useMaintenanceStore() {
@@ -19,26 +19,32 @@ export function useMaintenanceStore() {
 
   // Computed summary metrics
   const totalCount = computed(() => state.requests.length);
-  const openCount = computed(() => 
-    state.requests.filter((r) => r.status === 'REPORTED' || r.status === 'ASSIGNED' || r.status === 'IN_PROGRESS').length
+  const openCount = computed(
+    () =>
+      state.requests.filter(
+        (r) => r.status === 'REPORTED' || r.status === 'ASSIGNED' || r.status === 'IN_PROGRESS'
+      ).length
   );
-  const inProgressCount = computed(() => 
-    state.requests.filter((r) => r.status === 'IN_PROGRESS' || r.status === 'ASSIGNED').length
+  const inProgressCount = computed(
+    () => state.requests.filter((r) => r.status === 'IN_PROGRESS' || r.status === 'ASSIGNED').length
   );
-  const awaitingConfirmCount = computed(() => 
-    state.requests.filter((r) => r.status === 'RESOLVED').length
+  const awaitingConfirmCount = computed(
+    () => state.requests.filter((r) => r.status === 'RESOLVED').length
   );
-  const closedCount = computed(() => 
-    state.requests.filter((r) => r.status === 'CONFIRMED').length
+  const closedCount = computed(() => state.requests.filter((r) => r.status === 'CONFIRMED').length);
+  const urgentCount = computed(
+    () =>
+      state.requests.filter(
+        (r) => r.priority === 'URGENT' && r.status !== 'RESOLVED' && r.status !== 'CONFIRMED'
+      ).length
   );
-  const urgentCount = computed(() => 
-    state.requests.filter((r) => r.priority === 'URGENT' && r.status !== 'RESOLVED' && r.status !== 'CONFIRMED').length
-  );
-  const resolvedCount = computed(() => 
-    state.requests.filter((r) => r.status === 'RESOLVED' || r.status === 'CONFIRMED').length
+  const resolvedCount = computed(
+    () => state.requests.filter((r) => r.status === 'RESOLVED' || r.status === 'CONFIRMED').length
   );
 
-  async function fetchMaintenanceRequests(filter: { unitId?: string; tenantId?: string; status?: string; priority?: string } = {}) {
+  async function fetchMaintenanceRequests(
+    filter: { unitId?: string; tenantId?: string; status?: string; priority?: string } = {}
+  ) {
     state.isLoading = true;
     state.error = null;
 
@@ -60,7 +66,8 @@ export function useMaintenanceStore() {
         throw error.value || new Error('Failed to fetch maintenance requests');
       }
     } catch (err: any) {
-      state.error = err?.data?.error?.message || err?.message || 'Failed to fetch maintenance requests';
+      state.error =
+        err?.data?.error?.message || err?.message || 'Failed to fetch maintenance requests';
       return [];
     } finally {
       state.isLoading = false;
@@ -81,7 +88,8 @@ export function useMaintenanceStore() {
         throw error.value || new Error('Failed to fetch maintenance ticket');
       }
     } catch (err: any) {
-      state.error = err?.data?.error?.message || err?.message || 'Failed to fetch maintenance ticket';
+      state.error =
+        err?.data?.error?.message || err?.message || 'Failed to fetch maintenance ticket';
       throw err;
     } finally {
       state.isLoading = false;
@@ -108,7 +116,8 @@ export function useMaintenanceStore() {
         throw error.value || new Error('Failed to submit maintenance request');
       }
     } catch (err: any) {
-      state.error = err?.data?.error?.message || err?.message || 'Failed to submit maintenance request';
+      state.error =
+        err?.data?.error?.message || err?.message || 'Failed to submit maintenance request';
       return { success: false, error: state.error };
     } finally {
       state.isSubmitting = false;

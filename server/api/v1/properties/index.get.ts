@@ -12,7 +12,8 @@ export default defineEventHandler(async (event) => {
       search: query.search ? String(query.search) : undefined,
       minRent: query.minRent ? Number(query.minRent) : undefined,
       maxRent: query.maxRent ? Number(query.maxRent) : undefined,
-      bedrooms: query.bedrooms !== undefined && query.bedrooms !== '' ? Number(query.bedrooms) : undefined,
+      bedrooms:
+        query.bedrooms !== undefined && query.bedrooms !== '' ? Number(query.bedrooms) : undefined,
     });
 
     return createApiResponse({

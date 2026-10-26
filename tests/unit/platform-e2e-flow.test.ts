@@ -197,8 +197,8 @@ describe('Phase 8: Comprehensive End-to-End Platform Lifecycle Integration', () 
 
     // Landlord assigns technician
     const assignedTicket = await maintenanceRepo.assignTechnician({
-      requestId: maintenanceTicket.id, 
-      technicianId, 
+      requestId: maintenanceTicket.id,
+      technicianId,
       assignedById: landlordId,
       notes: 'Please inspect and replace the faulty brass compression valve.',
     });
@@ -206,12 +206,13 @@ describe('Phase 8: Comprehensive End-to-End Platform Lifecycle Integration', () 
 
     // Technician marks in progress and logs work
     await maintenanceRepo.update(maintenanceTicket.id, { status: 'IN_PROGRESS' as any });
-    
+
     // Technician resolves ticket
     const resolvedTicket = await maintenanceRepo.update(maintenanceTicket.id, {
       status: 'RESOLVED' as any,
       resolvedAt: new Date(),
-      resolutionNotes: 'Replaced compression washer and pressure tested fitting. No leakage observed.',
+      resolutionNotes:
+        'Replaced compression washer and pressure tested fitting. No leakage observed.',
     });
     expect(resolvedTicket?.status).toBe('RESOLVED');
 
@@ -237,12 +238,18 @@ describe('Phase 8: Comprehensive End-to-End Platform Lifecycle Integration', () 
     expect(audit.id).toBeDefined();
 
     // 11. Verify Analytics Aggregations
-    const occupancyReport = await reportService.getOccupancyReport({ id: landlordId, role: 'LANDLORD' });
+    const occupancyReport = await reportService.getOccupancyReport({
+      id: landlordId,
+      role: 'LANDLORD',
+    });
     expect(occupancyReport.totalUnits).toBeGreaterThanOrEqual(2);
     expect(occupancyReport.occupiedUnits).toBeGreaterThanOrEqual(1);
     expect(occupancyReport.occupancyRate).toBeGreaterThan(0);
 
-    const financialReport = await reportService.getFinancialReport({ id: landlordId, role: 'LANDLORD' });
+    const financialReport = await reportService.getFinancialReport({
+      id: landlordId,
+      role: 'LANDLORD',
+    });
     expect(financialReport.totalInvoices).toBeGreaterThanOrEqual(1);
   });
 });

@@ -4,13 +4,13 @@ import { leaseRepository } from '../repositories/lease.repo';
 import { propertyRepository } from '../repositories/property.repo';
 import { unitRepository } from '../repositories/unit.repo';
 import { userRepository } from '../repositories/user.repo';
-import { 
-  GenerateInvoiceSchema, 
-  RecordPaymentSchema, 
-  QueryInvoiceSchema, 
-  type GenerateInvoiceInput, 
-  type RecordPaymentInput, 
-  type QueryInvoiceInput 
+import {
+  GenerateInvoiceSchema,
+  RecordPaymentSchema,
+  QueryInvoiceSchema,
+  type GenerateInvoiceInput,
+  type RecordPaymentInput,
+  type QueryInvoiceInput,
 } from '../../shared/schemas/billing.schema';
 import { InvoiceStatus } from '../../shared/types/enums/invoice-status.enum';
 import { PaymentStatus } from '../../shared/types/enums/payment-status.enum';
@@ -143,10 +143,7 @@ export class BillingService {
     const enrichedList: InvoiceEntity[] = [];
 
     for (const inv of invoices) {
-      if (
-        inv.status === InvoiceStatus.UNPAID &&
-        new Date(inv.dueDate).getTime() < now.getTime()
-      ) {
+      if (inv.status === InvoiceStatus.UNPAID && new Date(inv.dueDate).getTime() < now.getTime()) {
         inv.status = InvoiceStatus.OVERDUE;
         await invoiceRepository.update(inv.id, { status: InvoiceStatus.OVERDUE });
       }
@@ -158,10 +155,7 @@ export class BillingService {
     return enrichedList;
   }
 
-  async getInvoiceById(
-    user: { id: string; role: string },
-    id: string
-  ): Promise<InvoiceEntity> {
+  async getInvoiceById(user: { id: string; role: string }, id: string): Promise<InvoiceEntity> {
     const invoice = await invoiceRepository.findById(id);
     if (!invoice) {
       throw createNotFoundError('Invoice not found');
@@ -179,10 +173,7 @@ export class BillingService {
     return this.enrichInvoice(invoice);
   }
 
-  async getPaymentReceipt(
-    user: { id: string; role: string },
-    paymentId: string
-  ) {
+  async getPaymentReceipt(user: { id: string; role: string }, paymentId: string) {
     const payment = await paymentRepository.findById(paymentId);
     if (!payment) {
       throw createNotFoundError('Payment record not found');
@@ -295,11 +286,13 @@ export class BillingService {
 
     return {
       ...invoice,
-      lease: lease ? {
-        ...lease,
-        unit: unit ? { ...unit, property } : undefined,
-        landlord,
-      } : undefined,
+      lease: lease
+        ? {
+            ...lease,
+            unit: unit ? { ...unit, property } : undefined,
+            landlord,
+          }
+        : undefined,
       tenant,
       payments,
     };

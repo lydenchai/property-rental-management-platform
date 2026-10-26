@@ -4,7 +4,12 @@ import { auditLogRepository } from '../../../../../repositories/audit-log.repo';
 import { requireRole } from '../../../../../utils/permissions';
 import { UserRole } from '../../../../../../shared/types/enums/user-role.enum';
 import { UserStatus } from '../../../../../../shared/types/enums/user-status.enum';
-import { createApiResponse, handleApiError, createValidationError, createNotFoundError } from '../../../../../utils/errors';
+import {
+  createApiResponse,
+  handleApiError,
+  createValidationError,
+  createNotFoundError,
+} from '../../../../../utils/errors';
 
 export default defineEventHandler(async (event) => {
   try {

@@ -1,13 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue';
-import {
-  Users,
-  UserCheck,
-  UserX,
-  AlertCircle,
-  CheckCircle2,
-  Filter,
-} from '@lucide/vue';
+import { Users, UserCheck, UserX, AlertCircle, CheckCircle2, Filter } from '@lucide/vue';
 import { useAuth } from '../../../composables/useAuth';
 import type { UserAccount } from '~~/shared/types';
 import AppTableCard from '../../../components/common/AppTableCard.vue';
@@ -35,11 +28,7 @@ const {
   suspendedCount,
 } = userStore;
 
-const {
-  fetchUsers,
-  loadUsers,
-  updateUserStatus,
-} = userStore;
+const { fetchUsers, loadUsers, updateUserStatus } = userStore;
 
 const successMessage = ref<string | null>(null);
 
@@ -87,7 +76,7 @@ async function executeToggleStatus() {
   if (!userToToggle.value) return;
 
   const newStatus: any = userToToggle.value.status === 'ACTIVE' ? 'SUSPENDED' : 'ACTIVE';
-  const res = await updateUserStatus(userToToggle.value.id, newStatus) as any;
+  const res = (await updateUserStatus(userToToggle.value.id, newStatus)) as any;
 
   if (res.success) {
     successMessage.value = res.message || 'User status updated successfully';
@@ -104,68 +93,130 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="users-page">
+  <div class="space-y-6">
     <!-- Top Bar -->
-    <div class="page-top-bar">
+    <div class="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
       <div>
-        <h1>{{ t('users.title') }}</h1>
-        <p class="subtitle">
+        <h1 class="text-2xl font-bold tracking-tight text-neutral-900 dark:text-white">
+          {{ t('users.title') }}
+        </h1>
+        <p class="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
           {{ t('users.subtitle') }}
         </p>
       </div>
-      <div class="admin-shield-badge">
-        <Users :size="15" />
+      <div
+        class="inline-flex items-center gap-2 rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-600 dark:border-indigo-800 dark:bg-indigo-950/40 dark:text-indigo-400"
+      >
+        <Users :size="16" />
         <span>{{ totalUsers }} {{ t('users.total_accounts') }}</span>
       </div>
     </div>
 
     <!-- Alert Messages -->
-    <div v-if="successMessage" class="alert-success">
-      <CheckCircle2 :size="16" />
+    <div
+      v-if="successMessage"
+      class="flex items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800 dark:border-emerald-900/40 dark:bg-emerald-950/20 dark:text-emerald-300"
+    >
+      <CheckCircle2 :size="18" class="shrink-0 text-emerald-600 dark:text-emerald-400" />
       <span>{{ successMessage }}</span>
     </div>
 
-    <div v-if="errorMessage" class="alert-error">
-      <AlertCircle :size="16" />
+    <div
+      v-if="errorMessage"
+      class="flex items-center gap-3 rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800 dark:border-rose-900/40 dark:bg-rose-950/20 dark:text-rose-300"
+    >
+      <AlertCircle :size="18" class="shrink-0 text-rose-600 dark:text-rose-400" />
       <span>{{ errorMessage }}</span>
     </div>
 
     <!-- Stats Grid -->
-    <div class="stats-grid">
-      <div class="stat-card card-flat">
-        <span class="stat-label">{{ t('users.landlords_card') }}</span>
-        <div class="stat-value font-mono">{{ landlordCount }}</div>
-        <div class="stat-subtext">{{ t('users.landlords_sub') }}</div>
+    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div
+        class="shadow-xs flex flex-col gap-1 rounded-xl border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900"
+      >
+        <span
+          class="text-xs font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400"
+          >{{ t('users.landlords_card') }}</span
+        >
+        <div class="font-mono text-2xl font-bold text-neutral-900 dark:text-white">
+          {{ landlordCount }}
+        </div>
+        <div class="text-xs text-neutral-500 dark:text-neutral-400">
+          {{ t('users.landlords_sub') }}
+        </div>
       </div>
-      <div class="stat-card card-flat">
-        <span class="stat-label">{{ t('users.tenants_card') }}</span>
-        <div class="stat-value font-mono">{{ tenantCount }}</div>
-        <div class="stat-subtext">{{ t('users.tenants_sub') }}</div>
+      <div
+        class="shadow-xs flex flex-col gap-1 rounded-xl border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900"
+      >
+        <span
+          class="text-xs font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400"
+          >{{ t('users.tenants_card') }}</span
+        >
+        <div class="font-mono text-2xl font-bold text-neutral-900 dark:text-white">
+          {{ tenantCount }}
+        </div>
+        <div class="text-xs text-neutral-500 dark:text-neutral-400">
+          {{ t('users.tenants_sub') }}
+        </div>
       </div>
-      <div class="stat-card card-flat">
-        <span class="stat-label">{{ t('users.technicians_card') }}</span>
-        <div class="stat-value font-mono">{{ techCount }}</div>
-        <div class="stat-subtext">{{ t('users.technicians_sub') }}</div>
+      <div
+        class="shadow-xs flex flex-col gap-1 rounded-xl border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900"
+      >
+        <span
+          class="text-xs font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400"
+          >{{ t('users.technicians_card') }}</span
+        >
+        <div class="font-mono text-2xl font-bold text-neutral-900 dark:text-white">
+          {{ techCount }}
+        </div>
+        <div class="text-xs text-neutral-500 dark:text-neutral-400">
+          {{ t('users.technicians_sub') }}
+        </div>
       </div>
-      <div class="stat-card card-flat">
-        <span class="stat-label">{{ t('users.suspended_card') }}</span>
-        <div class="stat-value font-mono" :class="{ 'text-danger': suspendedCount > 0 }">
+      <div
+        class="shadow-xs flex flex-col gap-1 rounded-xl border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900"
+      >
+        <span
+          class="text-xs font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400"
+          >{{ t('users.suspended_card') }}</span
+        >
+        <div
+          :class="[
+            'font-mono text-2xl font-bold',
+            suspendedCount > 0
+              ? 'text-rose-600 dark:text-rose-400'
+              : 'text-neutral-900 dark:text-white',
+          ]"
+        >
           {{ suspendedCount }}
         </div>
-        <div class="stat-subtext">{{ t('users.suspended_sub') }}</div>
+        <div class="text-xs text-neutral-500 dark:text-neutral-400">
+          {{ t('users.suspended_sub') }}
+        </div>
       </div>
     </div>
 
     <!-- Users Table using shared AppTableCard -->
-    <AppTableCard v-model:search="searchQuery" :search-placeholder="t('users.search_placeholder')"
-      :is-loading="isLoading" :is-empty="filteredUsers.length === 0" :empty-title="t('users.no_users')"
-      :empty-description="t('users.no_users_desc')" :empty-icon="Users" v-model:current-page="currentPage"
-      v-model:page-size="pageSize" :total-items="filteredUsers.length" :item-name="t('common.records')">
+    <AppTableCard
+      v-model:search="searchQuery"
+      :search-placeholder="t('users.search_placeholder')"
+      :is-loading="isLoading"
+      :is-empty="filteredUsers.length === 0"
+      :empty-title="t('users.no_users')"
+      :empty-description="t('users.no_users_desc')"
+      :empty-icon="Users"
+      v-model:current-page="currentPage"
+      v-model:page-size="pageSize"
+      :total-items="filteredUsers.length"
+      :item-name="t('common.records')"
+    >
       <template #toolbar-start>
-        <div class="filter-controls">
-          <div class="select-wrap">
-            <Filter :size="13" class="filter-icon" />
-            <select v-model="roleFilter" class="filter-select">
+        <div class="flex flex-wrap items-center gap-2">
+          <div class="relative">
+            <select
+              v-model="roleFilter"
+              class="focus:outline-hidden rounded-lg border border-neutral-300 bg-white px-3 py-1.5 text-xs text-neutral-800 focus:ring-2 focus:ring-primary-500 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-200"
+            >
               <option value="ALL">{{ t('users.filter_all_roles') }}</option>
               <option value="ADMIN">{{ t('users.roles.admin') }}</option>
               <option value="LANDLORD">{{ t('users.roles.landlord') }}</option>
@@ -174,8 +225,11 @@ onMounted(() => {
             </select>
           </div>
 
-          <div class="select-wrap">
-            <select v-model="statusFilter" class="filter-select">
+          <div class="relative">
+            <select
+              v-model="statusFilter"
+              class="focus:outline-hidden rounded-lg border border-neutral-300 bg-white px-3 py-1.5 text-xs text-neutral-800 focus:ring-2 focus:ring-primary-500 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-200"
+            >
               <option value="ALL">{{ t('users.filter_all_statuses') }}</option>
               <option value="ACTIVE">{{ t('common.active') }}</option>
               <option value="SUSPENDED">{{ t('common.suspended') }}</option>
@@ -184,466 +238,183 @@ onMounted(() => {
         </div>
       </template>
 
-      <table class="data-table">
-        <thead>
-          <tr>
-            <th>{{ t('users.col_name_email') }}</th>
-            <th>{{ t('users.col_phone') }}</th>
-            <th>{{ t('users.col_role') }}</th>
-            <th>{{ t('users.col_status') }}</th>
-            <th>{{ t('users.col_registered') }}</th>
-            <th class="text-right">{{ t('users.col_actions') }}</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="u in paginatedUsers" :key="u.id">
-            <td>
-              <div class="user-cell">
-                <span class="font-semibold">{{ u.fullName }}</span>
-                <span class="text-dim text-xs font-mono">{{ u.email }}</span>
-              </div>
-            </td>
-            <td>
-              <span class="text-xs text-dim">{{ u.phone || 'N/A' }}</span>
-            </td>
-            <td>
-              <span class="badge badge-pill" :class="{
-                'badge-admin': u.role === 'ADMIN',
-                'badge-landlord': u.role === 'LANDLORD',
-                'badge-tenant': u.role === 'TENANT',
-                'badge-technician': u.role === 'TECHNICIAN',
-              }">
-                <span class="badge-dot"></span>
-                <span>{{ u.role === 'ADMIN' ? t('users.roles.admin') : u.role === 'LANDLORD' ? t('users.roles.landlord')
-                  :
-                  u.role === 'TENANT' ? t('users.roles.tenant') : t('users.roles.technician') }}</span>
-              </span>
-            </td>
-            <td>
-              <span class="badge badge-pill" :class="u.status === 'ACTIVE' ? 'badge-success' : 'badge-danger'">
-                <span class="badge-dot"></span>
-                <span>{{ u.status === 'ACTIVE' ? t('common.active') : t('common.suspended') }}</span>
-              </span>
-            </td>
-            <td>
-              <span class="text-xs text-dim">{{ new Date(u.createdAt).toLocaleDateString() }}</span>
-            </td>
-            <td class="text-right">
-              <button v-if="u.role !== 'ADMIN'" @click="userToToggle = u" class="btn-secondary btn-sm"
-                :class="{ 'btn-suspend': u.status === 'ACTIVE', 'btn-activate': u.status === 'SUSPENDED' }">
-                <component :is="u.status === 'ACTIVE' ? UserX : UserCheck" :size="13" />
-                <span>{{ u.status === 'ACTIVE' ? t('users.suspend') : t('users.activate') }}</span>
-              </button>
-              <span v-else class="text-xs text-dim italic">{{ t('users.protected') }}</span>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-sm text-neutral-700 dark:text-neutral-200">
+          <thead
+            class="border-b border-neutral-200 bg-neutral-50 text-xs font-semibold uppercase tracking-wider text-neutral-500 dark:border-neutral-800 dark:bg-neutral-800/60 dark:text-neutral-400"
+          >
+            <tr>
+              <th class="px-4 py-3">{{ t('users.col_name_email') }}</th>
+              <th class="px-4 py-3">{{ t('users.col_phone') }}</th>
+              <th class="px-4 py-3">{{ t('users.col_role') }}</th>
+              <th class="px-4 py-3">{{ t('users.col_status') }}</th>
+              <th class="px-4 py-3">{{ t('users.col_registered') }}</th>
+              <th class="px-4 py-3 text-right">{{ t('users.col_actions') }}</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-neutral-200 dark:divide-neutral-800">
+            <tr
+              v-for="u in paginatedUsers"
+              :key="u.id"
+              class="transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-800/40"
+            >
+              <td class="px-4 py-3.5">
+                <div class="flex flex-col">
+                  <span class="font-semibold text-neutral-900 dark:text-white">{{
+                    u.fullName
+                  }}</span>
+                  <span class="font-mono text-xs text-neutral-500 dark:text-neutral-400">{{
+                    u.email
+                  }}</span>
+                </div>
+              </td>
+              <td class="px-4 py-3.5 text-xs text-neutral-500 dark:text-neutral-400">
+                {{ u.phone || 'N/A' }}
+              </td>
+              <td class="px-4 py-3.5">
+                <span
+                  :class="[
+                    'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium',
+                    u.role === 'ADMIN'
+                      ? 'border-purple-200 bg-purple-50 text-purple-700 dark:border-purple-800 dark:bg-purple-950/30 dark:text-purple-400'
+                      : u.role === 'LANDLORD'
+                        ? 'border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-800 dark:bg-blue-950/30 dark:text-blue-400'
+                        : u.role === 'TENANT'
+                          ? 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-400'
+                          : 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-400',
+                  ]"
+                >
+                  <span class="h-1.5 w-1.5 rounded-full bg-current"></span>
+                  <span>{{
+                    u.role === 'ADMIN'
+                      ? t('users.roles.admin')
+                      : u.role === 'LANDLORD'
+                        ? t('users.roles.landlord')
+                        : u.role === 'TENANT'
+                          ? t('users.roles.tenant')
+                          : t('users.roles.technician')
+                  }}</span>
+                </span>
+              </td>
+              <td class="px-4 py-3.5">
+                <span
+                  :class="[
+                    'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium',
+                    u.status === 'ACTIVE'
+                      ? 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-400'
+                      : 'border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-800 dark:bg-rose-950/30 dark:text-rose-400',
+                  ]"
+                >
+                  <span class="h-1.5 w-1.5 rounded-full bg-current"></span>
+                  <span>{{
+                    u.status === 'ACTIVE' ? t('common.active') : t('common.suspended')
+                  }}</span>
+                </span>
+              </td>
+              <td class="px-4 py-3.5 text-xs text-neutral-500 dark:text-neutral-400">
+                {{ new Date(u.createdAt).toLocaleDateString() }}
+              </td>
+              <td class="px-4 py-3.5 text-right">
+                <button
+                  v-if="u.role !== 'ADMIN'"
+                  @click="userToToggle = u"
+                  :class="[
+                    'inline-flex cursor-pointer items-center gap-1 rounded-lg border px-2.5 py-1 text-xs font-medium transition-colors',
+                    u.status === 'ACTIVE'
+                      ? 'border-rose-200 text-rose-600 hover:bg-rose-50 dark:border-rose-800 dark:text-rose-400 dark:hover:bg-rose-950/30'
+                      : 'border-emerald-200 text-emerald-600 hover:bg-emerald-50 dark:border-emerald-800 dark:text-emerald-400 dark:hover:bg-emerald-950/30',
+                  ]"
+                >
+                  <component :is="u.status === 'ACTIVE' ? UserX : UserCheck" :size="13" />
+                  <span>{{
+                    u.status === 'ACTIVE' ? t('users.suspend') : t('users.activate')
+                  }}</span>
+                </button>
+                <span v-else class="text-xs italic text-neutral-400 dark:text-neutral-500">{{
+                  t('users.protected')
+                }}</span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </AppTableCard>
 
     <!-- Toggle Status Modal -->
-    <div v-if="userToToggle" class="modal-backdrop">
-      <div class="modal-card card-flat" style="max-width: 480px;">
-        <div class="modal-header">
-          <h3>{{ t('users.confirm_status_change') }}</h3>
-          <button @click="userToToggle = null" class="modal-close">&times;</button>
-        </div>
-
-        <div class="modal-body">
-          <p>
-            {{ t('users.status_prompt', {
-              name: userToToggle.fullName,
-              email: userToToggle.email,
-              from: userToToggle.status,
-              to: userToToggle.status === 'ACTIVE' ? 'SUSPENDED' : 'ACTIVE'
-            }) }}
-          </p>
-
-          <p v-if="userToToggle.status === 'ACTIVE'" class="text-xs text-dim">
-            {{ t('users.suspend_warning') }}
-          </p>
-          <p v-else class="text-xs text-dim">
-            {{ t('users.activate_warning') }}
-          </p>
-
-          <div class="modal-actions">
-            <button type="button" @click="userToToggle = null" class="btn-secondary">
-              {{ t('common.cancel') }}
+    <Teleport to="body">
+      <div
+        v-if="userToToggle"
+        class="backdrop-blur-xs fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+      >
+        <div
+          class="w-full max-w-md overflow-hidden rounded-xl border border-neutral-200 bg-white shadow-xl dark:border-neutral-800 dark:bg-neutral-900"
+        >
+          <div
+            class="flex items-center justify-between border-b border-neutral-200 px-6 py-4 dark:border-neutral-800"
+          >
+            <h3 class="text-base font-semibold text-neutral-900 dark:text-white">
+              {{ t('users.confirm_status_change') }}
+            </h3>
+            <button
+              @click="userToToggle = null"
+              class="cursor-pointer text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200"
+            >
+              <X :size="18" />
             </button>
-            <button @click="executeToggleStatus" :disabled="isToggling" class="btn-primary"
-              :class="{ 'btn-danger': userToToggle.status === 'ACTIVE' }">
-              <span>{{ isToggling ? t('common.updating') : (userToToggle.status === 'ACTIVE' ? t('users.suspend') :
-                t('users.activate')) }}</span>
-            </button>
+          </div>
+
+          <div class="space-y-4 p-6">
+            <p class="text-sm leading-relaxed text-neutral-700 dark:text-neutral-300">
+              {{
+                t('users.status_prompt', {
+                  name: userToToggle.fullName,
+                  email: userToToggle.email,
+                  from: userToToggle.status,
+                  to: userToToggle.status === 'ACTIVE' ? 'SUSPENDED' : 'ACTIVE',
+                })
+              }}
+            </p>
+
+            <p
+              v-if="userToToggle.status === 'ACTIVE'"
+              class="text-xs text-neutral-500 dark:text-neutral-400"
+            >
+              {{ t('users.suspend_warning') }}
+            </p>
+            <p v-else class="text-xs text-neutral-500 dark:text-neutral-400">
+              {{ t('users.activate_warning') }}
+            </p>
+
+            <div class="flex items-center justify-end gap-3 pt-2">
+              <button
+                type="button"
+                @click="userToToggle = null"
+                class="rounded-lg border border-neutral-300 bg-white px-4 py-2 text-xs font-medium text-neutral-700 transition-colors hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-200 dark:hover:bg-neutral-700"
+              >
+                {{ t('common.cancel') }}
+              </button>
+              <button
+                @click="executeToggleStatus"
+                :disabled="isToggling"
+                :class="[
+                  'shadow-xs cursor-pointer rounded-lg px-4 py-2 text-xs font-medium text-white transition-colors disabled:opacity-50',
+                  userToToggle.status === 'ACTIVE'
+                    ? 'bg-rose-600 hover:bg-rose-700'
+                    : 'bg-emerald-600 hover:bg-emerald-700',
+                ]"
+              >
+                <span>{{
+                  isToggling
+                    ? t('common.updating')
+                    : userToToggle.status === 'ACTIVE'
+                      ? t('users.suspend')
+                      : t('users.activate')
+                }}</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </Teleport>
   </div>
 </template>
-
-<style scoped>
-.users-page {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
-
-.page-top-bar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 1rem;
-}
-
-.page-top-bar h1 {
-  font-size: 1.6rem;
-}
-
-.subtitle {
-  color: var(--text-muted);
-  font-size: 0.875rem;
-  margin-top: 0.2rem;
-}
-
-.admin-shield-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  background: rgba(99, 102, 241, 0.12);
-  border: 1px solid rgba(99, 102, 241, 0.25);
-  color: var(--primary);
-  font-size: 0.8rem;
-  font-weight: 600;
-  padding: 0.4rem 0.85rem;
-  border-radius: var(--radius-sm);
-}
-
-.stats-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 1rem;
-}
-
-@media (min-width: 640px) {
-  .stats-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-@media (min-width: 1024px) {
-  .stats-grid {
-    grid-template-columns: repeat(4, 1fr);
-  }
-}
-
-.stat-card {
-  padding: 1rem 1.25rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-md);
-  background: var(--bg-surface);
-}
-
-.stat-label {
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: var(--text-dim);
-  text-transform: uppercase;
-}
-
-.stat-value {
-  font-size: 1.4rem;
-  font-weight: 700;
-}
-
-.stat-subtext {
-  font-size: 0.75rem;
-  color: var(--text-muted);
-}
-
-.table-shell {
-  padding: 1.25rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.table-toolbar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 1rem;
-}
-
-.filter-controls {
-  display: flex;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-}
-
-.select-wrap {
-  position: relative;
-  display: flex;
-  align-items: center;
-}
-
-.filter-icon {
-  position: absolute;
-  left: 0.65rem;
-  color: var(--text-dim);
-  pointer-events: none;
-}
-
-.filter-select {
-  background: var(--bg-surface);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-sm);
-  color: var(--text-main);
-  font-size: 0.825rem;
-  padding: 0.45rem 0.85rem 0.45rem 1.8rem;
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.filter-select:hover {
-  border-color: var(--border-default);
-  background: var(--bg-surface-hover);
-}
-
-.filter-select:focus {
-  outline: none;
-  border-color: var(--border-focus);
-}
-
-.search-wrap {
-  position: relative;
-  width: 100%;
-  max-width: 320px;
-}
-
-.search-icon {
-  position: absolute;
-  left: 0.75rem;
-  top: 50%;
-  transform: translateY(-50%);
-  color: var(--text-dim);
-}
-
-.table-search-input {
-  width: 100%;
-  background: var(--bg-input);
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-sm);
-  padding: 0.45rem 0.75rem 0.45rem 2.2rem;
-  color: var(--text-main);
-  font-size: 0.85rem;
-}
-
-.table-search-input:focus {
-  outline: none;
-  border-color: var(--border-focus);
-}
-
-.user-cell {
-  display: flex;
-  flex-direction: column;
-}
-
-.status-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  font-size: 0.725rem;
-  font-weight: 500;
-  padding: 0.15rem 0.5rem;
-  border-radius: var(--radius-sm);
-  text-transform: capitalize;
-}
-
-.status-pill.active {
-  background: var(--accent-emerald-subtle);
-  color: var(--color-emerald-accent);
-  border: 1px solid rgba(16, 185, 129, 0.2);
-}
-
-.status-pill.suspended {
-  background: var(--accent-rose-subtle);
-  color: var(--color-rose-accent);
-  border: 1px solid rgba(239, 68, 68, 0.2);
-}
-
-.status-pill .dot {
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: currentColor;
-}
-
-.btn-sm {
-  padding: 0.35rem 0.65rem;
-  font-size: 0.8rem;
-  gap: 0.3rem;
-}
-
-.btn-suspend:hover {
-  border-color: rgba(239, 68, 68, 0.4);
-  color: #f87171;
-}
-
-.btn-activate:hover {
-  border-color: rgba(52, 211, 153, 0.4);
-  color: #34d399;
-}
-
-.btn-danger {
-  background-color: var(--accent-rose);
-}
-
-.btn-danger:hover {
-  background-color: #dc2626;
-}
-
-.text-right {
-  text-align: right;
-}
-
-.text-danger {
-  color: #f87171;
-}
-
-.text-amber {
-  color: #fbbf24;
-}
-
-.text-dim {
-  color: var(--text-dim);
-}
-
-.text-xs {
-  font-size: 0.75rem;
-}
-
-.font-mono {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-}
-
-.font-semibold {
-  font-weight: 600;
-}
-
-.italic {
-  font-style: italic;
-}
-
-/* Modal */
-.modal-backdrop {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.75);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 100;
-  padding: 1.5rem;
-}
-
-.modal-card {
-  width: 100%;
-  background: var(--bg-surface);
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-md);
-  padding: 1.5rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1.25rem;
-}
-
-.modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border-bottom: 1px solid var(--border-subtle);
-  padding-bottom: 0.75rem;
-}
-
-.modal-close {
-  background: none;
-  border: none;
-  color: var(--text-muted);
-  font-size: 1.5rem;
-  cursor: pointer;
-}
-
-.modal-body {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.modal-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 0.75rem;
-  margin-top: 0.5rem;
-}
-
-/* Empty & Loading */
-.empty-state {
-  text-align: center;
-  padding: 3.5rem 1rem;
-  color: var(--text-muted);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.empty-icon {
-  color: var(--text-dim);
-  margin-bottom: 0.5rem;
-}
-
-.loading-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 3rem 1rem;
-  color: var(--text-muted);
-}
-
-.loading-spinner {
-  width: 28px;
-  height: 28px;
-  border: 3px solid var(--border-subtle);
-  border-top-color: var(--primary);
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-@media (max-width: 900px) {
-  .stats-grid {
-    grid-template-columns: 1fr 1fr;
-  }
-}
-
-@media (max-width: 640px) {
-  .stats-grid {
-    grid-template-columns: 1fr;
-  }
-}
-</style>

@@ -32,7 +32,8 @@ const inMemoryProperties: PropertyEntity[] = [
     id: 'prop-skyline-01',
     landlordId: 'user-landlord-01',
     title: 'BKK1 Premier Luxury Residences',
-    description: 'Modern urban residential high-rise complex in the heart of Boeung Keng Kang 1. Features rooftop infinity pool, skyline lounge, 24/7 security concierge, and high-speed fiber.',
+    description:
+      'Modern urban residential high-rise complex in the heart of Boeung Keng Kang 1. Features rooftop infinity pool, skyline lounge, 24/7 security concierge, and high-speed fiber.',
     addressLine1: '#45 Street 288, Sangkat Boeung Keng Kang 1',
     city: 'Phnom Penh',
     state: 'Phnom Penh',
@@ -40,7 +41,15 @@ const inMemoryProperties: PropertyEntity[] = [
     country: 'KH',
     latitude: 11.5516,
     longitude: 104.9224,
-    amenities: ['Swimming Pool', 'Fitness Center', 'Underground Parking', '24/7 Concierge', 'High-speed Fiber', 'Rooftop Lounge', 'Backup Generator'],
+    amenities: [
+      'Swimming Pool',
+      'Fitness Center',
+      'Underground Parking',
+      '24/7 Concierge',
+      'High-speed Fiber',
+      'Rooftop Lounge',
+      'Backup Generator',
+    ],
     createdAt: new Date('2026-01-15T08:00:00Z'),
     updatedAt: new Date('2026-01-15T08:00:00Z'),
     deletedAt: null,
@@ -49,7 +58,8 @@ const inMemoryProperties: PropertyEntity[] = [
     id: 'prop-oakwood-02',
     landlordId: 'user-landlord-01',
     title: 'Bassac Garden Riverside Condominiums',
-    description: 'Prestigious residential community along the Tonle Bassac riverbank, minutes from AEON Mall 1 and Koh Pich. Landscaped gardens, lap pool, and 24-hour guarded gate.',
+    description:
+      'Prestigious residential community along the Tonle Bassac riverbank, minutes from AEON Mall 1 and Koh Pich. Landscaped gardens, lap pool, and 24-hour guarded gate.',
     addressLine1: 'National Assembly Street, Sangkat Tonle Bassac',
     city: 'Phnom Penh',
     state: 'Phnom Penh',
@@ -57,7 +67,14 @@ const inMemoryProperties: PropertyEntity[] = [
     country: 'KH',
     latitude: 11.5458,
     longitude: 104.9352,
-    amenities: ['Tennis Court', 'Garden Park', 'Covered Parking', 'In-unit Laundry', '24/7 Security', 'Children Playground'],
+    amenities: [
+      'Tennis Court',
+      'Garden Park',
+      'Covered Parking',
+      'In-unit Laundry',
+      '24/7 Security',
+      'Children Playground',
+    ],
     createdAt: new Date('2026-02-01T10:30:00Z'),
     updatedAt: new Date('2026-02-01T10:30:00Z'),
     deletedAt: null,
@@ -66,15 +83,22 @@ const inMemoryProperties: PropertyEntity[] = [
     id: 'prop-metropolitan-03',
     landlordId: 'user-admin-01',
     title: 'Angkor Heritage Parkside Villas',
-    description: 'Charming tropical boutique villas situated along the Siem Reap River, close to downtown heritage sights, pub street, and airport gateway.',
+    description:
+      'Charming tropical boutique villas situated along the Siem Reap River, close to downtown heritage sights, pub street, and airport gateway.',
     addressLine1: 'Charles de Gaulle Boulevard, Sangkat Svay Dangkum',
     city: 'Siem Reap',
     state: 'Siem Reap',
     postalCode: '17252',
     country: 'KH',
     latitude: 13.3671,
-    longitude: 103.8590,
-    amenities: ['Private Pool', 'Tropical Garden', 'Bicycle Parking', 'Solar Power Backup', 'Housekeeping'],
+    longitude: 103.859,
+    amenities: [
+      'Private Pool',
+      'Tropical Garden',
+      'Bicycle Parking',
+      'Solar Power Backup',
+      'Housekeeping',
+    ],
     createdAt: new Date('2026-02-10T14:15:00Z'),
     updatedAt: new Date('2026-02-10T14:15:00Z'),
     deletedAt: null,
@@ -83,7 +107,8 @@ const inMemoryProperties: PropertyEntity[] = [
     id: 'prop-peak-04',
     landlordId: 'user-landlord-01',
     title: 'The Peak Luxury Riverfront Suites',
-    description: 'Iconic 55-story luxury residential landmark overlooking the confluence of the Mekong and Bassac Rivers. Features Shangri-La hotel amenities, infinity sky pool, and direct mall access.',
+    description:
+      'Iconic 55-story luxury residential landmark overlooking the confluence of the Mekong and Bassac Rivers. Features Shangri-La hotel amenities, infinity sky pool, and direct mall access.',
     addressLine1: 'Samdech Hun Sen Park, Sangkat Tonle Bassac, Khan Chamkarmon',
     city: 'Phnom Penh',
     state: 'Phnom Penh',
@@ -91,7 +116,15 @@ const inMemoryProperties: PropertyEntity[] = [
     country: 'KH',
     latitude: 11.5528,
     longitude: 104.9388,
-    amenities: ['Sky Infinity Pool', 'Luxury Spa', 'Fitness Gym', '24/7 Concierge', 'Underground Parking', 'Smart Card Access', 'Rooftop Bar'],
+    amenities: [
+      'Sky Infinity Pool',
+      'Luxury Spa',
+      'Fitness Gym',
+      '24/7 Concierge',
+      'Underground Parking',
+      'Smart Card Access',
+      'Rooftop Bar',
+    ],
     createdAt: new Date('2026-02-15T09:00:00Z'),
     updatedAt: new Date('2026-02-15T09:00:00Z'),
     deletedAt: null,
@@ -100,7 +133,8 @@ const inMemoryProperties: PropertyEntity[] = [
     id: 'prop-toulkork-05',
     landlordId: 'user-landlord-01',
     title: 'Toul Kork Greenery Garden Villas',
-    description: 'Exclusive private gated compound nestled in Toul Kork diplomatic precinct. Expansive outdoor entertaining patios, private swimming pools, and manicured tropical grounds.',
+    description:
+      'Exclusive private gated compound nestled in Toul Kork diplomatic precinct. Expansive outdoor entertaining patios, private swimming pools, and manicured tropical grounds.',
     addressLine1: 'Street 315, Sangkat Boeung Kak 1, Khan Toul Kork',
     city: 'Phnom Penh',
     state: 'Phnom Penh',
@@ -108,7 +142,14 @@ const inMemoryProperties: PropertyEntity[] = [
     country: 'KH',
     latitude: 11.5762,
     longitude: 104.8967,
-    amenities: ['Private Pool', 'Solar Energy Backup', '24/7 Guarded Gate', 'Private Garage', 'Garden Patio', 'CCTV Security'],
+    amenities: [
+      'Private Pool',
+      'Solar Energy Backup',
+      '24/7 Guarded Gate',
+      'Private Garage',
+      'Garden Patio',
+      'CCTV Security',
+    ],
     createdAt: new Date('2026-02-20T11:30:00Z'),
     updatedAt: new Date('2026-02-20T11:30:00Z'),
     deletedAt: null,
@@ -117,7 +158,8 @@ const inMemoryProperties: PropertyEntity[] = [
     id: 'prop-chroy-06',
     landlordId: 'user-admin-01',
     title: 'Chroy Changvar Riverside Horizons',
-    description: 'Scenic peninsula waterfront community with panoramic sunrise views over the Tonle Sap. Breeze-cooled balconies, Olympic-size lap pool, and riverfront boardwalk.',
+    description:
+      'Scenic peninsula waterfront community with panoramic sunrise views over the Tonle Sap. Breeze-cooled balconies, Olympic-size lap pool, and riverfront boardwalk.',
     addressLine1: 'Keo Chenda Street, Sangkat Chroy Changvar, Khan Chroy Changvar',
     city: 'Phnom Penh',
     state: 'Phnom Penh',
@@ -125,7 +167,14 @@ const inMemoryProperties: PropertyEntity[] = [
     country: 'KH',
     latitude: 11.5878,
     longitude: 104.9312,
-    amenities: ['Olympic Pool', 'Riverfront Boardwalk', 'Tennis Court', 'Covered Parking', 'Kids Playground', 'High-speed Fiber'],
+    amenities: [
+      'Olympic Pool',
+      'Riverfront Boardwalk',
+      'Tennis Court',
+      'Covered Parking',
+      'Kids Playground',
+      'High-speed Fiber',
+    ],
     createdAt: new Date('2026-03-01T08:00:00Z'),
     updatedAt: new Date('2026-03-01T08:00:00Z'),
     deletedAt: null,
@@ -134,7 +183,8 @@ const inMemoryProperties: PropertyEntity[] = [
     id: 'prop-otres-07',
     landlordId: 'user-landlord-01',
     title: 'Sihanoukville Pearl Bay Ocean Condos',
-    description: 'Breathtaking beachfront condominium residences directly facing the Gulf of Thailand. Sunset sea views, private beach club access, and tropical resort amenities.',
+    description:
+      'Breathtaking beachfront condominium residences directly facing the Gulf of Thailand. Sunset sea views, private beach club access, and tropical resort amenities.',
     addressLine1: 'Otres Beach Parkway, Sangkat 4',
     city: 'Sihanoukville',
     state: 'Preah Sihanouk',
@@ -142,7 +192,14 @@ const inMemoryProperties: PropertyEntity[] = [
     country: 'KH',
     latitude: 10.5758,
     longitude: 103.5512,
-    amenities: ['Beach Access', 'Oceanfront Pool', 'Sunset Terrace', 'Fitness Club', '24/7 Security', 'Beachside Cafe'],
+    amenities: [
+      'Beach Access',
+      'Oceanfront Pool',
+      'Sunset Terrace',
+      'Fitness Club',
+      '24/7 Security',
+      'Beachside Cafe',
+    ],
     createdAt: new Date('2026-03-05T10:00:00Z'),
     updatedAt: new Date('2026-03-05T10:00:00Z'),
     deletedAt: null,
@@ -151,7 +208,8 @@ const inMemoryProperties: PropertyEntity[] = [
     id: 'prop-kampot-08',
     landlordId: 'user-admin-01',
     title: 'Kampot Riverfront Heritage Estate',
-    description: 'Boutique French-Indochine style riverside sanctuary framed by the Bokor Mountain range. Tranquil garden setting with private wooden boat jetty and kayak launch.',
+    description:
+      'Boutique French-Indochine style riverside sanctuary framed by the Bokor Mountain range. Tranquil garden setting with private wooden boat jetty and kayak launch.',
     addressLine1: 'Riverside Road, Krong Kampot',
     city: 'Kampot',
     state: 'Kampot',
@@ -159,7 +217,13 @@ const inMemoryProperties: PropertyEntity[] = [
     country: 'KH',
     latitude: 10.6085,
     longitude: 104.1818,
-    amenities: ['Private Boat Jetty', 'Kayak Launch', 'Tropical Fruit Garden', 'Solar Water Heating', 'High-speed Fiber'],
+    amenities: [
+      'Private Boat Jetty',
+      'Kayak Launch',
+      'Tropical Fruit Garden',
+      'Solar Water Heating',
+      'High-speed Fiber',
+    ],
     createdAt: new Date('2026-03-10T12:00:00Z'),
     updatedAt: new Date('2026-03-10T12:00:00Z'),
     deletedAt: null,
@@ -238,12 +302,14 @@ export class PropertyRepository {
     }
   }
 
-  async findAll(filter: {
-    landlordId?: string;
-    city?: string;
-    state?: string;
-    search?: string;
-  } = {}): Promise<PropertyEntity[]> {
+  async findAll(
+    filter: {
+      landlordId?: string;
+      city?: string;
+      state?: string;
+      search?: string;
+    } = {}
+  ): Promise<PropertyEntity[]> {
     try {
       const where: any = { deletedAt: null };
       if (filter.landlordId) where.landlordId = filter.landlordId;
@@ -284,7 +350,8 @@ export class PropertyRepository {
         if (p.deletedAt) return false;
         if (filter.landlordId && p.landlordId !== filter.landlordId) return false;
         if (filter.city && !p.city.toLowerCase().includes(filter.city.toLowerCase())) return false;
-        if (filter.state && !p.state.toLowerCase().includes(filter.state.toLowerCase())) return false;
+        if (filter.state && !p.state.toLowerCase().includes(filter.state.toLowerCase()))
+          return false;
         if (filter.search) {
           const q = filter.search.toLowerCase();
           const matchTitle = p.title.toLowerCase().includes(q);
@@ -297,12 +364,14 @@ export class PropertyRepository {
     }
   }
 
-  async findMany(filter: {
-    landlordId?: string;
-    city?: string;
-    state?: string;
-    search?: string;
-  } = {}): Promise<PropertyEntity[]> {
+  async findMany(
+    filter: {
+      landlordId?: string;
+      city?: string;
+      state?: string;
+      search?: string;
+    } = {}
+  ): Promise<PropertyEntity[]> {
     return this.findAll(filter);
   }
 

@@ -1,4 +1,13 @@
-import { PrismaClient, UserRole, UserStatus, UnitStatus, LeaseStatus, InvoiceStatus, MaintenancePriority, MaintenanceStatus } from '@prisma/client';
+import {
+  PrismaClient,
+  UserRole,
+  UserStatus,
+  UnitStatus,
+  LeaseStatus,
+  InvoiceStatus,
+  MaintenancePriority,
+  MaintenanceStatus,
+} from '@prisma/client';
 import crypto from 'node:crypto';
 
 const prisma = new PrismaClient();
@@ -84,13 +93,22 @@ async function main() {
       data: {
         landlordId: landlord.id,
         title: 'BKK1 Premier Luxury Residences',
-        description: 'Modern urban residential complex in the heart of Boeung Keng Kang 1 featuring premier amenities and skyline views.',
+        description:
+          'Modern urban residential complex in the heart of Boeung Keng Kang 1 featuring premier amenities and skyline views.',
         addressLine1: '#45 Street 288, Sangkat Boeung Keng Kang 1',
         city: 'Phnom Penh',
         state: 'Phnom Penh',
         postalCode: '120102',
         country: 'KH',
-        amenities: ['Swimming Pool', 'Fitness Center', 'Underground Parking', '24/7 Concierge', 'High-speed Fiber', 'Rooftop Sky Lounge', 'Backup Generator'],
+        amenities: [
+          'Swimming Pool',
+          'Fitness Center',
+          'Underground Parking',
+          '24/7 Concierge',
+          'High-speed Fiber',
+          'Rooftop Sky Lounge',
+          'Backup Generator',
+        ],
       },
     });
     console.log('Seeded Property: BKK1 Premier Luxury Residences');
@@ -115,7 +133,9 @@ async function main() {
       rentAmount: 650.0,
       depositAmount: 650.0,
       status: UnitStatus.OCCUPIED,
-      images: ['https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=1200&q=80'],
+      images: [
+        'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=1200&q=80',
+      ],
     },
   });
 
@@ -137,7 +157,9 @@ async function main() {
       rentAmount: 1100.0,
       depositAmount: 1100.0,
       status: UnitStatus.AVAILABLE,
-      images: ['https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&w=1200&q=80'],
+      images: [
+        'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&w=1200&q=80',
+      ],
     },
   });
 
@@ -151,13 +173,21 @@ async function main() {
       id: 'prop-bassac-02',
       landlordId: landlord.id,
       title: 'Bassac Garden Riverside Condominiums',
-      description: 'Prestigious residential community along the Tonle Bassac riverbank, minutes from AEON Mall 1 and Koh Pich.',
+      description:
+        'Prestigious residential community along the Tonle Bassac riverbank, minutes from AEON Mall 1 and Koh Pich.',
       addressLine1: 'National Assembly Street, Sangkat Tonle Bassac',
       city: 'Phnom Penh',
       state: 'Phnom Penh',
       postalCode: '120101',
       country: 'KH',
-      amenities: ['Tennis Court', 'Garden Park', 'Covered Parking', 'In-unit Laundry', '24/7 Security', 'Children Playground'],
+      amenities: [
+        'Tennis Court',
+        'Garden Park',
+        'Covered Parking',
+        'In-unit Laundry',
+        '24/7 Security',
+        'Children Playground',
+      ],
     },
   });
 
@@ -179,7 +209,9 @@ async function main() {
       rentAmount: 850.0,
       depositAmount: 850.0,
       status: UnitStatus.AVAILABLE,
-      images: ['https://images.unsplash.com/photo-1493809842364-78817add7ffb?auto=format&fit=crop&w=1200&q=80'],
+      images: [
+        'https://images.unsplash.com/photo-1493809842364-78817add7ffb?auto=format&fit=crop&w=1200&q=80',
+      ],
     },
   });
 
@@ -190,13 +222,21 @@ async function main() {
       id: 'prop-peak-03',
       landlordId: landlord.id,
       title: 'The Peak Luxury Riverfront Suites',
-      description: 'Iconic 55-story luxury residential landmark overlooking the confluence of the Mekong and Bassac Rivers.',
+      description:
+        'Iconic 55-story luxury residential landmark overlooking the confluence of the Mekong and Bassac Rivers.',
       addressLine1: 'Samdech Hun Sen Park, Sangkat Tonle Bassac',
       city: 'Phnom Penh',
       state: 'Phnom Penh',
       postalCode: '120101',
       country: 'KH',
-      amenities: ['Sky Infinity Pool', 'Luxury Spa', 'Fitness Gym', '24/7 Concierge', 'Underground Parking', 'Smart Card Access'],
+      amenities: [
+        'Sky Infinity Pool',
+        'Luxury Spa',
+        'Fitness Gym',
+        '24/7 Concierge',
+        'Underground Parking',
+        'Smart Card Access',
+      ],
     },
   });
 
@@ -218,7 +258,9 @@ async function main() {
       rentAmount: 650.0,
       depositAmount: 650.0,
       status: UnitStatus.AVAILABLE,
-      images: ['https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=1200&q=80'],
+      images: [
+        'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=1200&q=80',
+      ],
     },
   });
 
@@ -229,13 +271,20 @@ async function main() {
       id: 'prop-angkor-04',
       landlordId: admin.id,
       title: 'Angkor Heritage Parkside Villas',
-      description: 'Charming tropical boutique villas situated along the Siem Reap River, close to downtown heritage sights and pub street.',
+      description:
+        'Charming tropical boutique villas situated along the Siem Reap River, close to downtown heritage sights and pub street.',
       addressLine1: 'Charles de Gaulle Boulevard, Sangkat Svay Dangkum',
       city: 'Siem Reap',
       state: 'Siem Reap',
       postalCode: '17252',
       country: 'KH',
-      amenities: ['Private Pool', 'Tropical Garden', 'Bicycle Parking', 'Solar Power Backup', 'Housekeeping'],
+      amenities: [
+        'Private Pool',
+        'Tropical Garden',
+        'Bicycle Parking',
+        'Solar Power Backup',
+        'Housekeeping',
+      ],
     },
   });
 
@@ -257,7 +306,9 @@ async function main() {
       rentAmount: 550.0,
       depositAmount: 550.0,
       status: UnitStatus.AVAILABLE,
-      images: ['https://images.unsplash.com/photo-1580587771525-78b9dba3b914?auto=format&fit=crop&w=1200&q=80'],
+      images: [
+        'https://images.unsplash.com/photo-1580587771525-78b9dba3b914?auto=format&fit=crop&w=1200&q=80',
+      ],
     },
   });
 
@@ -288,7 +339,8 @@ async function main() {
         status: LeaseStatus.ACTIVE,
         tenantSignedAt: new Date(startDate),
         landlordSignedAt: new Date(startDate),
-        termsAndConditions: 'Standard 12-month residential lease agreement. Rent due on the 1st of each month.',
+        termsAndConditions:
+          'Standard 12-month residential lease agreement. Rent due on the 1st of each month.',
       },
     });
     console.log('Seeded Active Lease for Unit 101A');

@@ -17,13 +17,28 @@ const password = ref('');
 const showPassword = ref(false);
 
 const demoAccounts = [
-  { roleKey: 'auth.demo_admin', email: 'admin@rentease.com', pass: 'RentEase123!', icon: ShieldCheck },
-  { roleKey: 'auth.demo_landlord', email: 'landlord@rentease.com', pass: 'RentEase123!', icon: Building },
+  {
+    roleKey: 'auth.demo_admin',
+    email: 'admin@rentease.com',
+    pass: 'RentEase123!',
+    icon: ShieldCheck,
+  },
+  {
+    roleKey: 'auth.demo_landlord',
+    email: 'landlord@rentease.com',
+    pass: 'RentEase123!',
+    icon: Building,
+  },
   { roleKey: 'auth.demo_tenant', email: 'tenant@rentease.com', pass: 'RentEase123!', icon: Key },
-  { roleKey: 'auth.demo_technician', email: 'technician@rentease.com', pass: 'RentEase123!', icon: Wrench },
+  {
+    roleKey: 'auth.demo_technician',
+    email: 'technician@rentease.com',
+    pass: 'RentEase123!',
+    icon: Wrench,
+  },
 ];
 
-function fillDemo(item: typeof demoAccounts[0]) {
+function fillDemo(item: (typeof demoAccounts)[0]) {
   email.value = item.email;
   password.value = item.pass;
 }
@@ -42,10 +57,14 @@ async function handleLogin() {
 </script>
 
 <template>
-  <div class="login-view">
-    <div class="card-header">
-      <h2>{{ t('auth.welcome_back') }}</h2>
-      <p class="subtitle">{{ t('auth.credentials_prompt') }}</p>
+  <div class="flex flex-col gap-5">
+    <div class="text-center">
+      <h2 class="text-2xl font-bold tracking-tight text-neutral-900 dark:text-white">
+        {{ t('auth.welcome_back') }}
+      </h2>
+      <p class="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
+        {{ t('auth.credentials_prompt') }}
+      </p>
     </div>
 
     <!-- Error Alert -->
@@ -53,215 +72,106 @@ async function handleLogin() {
       {{ error }}
     </div>
 
-    <form @submit.prevent="handleLogin" class="login-form">
-      <div class="form-group">
-        <label for="login-email" class="form-label">{{ t('auth.email') }}</label>
-        <input id="login-email" v-model="email" type="email" :placeholder="t('auth.email_placeholder')" required
-          class="input-field" />
+    <form @submit.prevent="handleLogin" class="flex flex-col gap-4">
+      <div class="flex flex-col gap-1.5">
+        <label
+          for="login-email"
+          class="text-xs font-semibold uppercase tracking-wider text-neutral-900 dark:text-neutral-100"
+        >
+          {{ t('auth.email') }}
+        </label>
+        <input
+          id="login-email"
+          v-model="email"
+          type="email"
+          :placeholder="t('auth.email_placeholder')"
+          required
+          class="w-full rounded-md border border-neutral-300 bg-white px-3.5 py-2.5 text-sm text-neutral-900 transition-colors placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-blue-600 dark:border-neutral-700 dark:bg-neutral-950 dark:text-white dark:focus:ring-blue-500"
+        />
       </div>
 
-      <div class="form-group">
-        <div class="password-label-wrapper">
-          <label for="login-password" class="form-label">{{ t('auth.password') }}</label>
+      <div class="flex flex-col gap-1.5">
+        <div class="flex items-center justify-between">
+          <label
+            for="login-password"
+            class="text-xs font-semibold uppercase tracking-wider text-neutral-900 dark:text-neutral-100"
+          >
+            {{ t('auth.password') }}
+          </label>
         </div>
-        <div class="password-input-wrap">
+        <div class="relative flex items-center">
           <input
             id="login-password"
             v-model="password"
             :type="showPassword ? 'text' : 'password'"
             :placeholder="t('auth.password_placeholder')"
             required
-            class="input-field password-input"
+            class="w-full rounded-md border border-neutral-300 bg-white py-2.5 pl-3.5 pr-10 text-sm text-neutral-900 transition-colors placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-blue-600 dark:border-neutral-700 dark:bg-neutral-950 dark:text-white dark:focus:ring-blue-500"
           />
           <button
             type="button"
-            class="password-toggle-btn"
+            class="absolute right-3 p-1 text-neutral-400 transition-colors hover:text-neutral-700 dark:hover:text-neutral-200"
             @click="showPassword = !showPassword"
             :aria-label="showPassword ? 'Hide password' : 'Show password'"
           >
-            <EyeOff v-if="showPassword" :size="15" />
-            <Eye v-else :size="15" />
+            <EyeOff v-if="showPassword" :size="16" />
+            <Eye v-else :size="16" />
           </button>
         </div>
       </div>
 
-      <button type="submit" :disabled="isLoading" class="btn-primary btn-block">
+      <button
+        type="submit"
+        :disabled="isLoading"
+        class="mt-2 inline-flex w-full items-center justify-center rounded-md bg-neutral-900 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-blue-600 dark:hover:bg-blue-700"
+      >
         <span v-if="isLoading">{{ t('auth.signing_in') }}</span>
         <span v-else>{{ t('auth.sign_in') }}</span>
       </button>
     </form>
 
     <!-- Quick Demo Accounts -->
-    <div class="demo-section">
-      <div class="divider">
-        <span>{{ t('auth.quick_demo') }}</span>
+    <div class="mt-2">
+      <div class="relative flex items-center py-2">
+        <div class="flex-grow border-t border-neutral-200 dark:border-neutral-800" />
+        <span
+          class="mx-3 flex-shrink text-xs font-semibold uppercase tracking-wider text-neutral-400 dark:text-neutral-500"
+          >{{ t('auth.quick_demo') }}</span
+        >
+        <div class="flex-grow border-t border-neutral-200 dark:border-neutral-800" />
       </div>
-      <div class="demo-grid">
-        <button v-for="item in demoAccounts" :key="item.roleKey" type="button" @click="fillDemo(item)"
-          :class="['demo-chip', { 'demo-chip-active': email === item.email }]">
-          <component :is="item.icon" :size="15" class="chip-icon" />
-          <span class="chip-role">{{ t(item.roleKey) }}</span>
-          <Check v-if="email === item.email" :size="13" class="chip-check" />
+      <div class="mt-2 grid grid-cols-2 gap-2">
+        <button
+          v-for="item in demoAccounts"
+          :key="item.roleKey"
+          type="button"
+          @click="fillDemo(item)"
+          :class="[
+            'flex items-center gap-2 rounded-md border p-2.5 text-left text-xs font-medium transition-colors',
+            email === item.email
+              ? 'shadow-xs border-blue-600 bg-neutral-100 text-neutral-900 dark:border-blue-500 dark:bg-neutral-800 dark:text-white'
+              : 'border-neutral-200 bg-neutral-50 text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 dark:border-neutral-800 dark:bg-neutral-950 dark:text-neutral-400 dark:hover:bg-neutral-900 dark:hover:text-white',
+          ]"
+        >
+          <component :is="item.icon" :size="16" class="shrink-0 text-blue-600 dark:text-blue-400" />
+          <span class="truncate">{{ t(item.roleKey) }}</span>
+          <Check
+            v-if="email === item.email"
+            :size="14"
+            class="ml-auto shrink-0 text-emerald-600 dark:text-emerald-400"
+          />
         </button>
       </div>
     </div>
 
-    <div class="register-prompt">
+    <div class="text-center text-xs text-neutral-500 dark:text-neutral-400 sm:text-sm">
       <span>{{ t('auth.dont_have_account') }}</span>
-      <NuxtLink to="/register" class="register-link">{{ t('auth.create_account_now') }}</NuxtLink>
+      <NuxtLink
+        to="/register"
+        class="ml-1 font-semibold text-blue-600 hover:underline dark:text-blue-400"
+      >
+        {{ t('auth.create_account_now') }}
+      </NuxtLink>
     </div>
   </div>
 </template>
-
-<style scoped>
-.login-view {
-  display: flex;
-  flex-direction: column;
-  gap: 1.25rem;
-}
-
-.card-header {
-  text-align: center;
-}
-
-.card-header h2 {
-  font-size: 1.5rem;
-  margin-bottom: 0.25rem;
-}
-
-.subtitle {
-  color: var(--text-muted);
-  font-size: 0.875rem;
-}
-
-.password-label-wrapper {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.password-input-wrap {
-  position: relative;
-  display: flex;
-  align-items: center;
-}
-
-.password-input {
-  width: 100%;
-  padding-right: 2.5rem;
-}
-
-.password-toggle-btn {
-  position: absolute;
-  right: 0.75rem;
-  background: transparent;
-  border: none;
-  color: var(--text-dim);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0.25rem;
-  border-radius: var(--radius-sm);
-  transition: color 0.15s ease;
-}
-
-.password-toggle-btn:hover {
-  color: var(--text-main);
-}
-
-.btn-block {
-  width: 100%;
-  padding: 0.75rem;
-  margin-top: 0.5rem;
-  font-size: 0.95rem;
-}
-
-.divider {
-  display: flex;
-  align-items: center;
-  text-align: center;
-  margin: 1.25rem 0 0.75rem;
-  color: var(--text-dim);
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-}
-
-.divider::before,
-.divider::after {
-  content: '';
-  flex: 1;
-  border-bottom: 1px solid var(--border-subtle);
-}
-
-.divider span {
-  padding: 0 0.75rem;
-}
-
-.demo-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 0.5rem;
-}
-
-.demo-chip {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  background: var(--bg-subtle);
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-sm);
-  padding: 0.5rem 0.75rem;
-  color: var(--text-muted);
-  cursor: pointer;
-  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
-  font-size: 0.85rem;
-  font-weight: 500;
-}
-
-.demo-chip:hover {
-  background: var(--bg-surface-hover);
-  border-color: var(--primary);
-  color: var(--text-main);
-}
-
-.demo-chip-active {
-  background: var(--bg-surface-hover);
-  border-color: var(--primary);
-  color: var(--text-main);
-  box-shadow: 0 0 0 1px var(--primary);
-}
-
-.chip-icon {
-  color: var(--text-muted);
-  flex-shrink: 0;
-}
-
-.demo-chip:hover .chip-icon,
-.demo-chip-active .chip-icon {
-  color: var(--primary);
-}
-
-.chip-check {
-  margin-left: auto;
-  color: var(--accent-emerald);
-}
-
-.register-prompt {
-  text-align: center;
-  font-size: 0.85rem;
-  color: var(--text-muted);
-  margin-top: 0.25rem;
-}
-
-.register-link {
-  color: #818cf8;
-  font-weight: 600;
-  margin-left: 0.35rem;
-}
-
-.register-link:hover {
-  text-decoration: underline;
-}
-</style>

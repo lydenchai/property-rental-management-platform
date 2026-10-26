@@ -37,7 +37,8 @@ const inMemoryApplications: ApplicationEntity[] = [
     status: ApplicationStatus.PENDING,
     desiredMoveInDate: new Date('2026-11-01T00:00:00Z'),
     proposedRent: 1800,
-    employmentDetails: 'Senior Software Architect at Smart Axiata Phnom Penh. Monthly salary $3,200. Clean background check.',
+    employmentDetails:
+      'Senior Software Architect at Smart Axiata Phnom Penh. Monthly salary $3,200. Clean background check.',
     notes: 'Looking for a quiet top-tier 2-bedroom unit with underground parking in BKK1.',
     reviewedById: null,
     reviewedAt: null,
@@ -52,7 +53,8 @@ const inMemoryApplications: ApplicationEntity[] = [
     status: ApplicationStatus.APPROVED,
     desiredMoveInDate: new Date('2026-01-01T00:00:00Z'),
     proposedRent: 1200,
-    employmentDetails: 'Fintech Systems Lead at ABA Bank Phnom Penh. Verifiable income documentation on file.',
+    employmentDetails:
+      'Fintech Systems Lead at ABA Bank Phnom Penh. Verifiable income documentation on file.',
     notes: 'Initial lease application for Unit 101A.',
     reviewedById: 'user-landlord-01',
     reviewedAt: new Date('2026-01-02T10:00:00Z'),
@@ -147,11 +149,13 @@ export class ApplicationRepository {
     }
   }
 
-  async findAll(filter: {
-    tenantId?: string;
-    unitId?: string;
-    status?: ApplicationStatus;
-  } = {}): Promise<ApplicationEntity[]> {
+  async findAll(
+    filter: {
+      tenantId?: string;
+      unitId?: string;
+      status?: ApplicationStatus;
+    } = {}
+  ): Promise<ApplicationEntity[]> {
     try {
       const where: any = {};
       if (filter.tenantId) where.tenantId = filter.tenantId;
@@ -190,11 +194,13 @@ export class ApplicationRepository {
     }
   }
 
-  async findMany(filter: {
-    tenantId?: string;
-    unitId?: string;
-    status?: ApplicationStatus;
-  } = {}): Promise<ApplicationEntity[]> {
+  async findMany(
+    filter: {
+      tenantId?: string;
+      unitId?: string;
+      status?: ApplicationStatus;
+    } = {}
+  ): Promise<ApplicationEntity[]> {
     return this.findAll(filter);
   }
 

@@ -1,8 +1,5 @@
 import { reactive, toRefs, toRef, computed } from 'vue';
-import type { 
-  OccupancyReportData, 
-  FinancialReportData 
-} from '~~/shared/types';
+import type { OccupancyReportData, FinancialReportData } from '~~/shared/types';
 
 export function useReportStore() {
   const state = reactive({
@@ -54,10 +51,7 @@ export function useReportStore() {
     state.error = null;
 
     try {
-      await Promise.all([
-        fetchOccupancy(),
-        fetchFinancials(),
-      ]);
+      await Promise.all([fetchOccupancy(), fetchFinancials()]);
       return {
         success: true,
         occupancy: state.occupancyData,
@@ -80,7 +74,15 @@ export function useReportStore() {
     if (type === 'occupancy') {
       filename = `occupancy-report-${new Date().toISOString().split('T')[0]}.csv`;
       const rows = [
-        ['Property Title', 'Address', 'City', 'Total Units', 'Occupied Units', 'Available Units', 'Occupancy Rate (%)']
+        [
+          'Property Title',
+          'Address',
+          'City',
+          'Total Units',
+          'Occupied Units',
+          'Available Units',
+          'Occupancy Rate (%)',
+        ],
       ];
 
       if (state.occupancyData?.propertyBreakdown) {

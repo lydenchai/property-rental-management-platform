@@ -6,17 +6,19 @@ test.describe('Public Property Listings & Browsing', () => {
 
     await expect(page).toHaveTitle(/RentEase/);
     await expect(page.locator('.brand-name')).toContainText(/RentEase/i);
-    
+
     // Check navigation links
     const browseLink = page.locator('a[href="/properties"]');
     await expect(browseLink.first()).toBeVisible();
   });
 
-  test('should render properties catalog with search inputs and property cards', async ({ page }) => {
+  test('should render properties catalog with search inputs and property cards', async ({
+    page,
+  }) => {
     await page.goto('/properties');
 
     await expect(page.locator('h1')).toContainText(/Browse Properties|Available Listings/i);
-    
+
     // Verify search filter inputs
     const searchInput = page.locator('input[placeholder*="Search"], input[type="text"]').first();
     await expect(searchInput).toBeVisible();

@@ -35,7 +35,11 @@ export type AssignTechnicianInput = z.infer<typeof AssignTechnicianSchema>;
 
 export const UpdateProgressSchema = z.object({
   status: z.enum(['IN_PROGRESS', 'RESOLVED']),
-  resolutionNotes: z.string().min(5, 'Please provide progress or resolution details').max(2000).optional(),
+  resolutionNotes: z
+    .string()
+    .min(5, 'Please provide progress or resolution details')
+    .max(2000)
+    .optional(),
 });
 
 export type UpdateProgressInput = z.infer<typeof UpdateProgressSchema>;

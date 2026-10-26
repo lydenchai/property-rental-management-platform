@@ -21,16 +21,28 @@ const availableLocales = computed<LocaleItem[]>(() => {
 </script>
 
 <template>
-  <div class="lang-segmented-group" role="group" aria-label="Language selection">
-    <div class="lang-icon-badge" aria-hidden="true">
-      <Languages :size="13" class="lang-icon" />
+  <div
+    class="inline-flex items-center gap-1 rounded-lg border border-neutral-200 bg-white p-0.5 dark:border-neutral-700 dark:bg-neutral-800"
+    role="group"
+    aria-label="Language selection"
+  >
+    <div
+      class="flex items-center justify-center pl-1.5 pr-0.5 text-neutral-400 dark:text-neutral-500"
+      aria-hidden="true"
+    >
+      <Languages :size="13" />
     </div>
-    <div class="lang-buttons">
+    <div class="inline-flex items-center gap-0.5">
       <button
         v-for="item in availableLocales"
         :key="item.code"
         type="button"
-        :class="['lang-segment-btn', { active: locale === item.code }]"
+        :class="[
+          'inline-flex cursor-pointer items-center justify-center rounded px-2 py-1 text-xs font-semibold leading-none transition-colors',
+          locale === item.code
+            ? 'shadow-xs bg-primary-600 text-white'
+            : 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 dark:text-neutral-400 dark:hover:bg-neutral-700 dark:hover:text-white',
+        ]"
         @click="setLocale(item.code as any)"
         :title="item.code === 'km' ? 'ភាសាខ្មែរ (Khmer)' : 'English'"
       >
@@ -39,58 +51,3 @@ const availableLocales = computed<LocaleItem[]>(() => {
     </div>
   </div>
 </template>
-
-<style scoped>
-.lang-segmented-group {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.25rem;
-  padding: 2px 3px;
-  background: var(--bg-surface);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-sm, 6px);
-  height: 32px;
-}
-
-.lang-icon-badge {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0 0.25rem 0 0.35rem;
-  color: var(--text-muted, #94a3b8);
-}
-
-.lang-buttons {
-  display: inline-flex;
-  align-items: center;
-  gap: 2px;
-}
-
-.lang-segment-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0.2rem 0.5rem;
-  height: 24px;
-  border-radius: 4px;
-  font-size: 0.72rem;
-  font-weight: 600;
-  color: var(--text-muted, #94a3b8);
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  transition: all 0.15s ease;
-  line-height: 1;
-}
-
-.lang-segment-btn:hover {
-  color: var(--text-main);
-  background: var(--bg-surface-hover);
-}
-
-.lang-segment-btn.active {
-  color: #ffffff;
-  background: var(--primary, #4f46e5);
-  font-weight: 700;
-}
-</style>

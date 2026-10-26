@@ -1,20 +1,23 @@
-import { maintenanceRepository, type MaintenanceRequestEntity } from '../repositories/maintenance.repo';
+import {
+  maintenanceRepository,
+  type MaintenanceRequestEntity,
+} from '../repositories/maintenance.repo';
 import { notificationRepository } from '../repositories/notification.repo';
 import { unitRepository } from '../repositories/unit.repo';
 import { propertyRepository } from '../repositories/property.repo';
 import { userRepository } from '../repositories/user.repo';
 import { leaseRepository } from '../repositories/lease.repo';
-import { 
-  CreateMaintenanceRequestSchema, 
-  AssignTechnicianSchema, 
-  UpdateProgressSchema, 
-  ConfirmMaintenanceSchema, 
+import {
+  CreateMaintenanceRequestSchema,
+  AssignTechnicianSchema,
+  UpdateProgressSchema,
+  ConfirmMaintenanceSchema,
   QueryMaintenanceSchema,
-  type CreateMaintenanceRequestInput, 
-  type AssignTechnicianInput, 
-  type UpdateProgressInput, 
-  type ConfirmMaintenanceInput, 
-  type QueryMaintenanceInput 
+  type CreateMaintenanceRequestInput,
+  type AssignTechnicianInput,
+  type UpdateProgressInput,
+  type ConfirmMaintenanceInput,
+  type QueryMaintenanceInput,
 } from '../../shared/schemas/maintenance.schema';
 import { MaintenanceStatus } from '../../shared/types/enums/maintenance-status.enum';
 import { MaintenancePriority } from '../../shared/types/enums/maintenance-priority.enum';
@@ -48,7 +51,8 @@ export class MaintenanceService {
         userId: property.landlordId,
         title: `Maintenance Request: ${validated.priority} Priority`,
         message: `New ticket "${validated.title}" submitted for Unit ${unit.unitNumber} (${property.title}).`,
-        type: validated.priority === 'HIGH' || validated.priority === 'EMERGENCY' ? 'WARNING' : 'INFO',
+        type:
+          validated.priority === 'HIGH' || validated.priority === 'EMERGENCY' ? 'WARNING' : 'INFO',
         link: '/dashboard/maintenance',
       });
     }
@@ -72,7 +76,9 @@ export class MaintenanceService {
     const property = unit ? await propertyRepository.findById(unit.propertyId) : null;
 
     if (user.role !== 'ADMIN' && property?.landlordId !== user.id) {
-      throw createForbiddenError('You do not have permission to assign technicians for this property');
+      throw createForbiddenError(
+        'You do not have permission to assign technicians for this property'
+      );
     }
 
     const technician = await userRepository.findById(validated.technicianId);
@@ -124,7 +130,9 @@ export class MaintenanceService {
     const isAdmin = user.role === 'ADMIN';
 
     if (!isAssignedTech && !isAdmin) {
-      throw createForbiddenError('Only the assigned technician or an admin can update ticket progress');
+      throw createForbiddenError(
+        'Only the assigned technician or an admin can update ticket progress'
+      );
     }
 
     const updatePayload: Partial<MaintenanceRequestEntity> = {
@@ -223,7 +231,7 @@ export class MaintenanceService {
     } else if (user.role === 'LANDLORD') {
       const landlordProperties = await propertyRepository.findMany({ landlordId: user.id });
       const propIds = new Set(landlordProperties.map((p: any) => p.id));
-      
+
       const allRequests = await maintenanceRepository.findMany(validated);
       const matching: MaintenanceRequestEntity[] = [];
       for (const req of allRequests) {
@@ -269,7 +277,9 @@ export class MaintenanceService {
     return this.enrichRequest(request);
   }
 
-  private async enrichRequest(request: MaintenanceRequestEntity): Promise<MaintenanceRequestEntity> {
+  private async enrichRequest(
+    request: MaintenanceRequestEntity
+  ): Promise<MaintenanceRequestEntity> {
     let unit = request.unit;
     if (!unit) {
       const u = await unitRepository.findById(request.unitId);

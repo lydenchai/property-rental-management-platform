@@ -11,7 +11,7 @@ import {
   FileText,
   ShieldCheck,
   ArrowRight,
-  MessageSquare
+  MessageSquare,
 } from '@lucide/vue';
 
 definePageMeta({
@@ -22,7 +22,8 @@ const { t } = useI18n();
 
 useSeoMeta({
   title: 'Help Center & FAQ | RentEase Platform',
-  description: 'Find answers to common questions about accounts, property listings, rental applications, digital lease signing, invoices, and maintenance on RentEase.',
+  description:
+    'Find answers to common questions about accounts, property listings, rental applications, digital lease signing, invoices, and maintenance on RentEase.',
   ogTitle: 'Help Center & FAQ | RentEase',
   ogDescription: 'Frequently asked questions and support guide for RentEase users.',
 });
@@ -62,19 +63,19 @@ const faqList = computed<FaqItem[]>(() => [
     id: 'account-1',
     category: 'ACCOUNTS',
     question: t('faq.items.q_account_1'),
-    answer: t('faq.items.a_account_1')
+    answer: t('faq.items.a_account_1'),
   },
   {
     id: 'account-2',
     category: 'ACCOUNTS',
     question: t('faq.items.q_account_2'),
-    answer: t('faq.items.a_account_2')
+    answer: t('faq.items.a_account_2'),
   },
   {
     id: 'account-3',
     category: 'ACCOUNTS',
     question: t('faq.items.q_account_3'),
-    answer: t('faq.items.a_account_3')
+    answer: t('faq.items.a_account_3'),
   },
 
   // Properties & Units
@@ -82,19 +83,19 @@ const faqList = computed<FaqItem[]>(() => [
     id: 'property-1',
     category: 'PROPERTIES',
     question: t('faq.items.q_property_1'),
-    answer: t('faq.items.a_property_1')
+    answer: t('faq.items.a_property_1'),
   },
   {
     id: 'property-2',
     category: 'PROPERTIES',
     question: t('faq.items.q_property_2'),
-    answer: t('faq.items.a_property_2')
+    answer: t('faq.items.a_property_2'),
   },
   {
     id: 'property-3',
     category: 'PROPERTIES',
     question: t('faq.items.q_property_3'),
-    answer: t('faq.items.a_property_3')
+    answer: t('faq.items.a_property_3'),
   },
 
   // Applications
@@ -102,13 +103,13 @@ const faqList = computed<FaqItem[]>(() => [
     id: 'app-1',
     category: 'APPLICATIONS',
     question: t('faq.items.q_app_1'),
-    answer: t('faq.items.a_app_1')
+    answer: t('faq.items.a_app_1'),
   },
   {
     id: 'app-2',
     category: 'APPLICATIONS',
     question: t('faq.items.q_app_2'),
-    answer: t('faq.items.a_app_2')
+    answer: t('faq.items.a_app_2'),
   },
 
   // Leases
@@ -116,19 +117,19 @@ const faqList = computed<FaqItem[]>(() => [
     id: 'lease-1',
     category: 'LEASES',
     question: t('faq.items.q_lease_1'),
-    answer: t('faq.items.a_lease_1')
+    answer: t('faq.items.a_lease_1'),
   },
   {
     id: 'lease-2',
     category: 'LEASES',
     question: t('faq.items.q_lease_2'),
-    answer: t('faq.items.a_lease_2')
+    answer: t('faq.items.a_lease_2'),
   },
   {
     id: 'lease-3',
     category: 'LEASES',
     question: t('faq.items.q_lease_3'),
-    answer: t('faq.items.a_lease_3')
+    answer: t('faq.items.a_lease_3'),
   },
 
   // Payments & Invoicing
@@ -136,19 +137,19 @@ const faqList = computed<FaqItem[]>(() => [
     id: 'payment-1',
     category: 'PAYMENTS',
     question: t('faq.items.q_payment_1'),
-    answer: t('faq.items.a_payment_1')
+    answer: t('faq.items.a_payment_1'),
   },
   {
     id: 'payment-2',
     category: 'PAYMENTS',
     question: t('faq.items.q_payment_2'),
-    answer: t('faq.items.a_payment_2')
+    answer: t('faq.items.a_payment_2'),
   },
   {
     id: 'payment-3',
     category: 'PAYMENTS',
     question: t('faq.items.q_payment_3'),
-    answer: t('faq.items.a_payment_3')
+    answer: t('faq.items.a_payment_3'),
   },
 
   // Maintenance
@@ -156,20 +157,19 @@ const faqList = computed<FaqItem[]>(() => [
     id: 'maint-1',
     category: 'MAINTENANCE',
     question: t('faq.items.q_maint_1'),
-    answer: t('faq.items.a_maint_1')
+    answer: t('faq.items.a_maint_1'),
   },
   {
     id: 'maint-2',
     category: 'MAINTENANCE',
     question: t('faq.items.q_maint_2'),
-    answer: t('faq.items.a_maint_2')
-  }
+    answer: t('faq.items.a_maint_2'),
+  },
 ]);
 
 const filteredFaqs = computed(() => {
   return faqList.value.filter((faq) => {
-    const matchesCategory =
-      activeCategory.value === 'ALL' || faq.category === activeCategory.value;
+    const matchesCategory = activeCategory.value === 'ALL' || faq.category === activeCategory.value;
     const query = searchQuery.value.trim().toLowerCase();
     const matchesSearch =
       !query ||
@@ -181,34 +181,44 @@ const filteredFaqs = computed(() => {
 </script>
 
 <template>
-  <div class="faq-page">
+  <div class="flex flex-col gap-10 pb-16">
     <!-- Hero Header -->
-    <section class="faq-hero-section">
-      <div class="faq-hero-container">
-        <div class="faq-badge">
-          <HelpCircle :size="14" class="badge-icon" />
+    <section
+      class="border-b border-neutral-200 bg-white px-4 py-12 text-center transition-colors dark:border-neutral-800 dark:bg-neutral-950 sm:px-6"
+    >
+      <div class="mx-auto flex max-w-3xl flex-col items-center gap-4">
+        <div
+          class="inline-flex items-center gap-2 rounded-full border border-neutral-200 bg-neutral-100 px-3 py-1 text-xs font-semibold text-neutral-600 dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-300"
+        >
+          <HelpCircle :size="14" class="text-blue-600 dark:text-blue-400" />
           <span>{{ t('faq.badge') }}</span>
         </div>
-        <h1 class="faq-title">{{ t('faq.title') }}</h1>
-        <p class="faq-lead">
+        <h1 class="text-3xl font-bold tracking-tight text-neutral-900 dark:text-white sm:text-4xl">
+          {{ t('faq.title') }}
+        </h1>
+        <p
+          class="max-w-2xl text-sm leading-relaxed text-neutral-500 dark:text-neutral-400 sm:text-base"
+        >
           {{ t('faq.lead') }}
         </p>
 
         <!-- Search Input -->
-        <div class="faq-search-wrapper card-flat">
-          <Search :size="18" class="search-icon" />
+        <div
+          class="shadow-xs relative mt-2 flex w-full max-w-xl items-center rounded-xl border border-neutral-300 bg-white px-4 py-2.5 transition-all focus-within:ring-2 focus-within:ring-blue-600 dark:border-neutral-700 dark:bg-neutral-900 dark:focus-within:ring-blue-500"
+        >
+          <Search :size="18" class="mr-3 shrink-0 text-neutral-400 dark:text-neutral-500" />
           <input
             v-model="searchQuery"
             type="text"
             :placeholder="t('faq.search_placeholder')"
-            class="faq-search-input"
+            class="w-full border-none bg-transparent text-sm text-neutral-900 placeholder:text-neutral-400 focus:outline-none dark:text-white"
             aria-label="Search frequently asked questions"
           />
           <button
             v-if="searchQuery"
             type="button"
             @click="searchQuery = ''"
-            class="search-clear-btn"
+            class="ml-2 text-xs font-semibold text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200"
           >
             {{ t('faq.clear') }}
           </button>
@@ -217,374 +227,117 @@ const filteredFaqs = computed(() => {
     </section>
 
     <!-- Main Content Section -->
-    <section class="faq-content-section">
-      <div class="faq-container">
-        <!-- Topic Categories Tabs Strip -->
-        <div class="category-tabs-strip">
-          <button
-            v-for="cat in categories"
-            :key="cat.id"
-            type="button"
-            :class="['category-tab-btn', { active: activeCategory === cat.id }]"
-            @click="activeCategory = cat.id"
+    <section class="mx-auto flex w-full max-w-4xl flex-col gap-8 px-4 sm:px-6">
+      <!-- Topic Categories Tabs Strip -->
+      <div class="flex flex-wrap items-center justify-center gap-2">
+        <button
+          v-for="cat in categories"
+          :key="cat.id"
+          type="button"
+          :class="[
+            'inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors',
+            activeCategory === cat.id
+              ? 'shadow-xs border-neutral-900 bg-neutral-900 text-white dark:border-blue-600 dark:bg-blue-600 dark:text-white'
+              : 'border-neutral-200 bg-white text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900 dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-white',
+          ]"
+          @click="activeCategory = cat.id"
+        >
+          <component :is="cat.icon" :size="14" />
+          <span>{{ cat.label }}</span>
+        </button>
+      </div>
+
+      <!-- FAQ Items Accordion -->
+      <div class="flex flex-col gap-3">
+        <div
+          v-if="filteredFaqs.length === 0"
+          class="rounded-xl border border-neutral-200 bg-white px-4 py-12 text-center dark:border-neutral-800 dark:bg-neutral-900"
+        >
+          <HelpCircle :size="32" class="mx-auto mb-3 text-neutral-400 dark:text-neutral-500" />
+          <h3 class="text-base font-bold text-neutral-900 dark:text-white">
+            {{ t('faq.no_results_title') }}
+          </h3>
+          <p
+            class="mx-auto mt-1 max-w-sm text-xs text-neutral-500 dark:text-neutral-400 sm:text-sm"
           >
-            <component :is="cat.icon" :size="15" />
-            <span>{{ cat.label }}</span>
+            {{ t('faq.no_results_desc') }}
+          </p>
+          <button
+            type="button"
+            @click="
+              searchQuery = '';
+              activeCategory = 'ALL';
+            "
+            class="btn-secondary btn-sm mt-4"
+          >
+            {{ t('faq.reset_filters') }}
           </button>
         </div>
 
-        <!-- FAQ Items Accordion -->
-        <div class="faq-accordion-list">
-          <div v-if="filteredFaqs.length === 0" class="empty-faq card-flat">
-            <HelpCircle :size="28" class="empty-icon" />
-            <h3>{{ t('faq.no_results_title') }}</h3>
-            <p>{{ t('faq.no_results_desc') }}</p>
-            <button
-              type="button"
-              @click="searchQuery = ''; activeCategory = 'ALL'"
-              class="btn-secondary btn-sm mt-3"
+        <div
+          v-for="faq in filteredFaqs"
+          :key="faq.id"
+          :class="[
+            'shadow-xs overflow-hidden rounded-xl border bg-white transition-colors dark:bg-neutral-900',
+            expandedIds.has(faq.id)
+              ? 'border-neutral-300 dark:border-neutral-700'
+              : 'border-neutral-200 hover:border-neutral-300 dark:border-neutral-800 dark:hover:border-neutral-700',
+          ]"
+        >
+          <button
+            type="button"
+            class="flex w-full items-center justify-between p-4 text-left transition-colors sm:p-5"
+            :aria-expanded="expandedIds.has(faq.id)"
+            @click="toggleFaq(faq.id)"
+          >
+            <span
+              class="pr-4 text-sm font-semibold text-neutral-900 dark:text-white sm:text-base"
+              >{{ faq.question }}</span
             >
-              {{ t('faq.reset_filters') }}
-            </button>
-          </div>
+            <ChevronDown
+              :size="18"
+              :class="[
+                'shrink-0 text-neutral-400 transition-transform duration-200 dark:text-neutral-500',
+                { 'rotate-180': expandedIds.has(faq.id) },
+              ]"
+            />
+          </button>
 
           <div
-            v-for="faq in filteredFaqs"
-            :key="faq.id"
-            :class="['faq-card', 'card-flat', { 'is-expanded': expandedIds.has(faq.id) }]"
+            v-show="expandedIds.has(faq.id)"
+            class="mt-1 border-t border-neutral-100 px-4 pb-5 pt-0 dark:border-neutral-800/60 sm:px-5"
           >
-            <button
-              type="button"
-              class="faq-header-btn"
-              :aria-expanded="expandedIds.has(faq.id)"
-              @click="toggleFaq(faq.id)"
-            >
-              <span class="faq-question-text">{{ faq.question }}</span>
-              <ChevronDown
-                :size="18"
-                :class="['chevron-icon', { 'rotate-180': expandedIds.has(faq.id) }]"
-              />
-            </button>
-
-            <div v-show="expandedIds.has(faq.id)" class="faq-answer-panel">
-              <p>{{ faq.answer }}</p>
-            </div>
+            <p class="pt-3 text-sm leading-relaxed text-neutral-600 dark:text-neutral-300">
+              {{ faq.answer }}
+            </p>
           </div>
         </div>
+      </div>
 
-        <!-- Contact Support Banner -->
-        <div class="faq-support-banner card-flat">
-          <div class="support-banner-content">
-            <div class="support-icon-box">
-              <MessageSquare :size="20" />
-            </div>
-            <div>
-              <h3>{{ t('faq.banner_title') }}</h3>
-              <p>
-                {{ t('faq.banner_desc') }}
-              </p>
-            </div>
+      <!-- Contact Support Banner -->
+      <div
+        class="shadow-xs flex flex-col items-start justify-between gap-6 rounded-xl border border-neutral-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-900 sm:flex-row sm:items-center sm:p-8"
+      >
+        <div class="flex items-start gap-4">
+          <div
+            class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-blue-200 bg-blue-50 text-blue-600 dark:border-blue-800/40 dark:bg-blue-950/40 dark:text-blue-400"
+          >
+            <MessageSquare :size="20" />
           </div>
-          <NuxtLink to="/contact" class="btn-primary">
-            <span>{{ t('faq.contact_support') }}</span>
-            <ArrowRight :size="15" />
-          </NuxtLink>
+          <div class="flex flex-col gap-1">
+            <h3 class="text-base font-bold text-neutral-900 dark:text-white">
+              {{ t('faq.banner_title') }}
+            </h3>
+            <p class="text-xs leading-relaxed text-neutral-500 dark:text-neutral-400 sm:text-sm">
+              {{ t('faq.banner_desc') }}
+            </p>
+          </div>
         </div>
+        <NuxtLink to="/contact" class="btn-primary w-full shrink-0 sm:w-auto">
+          <span>{{ t('faq.contact_support') }}</span>
+          <ArrowRight :size="15" />
+        </NuxtLink>
       </div>
     </section>
   </div>
 </template>
-
-<style scoped>
-.faq-page {
-  display: flex;
-  flex-direction: column;
-  gap: 2.5rem;
-  padding-bottom: 4rem;
-}
-
-.faq-container {
-  max-width: 960px;
-  margin: 0 auto;
-  padding: 0 1.5rem;
-  width: 100%;
-}
-
-/* Hero Section */
-.faq-hero-section {
-  padding: 3.5rem 1.5rem 2rem;
-  text-align: center;
-  border-bottom: 1px solid var(--border-subtle);
-  background: var(--bg-surface);
-}
-
-.faq-hero-container {
-  max-width: 800px;
-  margin: 0 auto;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 1.25rem;
-}
-
-.faq-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  background: var(--bg-subtle);
-  border: 1px solid var(--border-default);
-  padding: 0.35rem 0.85rem;
-  border-radius: var(--radius-full);
-  font-size: 0.78rem;
-  font-weight: 600;
-  color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.badge-icon {
-  color: var(--color-indigo-accent);
-}
-
-.faq-title {
-  font-size: 2.25rem;
-  font-weight: 800;
-  letter-spacing: -0.025em;
-  color: var(--text-main);
-}
-
-@media (min-width: 768px) {
-  .faq-title {
-    font-size: 2.75rem;
-  }
-}
-
-.faq-lead {
-  font-size: 1rem;
-  line-height: 1.6;
-  color: var(--text-muted);
-  max-width: 680px;
-}
-
-/* Search Box */
-.faq-search-wrapper {
-  width: 100%;
-  max-width: 680px;
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.65rem 1rem;
-  background: var(--bg-surface);
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-md);
-  margin-top: 0.5rem;
-}
-
-.search-icon {
-  color: var(--text-dim);
-  flex-shrink: 0;
-}
-
-.faq-search-input {
-  width: 100%;
-  background: transparent;
-  border: none;
-  outline: none;
-  color: var(--text-main);
-  font-size: 0.92rem;
-  font-family: inherit;
-}
-
-.faq-search-input::placeholder {
-  color: var(--text-dim);
-}
-
-.search-clear-btn {
-  background: transparent;
-  border: none;
-  color: var(--text-dim);
-  font-size: 0.78rem;
-  cursor: pointer;
-  padding: 0.2rem 0.4rem;
-  border-radius: var(--radius-sm);
-}
-
-.search-clear-btn:hover {
-  color: var(--text-main);
-}
-
-/* Category Tabs Strip */
-.category-tabs-strip {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  overflow-x: auto;
-  padding-bottom: 0.5rem;
-  margin-bottom: 2rem;
-  scrollbar-width: thin;
-}
-
-.category-tab-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.45rem;
-  padding: 0.45rem 0.95rem;
-  border-radius: var(--radius-sm);
-  background: var(--bg-surface);
-  border: 1px solid var(--border-default);
-  color: var(--text-muted);
-  font-size: 0.82rem;
-  font-weight: 500;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: all 0.15s ease;
-}
-
-.category-tab-btn:hover {
-  color: var(--text-main);
-  border-color: var(--text-dim);
-}
-
-.category-tab-btn.active {
-  background: var(--primary);
-  color: #ffffff;
-  border-color: var(--primary);
-}
-
-/* Accordion Cards */
-.faq-accordion-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.85rem;
-}
-
-.faq-card {
-  padding: 0;
-  overflow: hidden;
-  transition: border-color 0.15s ease;
-}
-
-.faq-card.is-expanded {
-  border-color: var(--text-dim);
-}
-
-.faq-header-btn {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  padding: 1.25rem 1.5rem;
-  background: transparent;
-  border: none;
-  text-align: left;
-  cursor: pointer;
-  color: var(--text-main);
-  font-family: inherit;
-}
-
-.faq-question-text {
-  font-size: 1rem;
-  font-weight: 600;
-  line-height: 1.4;
-}
-
-.chevron-icon {
-  color: var(--text-dim);
-  flex-shrink: 0;
-  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.rotate-180 {
-  transform: rotate(180deg);
-}
-
-.faq-answer-panel {
-  padding: 0 1.5rem 1.25rem;
-  border-top: 1px solid var(--border-subtle);
-  padding-top: 1rem;
-}
-
-.faq-answer-panel p {
-  color: var(--text-muted);
-  font-size: 0.92rem;
-  line-height: 1.65;
-}
-
-/* Empty State */
-.empty-faq {
-  padding: 3rem 1.5rem;
-  text-align: center;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.empty-icon {
-  color: var(--text-dim);
-  margin-bottom: 0.5rem;
-}
-
-.empty-faq h3 {
-  font-size: 1.15rem;
-}
-
-.empty-faq p {
-  color: var(--text-muted);
-  font-size: 0.88rem;
-}
-
-/* Support Banner */
-.faq-support-banner {
-  margin-top: 3rem;
-  padding: 2rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-  align-items: flex-start;
-  justify-content: space-between;
-}
-
-@media (min-width: 768px) {
-  .faq-support-banner {
-    flex-direction: row;
-    align-items: center;
-  }
-}
-
-.support-banner-content {
-  display: flex;
-  align-items: flex-start;
-  gap: 1.25rem;
-  max-width: 600px;
-}
-
-.support-icon-box {
-  width: 44px;
-  height: 44px;
-  border-radius: var(--radius-sm);
-  background: var(--bg-subtle);
-  border: 1px solid var(--border-default);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--color-indigo-accent);
-  flex-shrink: 0;
-}
-
-.support-banner-content h3 {
-  font-size: 1.15rem;
-  margin-bottom: 0.35rem;
-}
-
-.support-banner-content p {
-  color: var(--text-muted);
-  font-size: 0.88rem;
-  line-height: 1.5;
-}
-
-.mt-3 {
-  margin-top: 0.75rem;
-}
-</style>

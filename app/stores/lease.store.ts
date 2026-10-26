@@ -14,21 +14,26 @@ export function useLeaseStore() {
 
   // Computed summary metrics
   const totalLeases = computed(() => state.leases.length);
-  const activeLeasesCount = computed(() => state.leases.filter((l) => l.status === 'ACTIVE').length);
-  const pendingLeasesCount = computed(() => 
-    state.leases.filter((l) => l.status === 'PENDING_SIGNATURES' || l.status === 'DRAFT').length
+  const activeLeasesCount = computed(
+    () => state.leases.filter((l) => l.status === 'ACTIVE').length
   );
-  const terminatedLeasesCount = computed(() => 
-    state.leases.filter((l) => l.status === 'TERMINATED' || l.status === 'EXPIRED').length
+  const pendingLeasesCount = computed(
+    () =>
+      state.leases.filter((l) => l.status === 'PENDING_SIGNATURES' || l.status === 'DRAFT').length
+  );
+  const terminatedLeasesCount = computed(
+    () => state.leases.filter((l) => l.status === 'TERMINATED' || l.status === 'EXPIRED').length
   );
 
-  const monthlyRentRoll = computed(() => 
+  const monthlyRentRoll = computed(() =>
     state.leases
       .filter((l) => l.status === 'ACTIVE')
       .reduce((sum, l) => sum + (Number(l.rentAmount) || 0), 0)
   );
 
-  async function fetchLeases(filter: { tenantId?: string; landlordId?: string; status?: string } = {}) {
+  async function fetchLeases(
+    filter: { tenantId?: string; landlordId?: string; status?: string } = {}
+  ) {
     state.isLoading = true;
     state.error = null;
 

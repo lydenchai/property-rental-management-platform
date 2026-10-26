@@ -162,10 +162,12 @@ export class AuditLogRepository {
 
       return {
         ...created,
-        user: created.user ? {
-          ...created.user,
-          role: created.user.role as string,
-        } : undefined,
+        user: created.user
+          ? {
+              ...created.user,
+              role: created.user.role as string,
+            }
+          : undefined,
       };
     } catch {
       const entry: AuditLogEntity = {
@@ -186,12 +188,14 @@ export class AuditLogRepository {
     }
   }
 
-  async findMany(filter: {
-    userId?: string;
-    action?: string;
-    entityType?: string;
-    search?: string;
-  } = {}): Promise<AuditLogEntity[]> {
+  async findMany(
+    filter: {
+      userId?: string;
+      action?: string;
+      entityType?: string;
+      search?: string;
+    } = {}
+  ): Promise<AuditLogEntity[]> {
     try {
       const where: any = {};
       if (filter.userId) where.userId = filter.userId;
@@ -210,10 +214,12 @@ export class AuditLogRepository {
 
       return list.map((l) => ({
         ...l,
-        user: l.user ? {
-          ...l.user,
-          role: l.user.role as string,
-        } : undefined,
+        user: l.user
+          ? {
+              ...l.user,
+              role: l.user.role as string,
+            }
+          : undefined,
       }));
     } catch {
       let filtered = [...inMemoryAuditLogs];
@@ -224,16 +230,19 @@ export class AuditLogRepository {
         filtered = filtered.filter((l) => l.action.toLowerCase() === filter.action!.toLowerCase());
       }
       if (filter.entityType) {
-        filtered = filtered.filter((l) => l.entityType.toLowerCase() === filter.entityType!.toLowerCase());
+        filtered = filtered.filter(
+          (l) => l.entityType.toLowerCase() === filter.entityType!.toLowerCase()
+        );
       }
       if (filter.search) {
         const q = filter.search.toLowerCase();
-        filtered = filtered.filter((l) =>
-          l.action.toLowerCase().includes(q) ||
-          l.entityType.toLowerCase().includes(q) ||
-          l.entityId.toLowerCase().includes(q) ||
-          l.user?.fullName.toLowerCase().includes(q) ||
-          l.user?.email.toLowerCase().includes(q)
+        filtered = filtered.filter(
+          (l) =>
+            l.action.toLowerCase().includes(q) ||
+            l.entityType.toLowerCase().includes(q) ||
+            l.entityId.toLowerCase().includes(q) ||
+            l.user?.fullName.toLowerCase().includes(q) ||
+            l.user?.email.toLowerCase().includes(q)
         );
       }
       return filtered;

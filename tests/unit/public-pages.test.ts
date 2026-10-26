@@ -41,7 +41,13 @@ describe('Public Information & Legal Schemas', () => {
 
   describe('Contact Us Form Validation', () => {
     it('should accept valid contact submissions across all categories', () => {
-      const categories = ['GENERAL', 'LANDLORD_ONBOARDING', 'TENANT_SUPPORT', 'TECHNICAL_SECURITY', 'BILLING'] as const;
+      const categories = [
+        'GENERAL',
+        'LANDLORD_ONBOARDING',
+        'TENANT_SUPPORT',
+        'TECHNICAL_SECURITY',
+        'BILLING',
+      ] as const;
 
       for (const category of categories) {
         const input = {
@@ -50,7 +56,8 @@ describe('Public Information & Legal Schemas', () => {
           category,
           propertyReference: 'BKK1 Luxury Suites #402',
           subject: 'Question regarding lease execution deposit',
-          message: 'Hello RentEase team, I would like to inquire about how the security deposit receipt is verified upon mutual signing.',
+          message:
+            'Hello RentEase team, I would like to inquire about how the security deposit receipt is verified upon mutual signing.',
         };
 
         const result = ContactInputSchema.safeParse(input);

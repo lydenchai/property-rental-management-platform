@@ -147,11 +147,13 @@ export class PaymentRepository {
     }
   }
 
-  async findMany(filter: {
-    invoiceId?: string;
-    recordedById?: string;
-    status?: PaymentStatus;
-  } = {}): Promise<PaymentEntity[]> {
+  async findMany(
+    filter: {
+      invoiceId?: string;
+      recordedById?: string;
+      status?: PaymentStatus;
+    } = {}
+  ): Promise<PaymentEntity[]> {
     try {
       const where: any = {};
       if (filter.invoiceId) where.invoiceId = filter.invoiceId;

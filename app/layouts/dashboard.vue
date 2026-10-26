@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue';
+import type { NavItem, NavSection } from '~~/shared/types';
 import {
   Building2,
   LayoutDashboard,
@@ -15,11 +16,12 @@ import {
   LogOut,
   BarChart3,
   Menu,
-  X
+  X,
 } from '@lucide/vue';
 import { useAuth } from '../composables/useAuth';
 import ThemeToggle from '../components/common/ThemeToggle.vue';
 import LanguageSwitcher from '../components/common/LanguageSwitcher.vue';
+import NotificationBell from '../components/common/NotificationBell.vue';
 import AppToastContainer from '../components/common/AppToastContainer.vue';
 
 const { t } = useI18n();
@@ -61,120 +63,224 @@ const currentTitle = computed(() => {
   return (route.meta.title as string) || t('nav.dashboard');
 });
 
-watch(() => route.path, () => {
-  isMobileNavOpen.value = false;
+const navSections = computed<NavSection[]>(() => [
+  {
+    title: t('nav.sections.main'),
+    items: [
+      {
+        name: t('common.overview'),
+        to: '/dashboard',
+        icon: LayoutDashboard,
+        exact: true,
+      },
+    ],
+  },
+  {
+    title: t('nav.sections.properties'),
+    show: isLandlord.value || isAdmin.value,
+    items: [
+      {
+        name: t('common.properties_units'),
+        to: '/dashboard/properties',
+        icon: Building,
+      },
+      {
+        name: t('nav.applications'),
+        to: '/dashboard/applications',
+        icon: ClipboardList,
+      },
+    ],
+  },
+  {
+    title: t('nav.sections.leasing'),
+    show: isTenant.value,
+    items: [
+      {
+        name: t('dashboard.metrics.browse_units'),
+        to: '/properties',
+        icon: Search,
+      },
+      {
+        name: t('applications.my_applications'),
+        to: '/dashboard/applications',
+        icon: FileSignature,
+      },
+    ],
+  },
+  {
+    title: t('nav.sections.finances'),
+    show: !isTechnician.value,
+    items: [
+      {
+        name: t('nav.leases'),
+        to: '/dashboard/leases',
+        icon: FileText,
+      },
+      {
+        name: t('nav.invoices'),
+        to: '/dashboard/invoices',
+        icon: CreditCard,
+      },
+      {
+        name: t('nav.reports'),
+        to: '/dashboard/reports',
+        icon: BarChart3,
+        show: isLandlord.value || isAdmin.value,
+      },
+    ],
+  },
+  {
+    title: t('nav.sections.operations'),
+    items: [
+      {
+        name: t('nav.maintenance'),
+        to: '/dashboard/maintenance',
+        icon: Wrench,
+      },
+    ],
+  },
+  {
+    title: t('nav.sections.system_admin'),
+    show: isAdmin.value,
+    items: [
+      {
+        name: t('nav.users'),
+        to: '/dashboard/users',
+        icon: Users,
+      },
+      {
+        name: t('nav.audit_logs'),
+        to: '/dashboard/audit-logs',
+        icon: ShieldCheck,
+      },
+    ],
+  },
+]);
+
+const visibleNavSections = computed(() => {
+  return navSections.value
+    .filter((section) => section.show !== false)
+    .map((section) => ({
+      ...section,
+      items: section.items.filter((item) => item.show !== false),
+    }))
+    .filter((section) => section.items.length > 0);
 });
+
+function isLinkActive(item: NavItem) {
+  if (item.exact) {
+    return route.path === item.to;
+  }
+  return route.path.startsWith(item.to);
+}
+
+watch(
+  () => route.path,
+  () => {
+    isMobileNavOpen.value = false;
+  }
+);
 </script>
 
 <template>
-  <div class="dashboard-shell">
+  <div
+    class="flex h-screen max-h-screen w-full overflow-hidden bg-neutral-100 font-sans text-neutral-900 transition-colors duration-200 dark:bg-black dark:text-neutral-100"
+  >
     <!-- Mobile backdrop -->
-    <div v-if="isMobileNavOpen" class="sidebar-backdrop" @click="isMobileNavOpen = false" aria-hidden="true" />
+    <div
+      v-if="isMobileNavOpen"
+      class="backdrop-blur-xs fixed inset-0 z-40 bg-black/60 transition-opacity md:hidden"
+      @click="isMobileNavOpen = false"
+      aria-hidden="true"
+    />
 
     <!-- Sidebar -->
-    <aside :class="['sidebar', { 'mobile-open': isMobileNavOpen }]">
-      <div class="sidebar-header">
-        <NuxtLink to="/" class="brand">
-          <div class="brand-icon-wrapper">
-            <Building2 :size="18" class="brand-icon-svg" />
+    <aside
+      :class="[
+        'fixed inset-y-0 left-0 z-50 flex h-screen max-h-screen w-64 shrink-0 flex-col overflow-hidden border-r border-neutral-200 bg-white shadow-2xl transition-transform duration-200 ease-out dark:border-neutral-800 dark:bg-neutral-950 md:static md:shadow-none',
+        isMobileNavOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0',
+      ]"
+    >
+      <div
+        class="flex shrink-0 items-center justify-between border-b border-neutral-200 p-4 dark:border-neutral-800"
+      >
+        <NuxtLink
+          to="/"
+          class="flex items-center gap-2.5 text-lg font-bold text-neutral-900 transition-opacity hover:opacity-90 dark:text-white"
+        >
+          <div
+            class="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-neutral-900 text-white shadow-sm dark:bg-blue-600"
+          >
+            <Building2 :size="18" />
           </div>
-          <span class="brand-name">Rent<span class="brand-accent">Ease</span></span>
+          <span>Rent<span class="text-blue-600 dark:text-blue-500">Ease</span></span>
         </NuxtLink>
-        <button class="mobile-close-btn" @click="isMobileNavOpen = false" aria-label="Close Navigation">
+        <button
+          class="rounded-md p-1.5 text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-900 dark:text-neutral-400 dark:hover:bg-neutral-900 dark:hover:text-white md:hidden"
+          @click="isMobileNavOpen = false"
+          aria-label="Close Navigation"
+        >
           <X :size="18" />
         </button>
       </div>
 
-      <nav class="sidebar-nav">
-        <div class="nav-section-title">{{ t('nav.sections.main') }}</div>
-        <NuxtLink to="/dashboard" class="nav-item" :class="{ active: route.path === '/dashboard' }">
-          <LayoutDashboard :size="16" class="nav-icon" />
-          <span>{{ t('common.overview') }}</span>
-        </NuxtLink>
-
-        <!-- Landlord & Admin Links -->
-        <template v-if="isLandlord || isAdmin">
-          <div class="nav-section-title">{{ t('nav.sections.properties') }}</div>
-          <NuxtLink to="/dashboard/properties" class="nav-item"
-            :class="{ active: route.path.startsWith('/dashboard/properties') }">
-            <Building :size="16" class="nav-icon" />
-            <span>{{ t('common.properties_units') }}</span>
-          </NuxtLink>
-          <NuxtLink to="/dashboard/applications" class="nav-item"
-            :class="{ active: route.path.startsWith('/dashboard/applications') }">
-            <ClipboardList :size="16" class="nav-icon" />
-            <span>{{ t('nav.applications') }}</span>
-          </NuxtLink>
-        </template>
-
-        <!-- Tenant Links -->
-        <template v-if="isTenant">
-          <div class="nav-section-title">{{ t('nav.sections.leasing') }}</div>
-          <NuxtLink to="/properties" class="nav-item">
-            <Search :size="16" class="nav-icon" />
-            <span>{{ t('dashboard.metrics.browse_units') }}</span>
-          </NuxtLink>
-          <NuxtLink to="/dashboard/applications" class="nav-item"
-            :class="{ active: route.path.startsWith('/dashboard/applications') }">
-            <FileSignature :size="16" class="nav-icon" />
-            <span>{{ t('applications.my_applications') }}</span>
-          </NuxtLink>
-        </template>
-
-        <!-- Common Leases & Invoices -->
-        <template v-if="!isTechnician">
-          <div class="nav-section-title">{{ t('nav.sections.finances') }}</div>
-          <NuxtLink to="/dashboard/leases" class="nav-item"
-            :class="{ active: route.path.startsWith('/dashboard/leases') }">
-            <FileText :size="16" class="nav-icon" />
-            <span>{{ t('nav.leases') }}</span>
-          </NuxtLink>
-          <NuxtLink to="/dashboard/invoices" class="nav-item"
-            :class="{ active: route.path.startsWith('/dashboard/invoices') }">
-            <CreditCard :size="16" class="nav-icon" />
-            <span>{{ t('nav.invoices') }}</span>
-          </NuxtLink>
-          <NuxtLink v-if="isLandlord || isAdmin" to="/dashboard/reports" class="nav-item"
-            :class="{ active: route.path.startsWith('/dashboard/reports') }">
-            <BarChart3 :size="16" class="nav-icon" />
-            <span>{{ t('nav.reports') }}</span>
-          </NuxtLink>
-        </template>
-
-        <!-- Maintenance (All Roles) -->
-        <div class="nav-section-title">{{ t('nav.sections.operations') }}</div>
-        <NuxtLink to="/dashboard/maintenance" class="nav-item"
-          :class="{ active: route.path.startsWith('/dashboard/maintenance') }">
-          <Wrench :size="16" class="nav-icon" />
-          <span>{{ t('nav.maintenance') }}</span>
-        </NuxtLink>
-
-        <!-- Admin Only -->
-        <template v-if="isAdmin">
-          <div class="nav-section-title">{{ t('nav.sections.system_admin') }}</div>
-          <NuxtLink to="/dashboard/users" class="nav-item"
-            :class="{ active: route.path.startsWith('/dashboard/users') }">
-            <Users :size="16" class="nav-icon" />
-            <span>{{ t('nav.users') }}</span>
-          </NuxtLink>
-          <NuxtLink to="/dashboard/audit-logs" class="nav-item"
-            :class="{ active: route.path.startsWith('/dashboard/audit-logs') }">
-            <ShieldCheck :size="16" class="nav-icon" />
-            <span>{{ t('nav.audit_logs') }}</span>
+      <nav class="flex flex-1 flex-col gap-1 overflow-y-auto px-3 py-4">
+        <template v-for="(section, idx) in visibleNavSections" :key="section.title">
+          <div
+            :class="[
+              'px-3 pb-1 text-[11px] font-bold uppercase tracking-wider text-neutral-400 dark:text-neutral-500',
+              idx === 0 ? 'pt-2' : 'pt-3',
+            ]"
+          >
+            {{ section.title }}
+          </div>
+          <NuxtLink
+            v-for="item in section.items"
+            :key="item.to + item.name"
+            :to="item.to"
+            class="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors"
+            :class="
+              isLinkActive(item)
+                ? 'shadow-xs bg-neutral-900 font-semibold text-white dark:bg-blue-600 dark:text-white'
+                : 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 dark:text-neutral-400 dark:hover:bg-neutral-900 dark:hover:text-white'
+            "
+          >
+            <component :is="item.icon" :size="16" class="shrink-0" />
+            <span>{{ item.name }}</span>
           </NuxtLink>
         </template>
       </nav>
 
-      <div class="sidebar-footer">
-        <div class="user-profile-tile">
-          <div class="user-avatar-circle">
+      <div
+        class="shrink-0 border-t border-neutral-200 bg-white p-3 dark:border-neutral-800 dark:bg-neutral-950"
+      >
+        <div
+          class="flex items-center gap-3 rounded-lg border border-neutral-200 bg-neutral-50 p-2 dark:border-neutral-800 dark:bg-neutral-900/60"
+        >
+          <div
+            class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-neutral-900 text-xs font-bold text-white dark:bg-blue-600"
+          >
             {{ user?.fullName?.charAt(0) || 'U' }}
           </div>
-          <div class="user-meta-details">
-            <span class="user-display-name" :title="user?.fullName">{{ user?.fullName }}</span>
-            <span class="user-role-label">{{ formattedRole }}</span>
+          <div class="flex min-w-0 flex-1 flex-col">
+            <span
+              class="truncate text-xs font-semibold text-neutral-900 dark:text-white"
+              :title="user?.fullName"
+            >
+              {{ user?.fullName }}
+            </span>
+            <span
+              class="truncate font-mono text-[10px] uppercase tracking-wider text-neutral-500 dark:text-neutral-400"
+            >
+              {{ formattedRole }}
+            </span>
           </div>
-          <button @click="logout" class="logout-icon-action" :title="t('common.sign_out')" :aria-label="t('common.sign_out')">
+          <button
+            @click="logout"
+            class="shrink-0 rounded-md p-1.5 text-neutral-400 transition-colors hover:bg-neutral-200 hover:text-rose-600 dark:hover:bg-neutral-800 dark:hover:text-rose-400"
+            :title="t('common.sign_out')"
+            :aria-label="t('common.sign_out')"
+          >
             <LogOut :size="15" />
           </button>
         </div>
@@ -182,26 +288,35 @@ watch(() => route.path, () => {
     </aside>
 
     <!-- Main Content Area -->
-    <div class="dashboard-body">
-      <header class="topbar">
-        <div class="topbar-left">
-          <button class="mobile-toggle-btn" @click="isMobileNavOpen = !isMobileNavOpen"
-            aria-label="Toggle navigation drawer">
+    <div class="relative flex h-screen max-h-screen min-w-0 flex-1 flex-col overflow-hidden">
+      <header
+        class="z-20 flex h-14 shrink-0 items-center justify-between border-b border-neutral-200 bg-white/95 px-4 backdrop-blur-sm transition-colors duration-200 dark:border-neutral-800 dark:bg-neutral-950/95 sm:px-6"
+      >
+        <div class="flex items-center gap-3">
+          <button
+            class="inline-flex h-8 w-8 items-center justify-center rounded-md border border-neutral-200 bg-white text-neutral-700 transition-colors hover:bg-neutral-100 dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-200 dark:hover:bg-neutral-800 md:hidden"
+            @click="isMobileNavOpen = !isMobileNavOpen"
+            aria-label="Toggle navigation drawer"
+          >
             <Menu :size="18" />
           </button>
-          <div class="topbar-title">
+          <div
+            class="text-base font-bold tracking-tight text-neutral-900 dark:text-white sm:text-lg"
+          >
             <h2>{{ currentTitle }}</h2>
           </div>
         </div>
 
-        <div class="topbar-actions">
+        <div class="flex items-center gap-2 sm:gap-3">
           <LanguageSwitcher />
           <ThemeToggle />
           <NotificationBell />
         </div>
       </header>
 
-      <main class="dashboard-content">
+      <main
+        class="flex-1 overflow-y-auto overflow-x-hidden scroll-smooth bg-neutral-100 p-4 dark:bg-black sm:p-6 lg:p-8"
+      >
         <slot />
       </main>
     </div>
@@ -210,340 +325,3 @@ watch(() => route.path, () => {
     <AppToastContainer />
   </div>
 </template>
-
-<style scoped>
-.dashboard-shell {
-  display: flex;
-  height: 100vh;
-  max-height: 100vh;
-  width: 100%;
-  overflow: hidden;
-  background-color: var(--bg-primary);
-}
-
-.sidebar {
-  width: 260px;
-  background: var(--bg-secondary);
-  border-right: 1px solid var(--border-subtle);
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
-  max-height: 100vh;
-  flex-shrink: 0;
-  overflow: hidden;
-  z-index: 30;
-  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.sidebar-header {
-  padding: 1.25rem;
-  border-bottom: 1px solid var(--border-subtle);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-shrink: 0;
-}
-
-.mobile-close-btn {
-  display: none;
-  background: transparent;
-  border: none;
-  color: var(--text-muted);
-  cursor: pointer;
-  padding: 0.25rem;
-}
-
-.brand {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: var(--text-main);
-  text-decoration: none;
-}
-
-.brand-icon-wrapper {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 30px;
-  height: 30px;
-  border-radius: var(--radius-sm);
-  background: var(--primary-subtle);
-  color: var(--color-indigo-accent);
-}
-
-.brand-accent {
-  color: var(--color-indigo-accent);
-}
-
-.sidebar-nav {
-  flex: 1;
-  overflow-y: auto;
-  overflow-x: hidden;
-  padding: 1rem 0.75rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  scrollbar-width: thin;
-  scrollbar-color: var(--border-subtle) transparent;
-}
-
-.nav-section-title {
-  font-size: 0.7rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--text-dim);
-  padding: 0.75rem 0.75rem 0.25rem;
-}
-
-.nav-item {
-  display: flex;
-  align-items: center;
-  gap: 0.65rem;
-  padding: 0.55rem 0.75rem;
-  border-radius: var(--radius-sm);
-  color: var(--text-muted);
-  font-weight: 500;
-  font-size: 0.875rem;
-  text-decoration: none;
-  transition: background-color 0.15s ease, color 0.15s ease;
-}
-
-.nav-icon {
-  flex-shrink: 0;
-  color: var(--text-muted);
-}
-
-.nav-item:hover {
-  background: var(--bg-surface-hover);
-  color: var(--text-main);
-}
-
-.nav-item:hover .nav-icon {
-  color: var(--text-main);
-}
-
-.nav-item.active {
-  background: var(--primary-subtle);
-  color: var(--color-indigo-accent);
-  font-weight: 600;
-}
-
-.nav-item.active .nav-icon {
-  color: var(--color-indigo-accent);
-}
-
-.sidebar-footer {
-  padding: 0.85rem;
-  border-top: 1px solid var(--border-subtle);
-  background: var(--bg-secondary);
-  flex-shrink: 0;
-}
-
-.user-profile-tile {
-  display: flex;
-  align-items: center;
-  gap: 0.65rem;
-  padding: 0.45rem 0.55rem;
-  background: transparent;
-  border-radius: var(--radius-sm);
-  transition: background-color 0.15s ease;
-}
-
-.user-profile-tile:hover {
-  background: var(--bg-hover);
-}
-
-.user-avatar-circle {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background: var(--bg-subtle);
-  border: 1px solid var(--border-subtle);
-  color: var(--text-main);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 600;
-  font-size: 0.8rem;
-  flex-shrink: 0;
-}
-
-.user-meta-details {
-  display: flex;
-  flex-direction: column;
-  gap: 0.1rem;
-  flex: 1;
-  min-width: 0;
-}
-
-.user-display-name {
-  font-size: 0.825rem;
-  font-weight: 600;
-  color: var(--text-main);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  line-height: 1.25;
-}
-
-.user-role-label {
-  font-size: 0.725rem;
-  color: var(--text-muted);
-  font-weight: 400;
-  line-height: 1.2;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.logout-icon-action {
-  width: 28px;
-  height: 28px;
-  border-radius: var(--radius-sm);
-  background: transparent;
-  border: 1px solid transparent;
-  color: var(--text-muted);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  flex-shrink: 0;
-  transition: all 0.15s ease;
-}
-
-.logout-icon-action:hover {
-  background: var(--bg-primary);
-  color: var(--accent-rose);
-  border-color: var(--border-subtle);
-}
-
-.dashboard-body {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
-  max-height: 100vh;
-  min-width: 0;
-  overflow: hidden;
-  position: relative;
-}
-
-.topbar {
-  height: 60px;
-  border-bottom: 1px solid var(--border-subtle);
-  background: var(--bg-secondary);
-  padding: 0 1.75rem;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-shrink: 0;
-  z-index: 20;
-}
-
-.topbar-left {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.mobile-toggle-btn {
-  display: none;
-  align-items: center;
-  justify-content: center;
-  width: 34px;
-  height: 34px;
-  border: 1px solid var(--border-subtle);
-  background: var(--bg-surface);
-  border-radius: var(--radius-sm);
-  color: var(--text-main);
-  cursor: pointer;
-}
-
-.topbar-title h2 {
-  font-size: 1.15rem;
-  font-weight: 600;
-  color: var(--text-main);
-}
-
-.topbar-actions {
-  display: flex;
-  align-items: center;
-  gap: 0.85rem;
-}
-
-.dashboard-content {
-  flex: 1;
-  padding: 1.75rem;
-  overflow-y: auto;
-  overflow-x: hidden;
-  scroll-behavior: smooth;
-  scrollbar-gutter: stable;
-  scrollbar-width: thin;
-  scrollbar-color: var(--border-subtle) transparent;
-}
-
-.dashboard-content::-webkit-scrollbar,
-.sidebar-nav::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-
-.dashboard-content::-webkit-scrollbar-track,
-.sidebar-nav::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.dashboard-content::-webkit-scrollbar-thumb,
-.sidebar-nav::-webkit-scrollbar-thumb {
-  background: var(--border-subtle);
-  border-radius: var(--radius-full);
-}
-
-.dashboard-content::-webkit-scrollbar-thumb:hover,
-.sidebar-nav::-webkit-scrollbar-thumb:hover {
-  background: var(--border-default);
-}
-
-/* Mobile & Tablet Drawer */
-@media (max-width: 768px) {
-  .sidebar {
-    position: fixed;
-    top: 0;
-    bottom: 0;
-    left: 0;
-    transform: translateX(-100%);
-    box-shadow: 0 0 24px rgba(0, 0, 0, 0.25);
-  }
-
-  .sidebar.mobile-open {
-    transform: translateX(0);
-  }
-
-  .mobile-close-btn {
-    display: block;
-  }
-
-  .mobile-toggle-btn {
-    display: inline-flex;
-  }
-
-  .sidebar-backdrop {
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.6);
-    z-index: 25;
-  }
-
-  .topbar {
-    padding: 0 1rem;
-  }
-
-  .dashboard-content {
-    padding: 1rem;
-  }
-}
-</style>

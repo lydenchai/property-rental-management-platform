@@ -33,7 +33,8 @@ export function useAuditLogStore() {
         throw error.value || new Error('Failed to fetch audit log history');
       }
     } catch (err: any) {
-      state.error = err?.data?.error?.message || err?.message || 'Failed to fetch audit log history';
+      state.error =
+        err?.data?.error?.message || err?.message || 'Failed to fetch audit log history';
       return [];
     } finally {
       state.isLoading = false;

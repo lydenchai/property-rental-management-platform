@@ -37,4 +37,3 @@ export type CreateUnitInput = z.infer<typeof CreateUnitSchema>;
 
 export const UpdateUnitSchema = CreateUnitSchema.partial();
 export type UpdateUnitInput = z.infer<typeof UpdateUnitSchema>;
-

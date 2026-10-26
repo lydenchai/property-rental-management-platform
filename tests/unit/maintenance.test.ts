@@ -83,7 +83,9 @@ describe('Phase 6: Maintenance Management & Notifications Lifecycle', () => {
     });
     expect(resolved.status).toBe(MaintenanceStatus.RESOLVED);
     expect(resolved.resolvedAt).toBeDefined();
-    expect(resolved.resolutionNotes).toBe('Cleared drain pump impellers and verified successful drainage cycle.');
+    expect(resolved.resolutionNotes).toBe(
+      'Cleared drain pump impellers and verified successful drainage cycle.'
+    );
 
     // Tenant notification for completed repair
     const tenantNotifs = await notificationRepository.findByUserId(tenantUser.id);

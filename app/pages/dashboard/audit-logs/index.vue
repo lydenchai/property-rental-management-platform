@@ -12,7 +12,7 @@ import {
   FileText,
   X,
   Terminal,
-  Activity
+  Activity,
 } from '@lucide/vue';
 import { useAuth } from '../../../composables/useAuth';
 import { useAuditLogStore } from '../../../stores/audit-log.store';
@@ -29,17 +29,9 @@ const { t } = useI18n();
 const { isAdmin } = useAuth();
 const auditLogStore = useAuditLogStore();
 
-const {
-  logs,
-  isLoading,
-  errorMessage,
-  totalLogs,
-} = auditLogStore;
+const { logs, isLoading, errorMessage, totalLogs } = auditLogStore;
 
-const {
-  fetchAuditLogs,
-  loadAuditLogs,
-} = auditLogStore;
+const { fetchAuditLogs, loadAuditLogs } = auditLogStore;
 
 // Filters
 const actionFilter = ref('ALL');
@@ -67,7 +59,14 @@ const filteredLogs = computed(() => {
     const userEmail = log.user?.email?.toLowerCase() || '';
     const ip = log.ipAddress?.toLowerCase() || '';
 
-    return act.includes(q) || ent.includes(q) || entId.includes(q) || userName.includes(q) || userEmail.includes(q) || ip.includes(q);
+    return (
+      act.includes(q) ||
+      ent.includes(q) ||
+      entId.includes(q) ||
+      userName.includes(q) ||
+      userEmail.includes(q) ||
+      ip.includes(q)
+    );
   });
 });
 
@@ -85,11 +84,15 @@ watch([actionFilter, entityFilter, searchQuery], () => {
 });
 
 function getActionBadgeClass(action: string): string {
-  if (action.startsWith('AUTH')) return 'badge-landlord';
-  if (action.includes('LEASE') || action.includes('APPLICATION')) return 'badge-info';
-  if (action.includes('PAYMENT') || action.includes('INVOICE')) return 'badge-success';
-  if (action.includes('MAINTENANCE')) return 'badge-warning';
-  return 'badge-subtle';
+  if (action.startsWith('AUTH'))
+    return 'bg-indigo-50 dark:bg-indigo-950/30 text-indigo-700 dark:text-indigo-400 border-indigo-200 dark:border-indigo-800';
+  if (action.includes('LEASE') || action.includes('APPLICATION'))
+    return 'bg-sky-50 dark:bg-sky-950/30 text-sky-700 dark:text-sky-400 border-sky-200 dark:border-sky-800';
+  if (action.includes('PAYMENT') || action.includes('INVOICE'))
+    return 'bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800';
+  if (action.includes('MAINTENANCE'))
+    return 'bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-800';
+  return 'bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 border-neutral-200 dark:border-neutral-700';
 }
 
 onMounted(() => {
@@ -98,37 +101,54 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="audit-logs-page">
+  <div class="space-y-6">
     <!-- Top Bar -->
-    <div class="page-top-bar">
+    <div class="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
       <div>
-        <h1>{{ t('audit_logs.title') }}</h1>
-        <p class="subtitle">
+        <h1 class="text-2xl font-bold tracking-tight text-neutral-900 dark:text-white">
+          {{ t('audit_logs.title') }}
+        </h1>
+        <p class="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
           {{ t('audit_logs.subtitle') }}
         </p>
       </div>
-      <div class="admin-shield-badge">
-        <ShieldCheck :size="15" />
+      <div
+        class="inline-flex items-center gap-2 rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-600 dark:border-indigo-800 dark:bg-indigo-950/40 dark:text-indigo-400"
+      >
+        <ShieldCheck :size="16" />
         <span>{{ t('audit_logs.admin_badge') }}</span>
       </div>
     </div>
 
-    <div v-if="errorMessage" class="alert-error">
-      <AlertCircle :size="16" />
+    <div
+      v-if="errorMessage"
+      class="flex items-center gap-3 rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800 dark:border-rose-900/40 dark:bg-rose-950/20 dark:text-rose-300"
+    >
+      <AlertCircle :size="18" class="shrink-0 text-rose-600 dark:text-rose-400" />
       <span>{{ errorMessage }}</span>
     </div>
 
     <!-- Audit Logs Table using shared AppTableCard -->
-    <AppTableCard v-model:search="searchQuery" :search-placeholder="t('audit_logs.search_placeholder')"
-      :is-loading="isLoading" :is-empty="filteredLogs.length === 0" :empty-title="t('audit_logs.empty_title')"
+    <AppTableCard
+      v-model:search="searchQuery"
+      :search-placeholder="t('audit_logs.search_placeholder')"
+      :is-loading="isLoading"
+      :is-empty="filteredLogs.length === 0"
+      :empty-title="t('audit_logs.empty_title')"
       :empty-description="t('audit_logs.empty_desc')"
-      :empty-icon="History" v-model:current-page="currentPage" v-model:page-size="pageSize"
-      :total-items="filteredLogs.length" :item-name="t('common.records')">
+      :empty-icon="History"
+      v-model:current-page="currentPage"
+      v-model:page-size="pageSize"
+      :total-items="filteredLogs.length"
+      :item-name="t('common.records')"
+    >
       <template #toolbar-start>
-        <div class="filter-controls">
-          <div class="select-wrap">
-            <Filter :size="13" class="filter-icon" />
-            <select v-model="actionFilter" class="filter-select">
+        <div class="flex flex-wrap items-center gap-2">
+          <div class="relative">
+            <select
+              v-model="actionFilter"
+              class="focus:outline-hidden rounded-lg border border-neutral-300 bg-white px-3 py-1.5 text-xs text-neutral-800 focus:ring-2 focus:ring-primary-500 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-200"
+            >
               <option value="ALL">{{ t('audit_logs.filter_all_actions') }}</option>
               <option value="AUTH_LOGIN">Login Events</option>
               <option value="USER_STATUS_CHANGE">User Status Changes</option>
@@ -140,8 +160,11 @@ onMounted(() => {
             </select>
           </div>
 
-          <div class="select-wrap">
-            <select v-model="entityFilter" class="filter-select">
+          <div class="relative">
+            <select
+              v-model="entityFilter"
+              class="focus:outline-hidden rounded-lg border border-neutral-300 bg-white px-3 py-1.5 text-xs text-neutral-800 focus:ring-2 focus:ring-primary-500 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-200"
+            >
               <option value="ALL">{{ t('audit_logs.filter_all_entities') }}</option>
               <option value="User">User</option>
               <option value="RentalApplication">Rental Application</option>
@@ -154,501 +177,220 @@ onMounted(() => {
         </div>
       </template>
 
-      <table class="data-table">
-        <thead>
-          <tr>
-            <th>{{ t('audit_logs.col_timestamp') }}</th>
-            <th>{{ t('audit_logs.col_user') }}</th>
-            <th>{{ t('audit_logs.col_action') }}</th>
-            <th>{{ t('audit_logs.col_entity') }}</th>
-            <th>{{ t('audit_logs.col_entity_ref') }}</th>
-            <th>{{ t('audit_logs.col_ip') }}</th>
-            <th class="text-right">{{ t('audit_logs.col_payload') }}</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="log in paginatedLogs" :key="log.id">
-            <td>
-              <div class="timestamp-cell font-mono">
-                <span class="timestamp-date">{{ new Date(log.createdAt).toLocaleDateString() }}</span>
-                <span class="timestamp-time text-dim">{{ new Date(log.createdAt).toLocaleTimeString() }}</span>
-              </div>
-            </td>
-            <td>
-              <div class="user-cell">
-                <span class="user-name">{{ log.user?.fullName || 'System Event' }}</span>
-                <span class="user-email text-dim font-mono">{{ log.user?.email || 'N/A' }}</span>
-              </div>
-            </td>
-            <td>
-              <span class="badge badge-pill font-mono badge-action" :class="getActionBadgeClass(log.action)">
-                <span class="badge-dot"></span>
-                <span>{{ log.action }}</span>
-              </span>
-            </td>
-            <td>
-              <span class="badge badge-pill badge-subtle">
-                <span class="badge-dot"></span>
-                <span>{{ log.entityType }}</span>
-              </span>
-            </td>
-            <td>
-              <span class="font-mono entity-ref">{{ log.entityId }}</span>
-            </td>
-            <td>
-              <span class="font-mono ip-cell">{{ log.ipAddress || '127.0.0.1' }}</span>
-            </td>
-            <td class="text-right">
-              <button @click="selectedLog = log" class="btn-secondary btn-inspect" :title="t('audit_logs.inspect')">
-                <FileText :size="14" />
-                <span>{{ t('audit_logs.inspect') }}</span>
-              </button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-sm text-neutral-700 dark:text-neutral-200">
+          <thead
+            class="border-b border-neutral-200 bg-neutral-50 text-xs font-semibold uppercase tracking-wider text-neutral-500 dark:border-neutral-800 dark:bg-neutral-800/60 dark:text-neutral-400"
+          >
+            <tr>
+              <th class="px-4 py-3">{{ t('audit_logs.col_timestamp') }}</th>
+              <th class="px-4 py-3">{{ t('audit_logs.col_user') }}</th>
+              <th class="px-4 py-3">{{ t('audit_logs.col_action') }}</th>
+              <th class="px-4 py-3">{{ t('audit_logs.col_entity') }}</th>
+              <th class="px-4 py-3">{{ t('audit_logs.col_entity_ref') }}</th>
+              <th class="px-4 py-3">{{ t('audit_logs.col_ip') }}</th>
+              <th class="px-4 py-3 text-right">{{ t('audit_logs.col_payload') }}</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-neutral-200 dark:divide-neutral-800">
+            <tr
+              v-for="log in paginatedLogs"
+              :key="log.id"
+              class="transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-800/40"
+            >
+              <td class="px-4 py-3.5 font-mono text-xs">
+                <div class="flex flex-col">
+                  <span class="font-medium text-neutral-900 dark:text-white">{{
+                    new Date(log.createdAt).toLocaleDateString()
+                  }}</span>
+                  <span class="text-[11px] text-neutral-500 dark:text-neutral-400">{{
+                    new Date(log.createdAt).toLocaleTimeString()
+                  }}</span>
+                </div>
+              </td>
+              <td class="px-4 py-3.5">
+                <div class="flex flex-col text-xs">
+                  <span class="font-medium text-neutral-900 dark:text-white">{{
+                    log.user?.fullName || 'System Event'
+                  }}</span>
+                  <span class="font-mono text-[11px] text-neutral-500 dark:text-neutral-400">{{
+                    log.user?.email || 'N/A'
+                  }}</span>
+                </div>
+              </td>
+              <td class="px-4 py-3.5">
+                <span
+                  :class="[
+                    'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 font-mono text-xs font-medium',
+                    getActionBadgeClass(log.action),
+                  ]"
+                >
+                  <span class="h-1.5 w-1.5 rounded-full bg-current"></span>
+                  <span>{{ log.action }}</span>
+                </span>
+              </td>
+              <td class="px-4 py-3.5">
+                <span
+                  class="inline-flex items-center gap-1.5 rounded-md border border-neutral-200 bg-neutral-100 px-2 py-0.5 text-xs font-medium text-neutral-700 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-300"
+                >
+                  {{ log.entityType }}
+                </span>
+              </td>
+              <td
+                class="max-w-[140px] truncate px-4 py-3.5 font-mono text-xs text-neutral-600 dark:text-neutral-400"
+                :title="log.entityId"
+              >
+                {{ log.entityId }}
+              </td>
+              <td class="px-4 py-3.5 font-mono text-xs text-neutral-500 dark:text-neutral-400">
+                {{ log.ipAddress || '127.0.0.1' }}
+              </td>
+              <td class="px-4 py-3.5 text-right">
+                <button
+                  @click="selectedLog = log"
+                  class="inline-flex cursor-pointer items-center gap-1 rounded-lg border border-neutral-300 px-2.5 py-1 text-xs font-medium text-neutral-700 transition-colors hover:bg-neutral-50 dark:border-neutral-700 dark:text-neutral-200 dark:hover:bg-neutral-800"
+                  :title="t('audit_logs.inspect')"
+                >
+                  <FileText :size="13" />
+                  <span>{{ t('audit_logs.inspect') }}</span>
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </AppTableCard>
 
     <!-- Payload Inspector Modal -->
-    <div v-if="selectedLog" class="modal-backdrop">
-      <div class="modal-card card-flat" style="max-width: 650px;">
-        <div class="modal-header">
-          <div class="modal-title-row">
-            <Terminal :size="16" class="text-indigo" />
-            <h3>{{ t('audit_logs.modal_title') }}</h3>
-          </div>
-          <button @click="selectedLog = null" class="modal-close">&times;</button>
-        </div>
-
-        <div class="modal-body">
-          <div class="contract-summary">
-            <div><strong>{{ t('audit_logs.log_id') }}:</strong> <span class="font-mono text-dim">{{ selectedLog.id }}</span></div>
-            <div class="modal-badge-row">
-              <strong>{{ t('audit_logs.action') }}:</strong> 
-              <span class="badge badge-pill font-mono badge-action" :class="getActionBadgeClass(selectedLog.action)">
-                <span class="badge-dot"></span>
-                <span>{{ selectedLog.action }}</span>
-              </span>
+    <Teleport to="body">
+      <div
+        v-if="selectedLog"
+        class="backdrop-blur-xs fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+      >
+        <div
+          class="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-xl border border-neutral-200 bg-white shadow-xl dark:border-neutral-800 dark:bg-neutral-900"
+        >
+          <div
+            class="flex items-center justify-between border-b border-neutral-200 px-6 py-4 dark:border-neutral-800"
+          >
+            <div class="flex items-center gap-2">
+              <Terminal :size="16" class="text-indigo-600 dark:text-indigo-400" />
+              <h3 class="text-base font-semibold text-neutral-900 dark:text-white">
+                {{ t('audit_logs.modal_title') }}
+              </h3>
             </div>
-            <div class="modal-badge-row">
-              <strong>{{ t('audit_logs.target_entity') }}:</strong> 
-              <span class="badge badge-pill badge-subtle">
-                <span class="badge-dot"></span>
-                <span>{{ selectedLog.entityType }}</span>
-              </span>
-              <span class="text-xs text-dim font-mono ml-1">(ID: {{ selectedLog.entityId }})</span>
-            </div>
-            <div><strong>{{ t('audit_logs.acting_user') }}:</strong> {{ selectedLog.user?.fullName }} ({{ selectedLog.user?.email }})</div>
-            <div><strong>{{ t('audit_logs.timestamp') }}:</strong> {{ new Date(selectedLog.createdAt).toUTCString() }}</div>
-            <div><strong>{{ t('audit_logs.client_ip') }}:</strong> <span class="font-mono">{{ selectedLog.ipAddress || '127.0.0.1' }}</span>
-            </div>
-            <div v-if="selectedLog.userAgent"><strong>{{ t('audit_logs.user_agent') }}:</strong> <span class="text-xs text-dim">{{
-              selectedLog.userAgent }}</span></div>
-          </div>
-
-          <div class="payload-diff-grid">
-            <div class="payload-box">
-              <span class="payload-title">{{ t('audit_logs.old_values') }}:</span>
-              <pre class="json-code">{{ selectedLog.oldValues ? JSON.stringify(selectedLog.oldValues, null, 2) : 'null (initial state)' }}</pre>
-            </div>
-
-            <div class="payload-box">
-              <span class="payload-title">{{ t('audit_logs.new_values') }}:</span>
-              <pre class="json-code text-emerald">{{ selectedLog.newValues ? JSON.stringify(selectedLog.newValues, null, 2)
-                : 'null' }}</pre>
-            </div>
-          </div>
-
-          <div class="modal-actions">
-            <button @click="selectedLog = null" class="btn-secondary">
-              {{ t('common.close') }}
+            <button
+              @click="selectedLog = null"
+              class="cursor-pointer text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200"
+            >
+              <X :size="18" />
             </button>
+          </div>
+
+          <div class="space-y-4 p-6">
+            <div
+              class="space-y-2 rounded-lg border border-neutral-200 bg-neutral-50 p-4 text-xs text-neutral-700 dark:border-neutral-800 dark:bg-neutral-800/50 dark:text-neutral-300"
+            >
+              <div>
+                <strong class="text-neutral-900 dark:text-white"
+                  >{{ t('audit_logs.log_id') }}:</strong
+                >
+                <span class="font-mono text-neutral-500">{{ selectedLog.id }}</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <strong class="text-neutral-900 dark:text-white"
+                  >{{ t('audit_logs.action') }}:</strong
+                >
+                <span
+                  :class="[
+                    'inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 font-mono text-xs font-medium',
+                    getActionBadgeClass(selectedLog.action),
+                  ]"
+                >
+                  <span class="h-1.5 w-1.5 rounded-full bg-current"></span>
+                  <span>{{ selectedLog.action }}</span>
+                </span>
+              </div>
+              <div class="flex items-center gap-2">
+                <strong class="text-neutral-900 dark:text-white"
+                  >{{ t('audit_logs.target_entity') }}:</strong
+                >
+                <span
+                  class="inline-flex items-center rounded-md border border-neutral-200 bg-neutral-100 px-2 py-0.5 text-xs font-medium text-neutral-700 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-300"
+                >
+                  {{ selectedLog.entityType }}
+                </span>
+                <span class="font-mono text-xs text-neutral-500"
+                  >(ID: {{ selectedLog.entityId }})</span
+                >
+              </div>
+              <div>
+                <strong class="text-neutral-900 dark:text-white"
+                  >{{ t('audit_logs.acting_user') }}:</strong
+                >
+                {{ selectedLog.user?.fullName }} ({{ selectedLog.user?.email }})
+              </div>
+              <div>
+                <strong class="text-neutral-900 dark:text-white"
+                  >{{ t('audit_logs.timestamp') }}:</strong
+                >
+                {{ new Date(selectedLog.createdAt).toUTCString() }}
+              </div>
+              <div>
+                <strong class="text-neutral-900 dark:text-white"
+                  >{{ t('audit_logs.client_ip') }}:</strong
+                >
+                <span class="font-mono">{{ selectedLog.ipAddress || '127.0.0.1' }}</span>
+              </div>
+              <div v-if="selectedLog.userAgent">
+                <strong class="text-neutral-900 dark:text-white"
+                  >{{ t('audit_logs.user_agent') }}:</strong
+                >
+                <span class="text-xs text-neutral-500">{{ selectedLog.userAgent }}</span>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div class="space-y-1.5">
+                <span
+                  class="block text-[10px] font-bold uppercase text-neutral-500 dark:text-neutral-400"
+                  >{{ t('audit_logs.old_values') }}:</span
+                >
+                <pre
+                  class="max-h-56 overflow-x-auto rounded-lg border border-neutral-200 bg-neutral-100 p-3 font-mono text-xs leading-relaxed text-neutral-800 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-200"
+                >
+            {{
+                    selectedLog.oldValues
+                      ? JSON.stringify(selectedLog.oldValues, null, 2)
+                      : 'null (initial state)'
+                  }}</pre>
+              </div>
+
+              <div class="space-y-1.5">
+                <span
+                  class="block text-[10px] font-bold uppercase text-neutral-500 dark:text-neutral-400"
+                  >{{ t('audit_logs.new_values') }}:</span
+                >
+                <pre
+                  class="max-h-56 overflow-x-auto rounded-lg border border-emerald-200 bg-emerald-50/50 p-3 font-mono text-xs leading-relaxed text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/20 dark:text-emerald-300"
+                >
+            {{
+                    selectedLog.newValues ? JSON.stringify(selectedLog.newValues, null, 2) : 'null'
+                  }}</pre>
+              </div>
+            </div>
+
+            <div class="flex justify-end pt-2">
+              <button
+                @click="selectedLog = null"
+                class="rounded-lg border border-neutral-300 bg-white px-4 py-2 text-xs font-medium text-neutral-700 transition-colors hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-200 dark:hover:bg-neutral-700"
+              >
+                {{ t('common.close') }}
+              </button>
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </Teleport>
   </div>
 </template>
-
-<style scoped>
-.audit-logs-page {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
-
-.page-top-bar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 1rem;
-}
-
-.page-top-bar h1 {
-  font-size: 1.6rem;
-}
-
-.subtitle {
-  color: var(--text-muted);
-  font-size: 0.875rem;
-  margin-top: 0.2rem;
-}
-
-.admin-shield-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  background: rgba(99, 102, 241, 0.12);
-  border: 1px solid rgba(99, 102, 241, 0.25);
-  color: var(--primary);
-  font-size: 0.8rem;
-  font-weight: 600;
-  padding: 0.4rem 0.85rem;
-  border-radius: var(--radius-sm);
-}
-
-.table-shell {
-  padding: 1.25rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.table-toolbar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 1rem;
-}
-
-.filter-controls {
-  display: flex;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-}
-
-.select-wrap {
-  position: relative;
-  display: flex;
-  align-items: center;
-}
-
-.filter-icon {
-  position: absolute;
-  left: 0.65rem;
-  color: var(--text-dim);
-  pointer-events: none;
-}
-
-.filter-select {
-  background: var(--bg-surface);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-sm);
-  color: var(--text-main);
-  font-size: 0.825rem;
-  padding: 0.45rem 0.85rem 0.45rem 1.8rem;
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.filter-select:hover {
-  border-color: var(--border-default);
-  background: var(--bg-surface-hover);
-}
-
-.filter-select:focus {
-  outline: none;
-  border-color: var(--border-focus);
-}
-
-.search-wrap {
-  position: relative;
-  width: 100%;
-  max-width: 320px;
-}
-
-.search-icon {
-  position: absolute;
-  left: 0.75rem;
-  top: 50%;
-  transform: translateY(-50%);
-  color: var(--text-dim);
-}
-
-.table-search-input {
-  width: 100%;
-  background: var(--bg-input);
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-sm);
-  padding: 0.45rem 0.75rem 0.45rem 2.2rem;
-  color: var(--text-main);
-  font-size: 0.85rem;
-}
-
-.table-search-input:focus {
-  outline: none;
-  border-color: var(--border-focus);
-}
-
-.timestamp-cell,
-.user-cell {
-  display: flex;
-  flex-direction: column;
-  gap: 0.15rem;
-}
-
-.timestamp-date {
-  font-size: 0.85rem;
-  font-weight: 500;
-  color: var(--text-main);
-}
-
-.timestamp-time {
-  font-size: 0.775rem;
-  color: var(--text-dim);
-}
-
-.user-name {
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: var(--text-main);
-}
-
-.user-email {
-  font-size: 0.775rem;
-  color: var(--text-dim);
-}
-
-.badge-action {
-  text-transform: none !important;
-  font-size: 0.775rem;
-  letter-spacing: 0.02em;
-}
-
-.modal-badge-row {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.entity-ref,
-.ip-cell {
-  font-size: 0.825rem;
-  color: var(--text-muted);
-}
-
-.btn-inspect {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  padding: 0.38rem 0.75rem;
-  font-size: 0.825rem;
-  font-weight: 500;
-}
-
-.text-right {
-  text-align: right;
-}
-
-.btn-sm {
-  padding: 0.35rem 0.65rem;
-  font-size: 0.8rem;
-  gap: 0.3rem;
-}
-
-.font-mono {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-}
-
-.font-semibold {
-  font-weight: 600;
-}
-
-.text-xs {
-  font-size: 0.775rem;
-}
-
-.text-sm {
-  font-size: 0.875rem;
-}
-
-.text-dim {
-  color: var(--text-dim);
-}
-
-.text-emerald {
-  color: #34d399;
-}
-
-.text-indigo {
-  color: var(--primary);
-}
-
-.data-table th {
-  font-size: 0.75rem;
-  font-weight: 700;
-  letter-spacing: 0.05em;
-  padding: 0.85rem 1.25rem;
-}
-
-.data-table td {
-  font-size: 0.875rem;
-  padding: 0.95rem 1.25rem;
-}
-
-/* Modal */
-.modal-backdrop {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.75);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 100;
-  padding: 1.5rem;
-}
-
-.modal-card {
-  width: 100%;
-  background: var(--bg-surface);
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-md);
-  padding: 1.5rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1.25rem;
-  max-height: 90vh;
-  overflow-y: auto;
-}
-
-.modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border-bottom: 1px solid var(--border-subtle);
-  padding-bottom: 0.75rem;
-}
-
-.modal-title-row {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.modal-close {
-  background: none;
-  border: none;
-  color: var(--text-muted);
-  font-size: 1.5rem;
-  cursor: pointer;
-}
-
-.modal-body {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.contract-summary {
-  background: var(--bg-subtle);
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-sm);
-  padding: 0.85rem 1rem;
-  font-size: 0.85rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-}
-
-.payload-diff-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1rem;
-}
-
-.payload-box {
-  background: var(--bg-input);
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-sm);
-  padding: 0.75rem 1rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-}
-
-.payload-title {
-  font-size: 0.75rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  color: var(--text-dim);
-  letter-spacing: 0.04em;
-}
-
-.json-code {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  font-size: 0.825rem;
-  line-height: 1.5;
-  white-space: pre-wrap;
-  color: var(--text-muted);
-  max-height: 220px;
-  overflow-y: auto;
-}
-
-.modal-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 0.75rem;
-  margin-top: 0.5rem;
-}
-
-/* Empty & Loading */
-.empty-state {
-  text-align: center;
-  padding: 3.5rem 1rem;
-  color: var(--text-muted);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.empty-icon {
-  color: var(--text-dim);
-  margin-bottom: 0.5rem;
-}
-
-.loading-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 3rem 1rem;
-  color: var(--text-muted);
-}
-
-.loading-spinner {
-  width: 28px;
-  height: 28px;
-  border: 3px solid var(--border-subtle);
-  border-top-color: var(--primary);
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-@media (max-width: 640px) {
-  .payload-diff-grid {
-    grid-template-columns: 1fr;
-  }
-}
-</style>

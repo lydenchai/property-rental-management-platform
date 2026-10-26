@@ -51,7 +51,8 @@ const inMemoryMaintenanceRequests: MaintenanceRequestEntity[] = [
     unitId: 'unit-skyline-101a',
     tenantId: 'user-tenant-01',
     title: 'HVAC Air Conditioning Not Cooling',
-    description: 'The master bedroom cooling unit is blowing ambient temperature air during afternoon hours.',
+    description:
+      'The master bedroom cooling unit is blowing ambient temperature air during afternoon hours.',
     priority: MaintenancePriority.HIGH,
     status: MaintenanceStatus.ASSIGNED,
     requestedAt: new Date('2026-02-10T14:30:00Z'),
@@ -172,13 +173,15 @@ export class MaintenanceRepository {
     }
   }
 
-  async findMany(filter: {
-    unitId?: string;
-    tenantId?: string;
-    technicianId?: string;
-    status?: MaintenanceStatus;
-    priority?: MaintenancePriority;
-  } = {}): Promise<MaintenanceRequestEntity[]> {
+  async findMany(
+    filter: {
+      unitId?: string;
+      tenantId?: string;
+      technicianId?: string;
+      status?: MaintenanceStatus;
+      priority?: MaintenancePriority;
+    } = {}
+  ): Promise<MaintenanceRequestEntity[]> {
     try {
       const where: any = {};
       if (filter.unitId) where.unitId = filter.unitId;
@@ -295,7 +298,10 @@ export class MaintenanceRepository {
     }
   }
 
-  async update(id: string, data: Partial<MaintenanceRequestEntity>): Promise<MaintenanceRequestEntity | null> {
+  async update(
+    id: string,
+    data: Partial<MaintenanceRequestEntity>
+  ): Promise<MaintenanceRequestEntity | null> {
     try {
       const payload: any = {};
       if (data.status) payload.status = data.status as any;

@@ -82,6 +82,8 @@ describe('Permissions & Role Guards', () => {
       node: { res: {} },
     } as unknown as H3Event;
 
-    expect(() => requireRole(mockEvent, ['LANDLORD', 'ADMIN'])).toThrowError(/Access restricted to/);
+    expect(() => requireRole(mockEvent, ['LANDLORD', 'ADMIN'])).toThrowError(
+      /Access restricted to/
+    );
   });
 });

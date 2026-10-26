@@ -2,13 +2,13 @@ import { applicationRepo } from '../repositories/application.repo';
 import { leaseRepo } from '../repositories/lease.repo';
 import { unitRepo } from '../repositories/unit.repo';
 import { propertyRepo } from '../repositories/property.repo';
-import { 
-  SubmitApplicationInput, 
-  ReviewApplicationInput, 
+import {
+  SubmitApplicationInput,
+  ReviewApplicationInput,
   CreateLeaseInput,
   SubmitApplicationSchema,
   ReviewApplicationSchema,
-  CreateLeaseSchema
+  CreateLeaseSchema,
 } from '../../shared/schemas/lease.schema';
 import { notFoundError, forbiddenError, badRequestError } from '../utils/errors';
 import type { AuthContext } from '../utils/permissions';
@@ -28,7 +28,9 @@ export class LeaseService {
     }
 
     if (unit.status !== UnitStatus.AVAILABLE && unit.status !== UnitStatus.RESERVED) {
-      throw badRequestError(`Unit ${unit.unitNumber} is not currently available for leasing (status: ${unit.status})`);
+      throw badRequestError(
+        `Unit ${unit.unitNumber} is not currently available for leasing (status: ${unit.status})`
+      );
     }
 
     // Check if tenant already has an active application on this unit
@@ -96,7 +98,11 @@ export class LeaseService {
     return hydrated;
   }
 
-  async reviewApplication(applicationId: string, reviewer: AuthContext, input: ReviewApplicationInput) {
+  async reviewApplication(
+    applicationId: string,
+    reviewer: AuthContext,
+    input: ReviewApplicationInput
+  ) {
     const validated = ReviewApplicationSchema.parse(input);
     const app = await applicationRepo.findById(applicationId);
     if (!app) {
@@ -276,9 +282,10 @@ export class LeaseService {
     return {
       lease: updated,
       isFullySigned: willBeTenantSigned && willBeLandlordSigned,
-      message: willBeTenantSigned && willBeLandlordSigned
-        ? 'Both parties have signed! The lease is now ACTIVE and the unit is marked OCCUPIED.'
-        : 'Your signature has been recorded. Awaiting the counter-party signature.',
+      message:
+        willBeTenantSigned && willBeLandlordSigned
+          ? 'Both parties have signed! The lease is now ACTIVE and the unit is marked OCCUPIED.'
+          : 'Your signature has been recorded. Awaiting the counter-party signature.',
     };
   }
 
@@ -289,7 +296,9 @@ export class LeaseService {
     }
 
     if (user.role !== 'ADMIN' && lease.landlordId !== user.id) {
-      throw forbiddenError('Only the landlord or system administrator can terminate an active lease');
+      throw forbiddenError(
+        'Only the landlord or system administrator can terminate an active lease'
+      );
     }
 
     const updated = await leaseRepo.update(leaseId, {

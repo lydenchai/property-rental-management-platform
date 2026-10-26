@@ -73,13 +73,16 @@ const inMemoryUsers: Array<{
   },
 ];
 
-const inMemorySessions: Map<string, {
-  id: string;
-  userId: string;
-  ipAddress: string | null;
-  userAgent: string | null;
-  expiresAt: Date;
-}> = new Map();
+const inMemorySessions: Map<
+  string,
+  {
+    id: string;
+    userId: string;
+    ipAddress: string | null;
+    userAgent: string | null;
+    expiresAt: Date;
+  }
+> = new Map();
 
 export class UserRepository {
   async findByEmail(email: string) {
@@ -241,9 +244,11 @@ export class UserRepository {
 
   async deleteSession(sessionId: string) {
     try {
-      return await prisma.session.delete({
-        where: { id: sessionId },
-      }).catch(() => null);
+      return await prisma.session
+        .delete({
+          where: { id: sessionId },
+        })
+        .catch(() => null);
     } catch {
       inMemorySessions.delete(sessionId);
       return null;
@@ -290,7 +295,9 @@ export class UserRepository {
       if (filter.status) filtered = filtered.filter((u) => u.status === filter.status);
       if (filter.search) {
         const q = filter.search.toLowerCase();
-        filtered = filtered.filter((u) => u.fullName.toLowerCase().includes(q) || u.email.toLowerCase().includes(q));
+        filtered = filtered.filter(
+          (u) => u.fullName.toLowerCase().includes(q) || u.email.toLowerCase().includes(q)
+        );
       }
       return filtered.map((u) => ({
         id: u.id,

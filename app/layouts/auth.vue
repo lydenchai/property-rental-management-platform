@@ -7,28 +7,40 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <div class="auth-layout">
-    <div class="auth-container">
-      <div class="auth-header">
-        <NuxtLink to="/" class="brand">
-          <div class="brand-icon-wrapper">
-            <Building2 :size="18" class="brand-icon-svg" />
+  <div
+    class="flex min-h-screen items-center justify-center bg-neutral-100 p-4 font-sans text-neutral-900 transition-colors duration-200 dark:bg-black dark:text-neutral-100 sm:p-8"
+  >
+    <div class="flex w-full max-w-md flex-col gap-5">
+      <div class="flex items-center justify-between px-1">
+        <NuxtLink
+          to="/"
+          class="flex items-center gap-2.5 text-xl font-bold tracking-tight text-neutral-900 transition-opacity hover:opacity-90 dark:text-white"
+        >
+          <div
+            class="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-neutral-900 text-white shadow-sm dark:bg-blue-600"
+          >
+            <Building2 :size="18" />
           </div>
-          <span class="brand-name">Rent<span class="brand-accent">Ease</span></span>
+          <span>Rent<span class="text-blue-600 dark:text-blue-500">Ease</span></span>
         </NuxtLink>
 
-        <div class="auth-actions-box">
+        <div class="flex items-center gap-2">
           <LanguageSwitcher />
           <ThemeToggle />
         </div>
       </div>
 
-      <main class="auth-card card-flat">
+      <main
+        class="rounded-xl border border-neutral-200 bg-white p-6 shadow-sm dark:border-neutral-800 dark:bg-neutral-900 sm:p-8"
+      >
         <slot />
       </main>
 
-      <div class="auth-footer">
-        <NuxtLink to="/" class="back-link">
+      <div class="text-center">
+        <NuxtLink
+          to="/"
+          class="inline-flex items-center gap-1.5 text-xs font-medium text-neutral-500 transition-colors hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white sm:text-sm"
+        >
           <ArrowLeft :size="14" />
           <span>{{ t('auth.back_to_home') }}</span>
         </NuxtLink>
@@ -36,87 +48,3 @@ const { t } = useI18n();
     </div>
   </div>
 </template>
-
-<style scoped>
-.auth-layout {
-  min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 2.5rem 1.5rem;
-  background-color: var(--bg-primary);
-  transition: background-color 0.2s ease;
-}
-
-.auth-container {
-  width: 100%;
-  max-width: 440px;
-  display: flex;
-  flex-direction: column;
-  gap: 1.25rem;
-}
-
-.auth-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 0.25rem;
-}
-
-.auth-actions-box {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.brand {
-  display: flex;
-  align-items: center;
-  gap: 0.55rem;
-  font-size: 1.35rem;
-  font-weight: 700;
-  color: var(--text-main);
-  letter-spacing: -0.02em;
-}
-
-.brand-icon-wrapper {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  border-radius: var(--radius-sm);
-  background: var(--primary);
-  color: #ffffff;
-}
-
-.brand-accent {
-  color: var(--primary);
-}
-
-.auth-card {
-  padding: 2rem;
-  background: var(--bg-surface);
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-md);
-  box-shadow: none;
-}
-
-.auth-footer {
-  text-align: center;
-}
-
-.back-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  color: var(--text-dim);
-  font-size: 0.85rem;
-  font-weight: 500;
-  transition: color 0.15s ease;
-}
-
-.back-link:hover {
-  color: var(--text-main);
-}
-</style>

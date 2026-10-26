@@ -1,27 +1,29 @@
 import { propertyRepo } from '../repositories/property.repo';
 import { unitRepo } from '../repositories/unit.repo';
-import { 
-  CreatePropertyInput, 
-  UpdatePropertyInput, 
-  CreateUnitInput, 
+import {
+  CreatePropertyInput,
+  UpdatePropertyInput,
+  CreateUnitInput,
   UpdateUnitInput,
   CreatePropertySchema,
-  CreateUnitSchema
+  CreateUnitSchema,
 } from '../../shared/schemas/property.schema';
 import { notFoundError, forbiddenError, badRequestError } from '../utils/errors';
 import type { AuthContext } from '../utils/permissions';
 import { UnitStatus } from '../../shared/types/enums/unit-status.enum';
 
 export class PropertyService {
-  async listProperties(filter: {
-    landlordId?: string;
-    city?: string;
-    state?: string;
-    search?: string;
-    minRent?: number;
-    maxRent?: number;
-    bedrooms?: number;
-  } = {}) {
+  async listProperties(
+    filter: {
+      landlordId?: string;
+      city?: string;
+      state?: string;
+      search?: string;
+      minRent?: number;
+      maxRent?: number;
+      bedrooms?: number;
+    } = {}
+  ) {
     const properties = await propertyRepo.findAll({
       landlordId: filter.landlordId,
       city: filter.city,
@@ -54,7 +56,11 @@ export class PropertyService {
     );
 
     // Apply unit-level filters if requested (for tenant search)
-    if (filter.bedrooms !== undefined || filter.minRent !== undefined || filter.maxRent !== undefined) {
+    if (
+      filter.bedrooms !== undefined ||
+      filter.minRent !== undefined ||
+      filter.maxRent !== undefined
+    ) {
       return enhanced.filter((prop) => {
         if (filter.minRent && prop.maxRent < filter.minRent) return false;
         if (filter.maxRent && prop.minRent > filter.maxRent) return false;
@@ -156,7 +162,9 @@ export class PropertyService {
       (u) => u.unitNumber.toLowerCase() === validated.unitNumber.toLowerCase()
     );
     if (isDuplicate) {
-      throw badRequestError(`A unit with number "${validated.unitNumber}" already exists in this property`);
+      throw badRequestError(
+        `A unit with number "${validated.unitNumber}" already exists in this property`
+      );
     }
 
     return unitRepo.create(propertyId, validated);
@@ -183,7 +191,9 @@ export class PropertyService {
         (u) => u.id !== unitId && u.unitNumber.toLowerCase() === input.unitNumber!.toLowerCase()
       );
       if (isDuplicate) {
-        throw badRequestError(`A unit with number "${input.unitNumber}" already exists in this property`);
+        throw badRequestError(
+          `A unit with number "${input.unitNumber}" already exists in this property`
+        );
       }
     }
 

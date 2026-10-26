@@ -1,6 +1,5 @@
 import type { LeaseStatus } from './enums/Lease-status.enum';
 
-
 export interface LeaseDetail {
   id: string;
   unitId: string;

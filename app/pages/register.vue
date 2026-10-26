@@ -57,10 +57,14 @@ async function handleRegister() {
 </script>
 
 <template>
-  <div class="register-view">
-    <div class="card-header">
-      <h2>{{ t('auth.join_title') }}</h2>
-      <p class="subtitle">{{ t('auth.join_subtitle') }}</p>
+  <div class="flex flex-col gap-5">
+    <div class="text-center">
+      <h2 class="text-2xl font-bold tracking-tight text-neutral-900 dark:text-white">
+        {{ t('auth.join_title') }}
+      </h2>
+      <p class="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
+        {{ t('auth.join_subtitle') }}
+      </p>
     </div>
 
     <!-- Error Alerts -->
@@ -68,312 +72,233 @@ async function handleRegister() {
       {{ validationError || error }}
     </div>
 
-    <form @submit.prevent="handleRegister" class="register-form">
-      <div class="form-group">
-        <label for="reg-name" class="form-label">{{ t('auth.full_name') }}</label>
-        <input id="reg-name" v-model="fullName" type="text" :placeholder="t('auth.full_name_placeholder')" required
-          class="input-field" />
+    <form @submit.prevent="handleRegister" class="flex flex-col gap-4">
+      <div class="flex flex-col gap-1.5">
+        <label
+          for="reg-name"
+          class="text-xs font-semibold uppercase tracking-wider text-neutral-900 dark:text-neutral-100"
+        >
+          {{ t('auth.full_name') }}
+        </label>
+        <input
+          id="reg-name"
+          v-model="fullName"
+          type="text"
+          :placeholder="t('auth.full_name_placeholder')"
+          required
+          class="w-full rounded-md border border-neutral-300 bg-white px-3.5 py-2.5 text-sm text-neutral-900 transition-colors placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-blue-600 dark:border-neutral-700 dark:bg-neutral-950 dark:text-white dark:focus:ring-blue-500"
+        />
       </div>
 
-      <div class="form-group">
-        <label for="reg-email" class="form-label">{{ t('auth.email') }}</label>
-        <input id="reg-email" v-model="email" type="email" :placeholder="t('auth.email_placeholder')" required
-          class="input-field" />
+      <div class="flex flex-col gap-1.5">
+        <label
+          for="reg-email"
+          class="text-xs font-semibold uppercase tracking-wider text-neutral-900 dark:text-neutral-100"
+        >
+          {{ t('auth.email') }}
+        </label>
+        <input
+          id="reg-email"
+          v-model="email"
+          type="email"
+          :placeholder="t('auth.email_placeholder')"
+          required
+          class="w-full rounded-md border border-neutral-300 bg-white px-3.5 py-2.5 text-sm text-neutral-900 transition-colors placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-blue-600 dark:border-neutral-700 dark:bg-neutral-950 dark:text-white dark:focus:ring-blue-500"
+        />
       </div>
 
-      <div class="form-group">
-        <label for="reg-phone" class="form-label">{{ t('auth.phone_optional') }}</label>
-        <input id="reg-phone" v-model="phone" type="tel" :placeholder="t('auth.phone_placeholder')"
-          class="input-field" />
+      <div class="flex flex-col gap-1.5">
+        <label
+          for="reg-phone"
+          class="text-xs font-semibold uppercase tracking-wider text-neutral-900 dark:text-neutral-100"
+        >
+          {{ t('auth.phone_optional') }}
+        </label>
+        <input
+          id="reg-phone"
+          v-model="phone"
+          type="tel"
+          :placeholder="t('auth.phone_placeholder')"
+          class="w-full rounded-md border border-neutral-300 bg-white px-3.5 py-2.5 text-sm text-neutral-900 transition-colors placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-blue-600 dark:border-neutral-700 dark:bg-neutral-950 dark:text-white dark:focus:ring-blue-500"
+        />
       </div>
 
-      <div class="form-group">
-        <label class="form-label">{{ t('auth.register_as') }}</label>
-        <div class="role-selector">
-          <label class="role-option" :class="{ selected: role === 'TENANT' }">
-            <input type="radio" v-model="role" value="TENANT" class="radio-hidden" />
-            <div class="role-icon-box">
+      <div class="flex flex-col gap-1.5">
+        <label
+          class="text-xs font-semibold uppercase tracking-wider text-neutral-900 dark:text-neutral-100"
+        >
+          {{ t('auth.register_as') }}
+        </label>
+        <div class="grid grid-cols-2 gap-3">
+          <label
+            :class="[
+              'flex cursor-pointer items-center gap-3 rounded-lg border p-3 transition-colors',
+              role === 'TENANT'
+                ? 'border-blue-600 bg-blue-50/50 dark:border-blue-500 dark:bg-blue-950/20'
+                : 'border-neutral-200 bg-neutral-50 hover:bg-neutral-100 dark:border-neutral-800 dark:bg-neutral-900/40 dark:hover:bg-neutral-900',
+            ]"
+          >
+            <input type="radio" v-model="role" value="TENANT" class="sr-only" />
+            <div
+              :class="[
+                'rounded-md p-2',
+                role === 'TENANT'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-neutral-200 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400',
+              ]"
+            >
               <Key :size="16" />
             </div>
-            <div class="role-text">
-              <span class="role-title">{{ t('auth.role_tenant') }}</span>
-              <span class="role-desc">{{ t('auth.role_tenant_desc') }}</span>
+            <div class="flex min-w-0 flex-col">
+              <span class="text-xs font-bold text-neutral-900 dark:text-white">{{
+                t('auth.role_tenant')
+              }}</span>
+              <span class="truncate text-[11px] text-neutral-500 dark:text-neutral-400">{{
+                t('auth.role_tenant_desc')
+              }}</span>
             </div>
           </label>
 
-          <label class="role-option" :class="{ selected: role === 'LANDLORD' }">
-            <input type="radio" v-model="role" value="LANDLORD" class="radio-hidden" />
-            <div class="role-icon-box">
+          <label
+            :class="[
+              'flex cursor-pointer items-center gap-3 rounded-lg border p-3 transition-colors',
+              role === 'LANDLORD'
+                ? 'border-blue-600 bg-blue-50/50 dark:border-blue-500 dark:bg-blue-950/20'
+                : 'border-neutral-200 bg-neutral-50 hover:bg-neutral-100 dark:border-neutral-800 dark:bg-neutral-900/40 dark:hover:bg-neutral-900',
+            ]"
+          >
+            <input type="radio" v-model="role" value="LANDLORD" class="sr-only" />
+            <div
+              :class="[
+                'rounded-md p-2',
+                role === 'LANDLORD'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-neutral-200 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400',
+              ]"
+            >
               <Building :size="16" />
             </div>
-            <div class="role-text">
-              <span class="role-title">{{ t('auth.role_landlord') }}</span>
-              <span class="role-desc">{{ t('auth.role_landlord_desc') }}</span>
+            <div class="flex min-w-0 flex-col">
+              <span class="text-xs font-bold text-neutral-900 dark:text-white">{{
+                t('auth.role_landlord')
+              }}</span>
+              <span class="truncate text-[11px] text-neutral-500 dark:text-neutral-400">{{
+                t('auth.role_landlord_desc')
+              }}</span>
             </div>
           </label>
         </div>
       </div>
 
-      <div class="form-group">
-        <label for="reg-password" class="form-label">{{ t('auth.password') }}</label>
-        <div class="password-input-wrap">
+      <div class="flex flex-col gap-1.5">
+        <label
+          for="reg-password"
+          class="text-xs font-semibold uppercase tracking-wider text-neutral-900 dark:text-neutral-100"
+        >
+          {{ t('auth.password') }}
+        </label>
+        <div class="relative flex items-center">
           <input
             id="reg-password"
             v-model="password"
             :type="showPassword ? 'text' : 'password'"
             :placeholder="t('auth.password_hint')"
             required
-            class="input-field password-input"
+            class="w-full rounded-md border border-neutral-300 bg-white py-2.5 pl-3.5 pr-10 text-sm text-neutral-900 transition-colors placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-blue-600 dark:border-neutral-700 dark:bg-neutral-950 dark:text-white dark:focus:ring-blue-500"
           />
           <button
             type="button"
-            class="password-toggle-btn"
+            class="absolute right-3 p-1 text-neutral-400 transition-colors hover:text-neutral-700 dark:hover:text-neutral-200"
             @click="showPassword = !showPassword"
             :aria-label="showPassword ? 'Hide password' : 'Show password'"
           >
-            <EyeOff v-if="showPassword" :size="15" />
-            <Eye v-else :size="15" />
+            <EyeOff v-if="showPassword" :size="16" />
+            <Eye v-else :size="16" />
           </button>
         </div>
       </div>
 
-      <div class="form-group">
-        <label for="reg-confirm" class="form-label">{{ t('auth.confirm_password') }}</label>
-        <div class="password-input-wrap">
+      <div class="flex flex-col gap-1.5">
+        <label
+          for="reg-confirm"
+          class="text-xs font-semibold uppercase tracking-wider text-neutral-900 dark:text-neutral-100"
+        >
+          {{ t('auth.confirm_password') }}
+        </label>
+        <div class="relative flex items-center">
           <input
             id="reg-confirm"
             v-model="confirmPassword"
             :type="showConfirmPassword ? 'text' : 'password'"
             :placeholder="t('auth.confirm_password_placeholder')"
             required
-            class="input-field password-input"
+            class="w-full rounded-md border border-neutral-300 bg-white py-2.5 pl-3.5 pr-10 text-sm text-neutral-900 transition-colors placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-blue-600 dark:border-neutral-700 dark:bg-neutral-950 dark:text-white dark:focus:ring-blue-500"
           />
           <button
             type="button"
-            class="password-toggle-btn"
+            class="absolute right-3 p-1 text-neutral-400 transition-colors hover:text-neutral-700 dark:hover:text-neutral-200"
             @click="showConfirmPassword = !showConfirmPassword"
             :aria-label="showConfirmPassword ? 'Hide password' : 'Show password'"
           >
-            <EyeOff v-if="showConfirmPassword" :size="15" />
-            <Eye v-else :size="15" />
+            <EyeOff v-if="showConfirmPassword" :size="16" />
+            <Eye v-else :size="16" />
           </button>
         </div>
       </div>
 
       <!-- Legal Terms and Privacy Policy Consent Checkbox -->
-      <div class="form-group consent-group">
-        <label class="consent-checkbox-label">
+      <div class="my-1">
+        <label class="flex cursor-pointer select-none items-start gap-2.5">
           <input
             id="reg-terms-consent"
             v-model="termsAccepted"
             type="checkbox"
-            class="checkbox-input"
+            class="mt-1 h-4 w-4 rounded border-neutral-300 text-blue-600 focus:ring-blue-500 dark:border-neutral-700"
             required
           />
-          <span class="consent-text">
+          <span class="text-xs leading-relaxed text-neutral-600 dark:text-neutral-400">
             {{ t('auth.terms_consent_prefix') }}
-            <NuxtLink to="/terms" target="_blank" class="legal-link">
+            <NuxtLink
+              to="/terms"
+              target="_blank"
+              class="font-semibold text-blue-600 underline underline-offset-2 hover:opacity-80 dark:text-blue-400"
+            >
               {{ t('auth.terms_link') }}
             </NuxtLink>
             {{ t('auth.terms_consent_and') }}
-            <NuxtLink to="/privacy" target="_blank" class="legal-link">
+            <NuxtLink
+              to="/privacy"
+              target="_blank"
+              class="font-semibold text-blue-600 underline underline-offset-2 hover:opacity-80 dark:text-blue-400"
+            >
               {{ t('auth.privacy_link') }}
             </NuxtLink>
-            <span class="version-tag">{{ t('auth.terms_version_tag') }}</span>.
+            <span class="ml-1 font-mono text-neutral-400 dark:text-neutral-500">{{
+              t('auth.terms_version_tag')
+            }}</span
+            >.
           </span>
         </label>
       </div>
 
-      <button type="submit" :disabled="isLoading" class="btn-primary btn-block">
+      <button
+        type="submit"
+        :disabled="isLoading"
+        class="mt-2 inline-flex w-full items-center justify-center rounded-md bg-neutral-900 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-blue-600 dark:hover:bg-blue-700"
+      >
         <span v-if="isLoading">{{ t('auth.creating_account') }}</span>
         <span v-else>{{ t('auth.register_account') }}</span>
       </button>
     </form>
 
-    <div class="signin-prompt">
+    <div class="text-center text-xs text-neutral-500 dark:text-neutral-400 sm:text-sm">
       <span>{{ t('auth.already_have_account') }}</span>
-      <NuxtLink to="/login" class="signin-link">{{ t('auth.sign_in') }}</NuxtLink>
+      <NuxtLink
+        to="/login"
+        class="ml-1 font-semibold text-blue-600 hover:underline dark:text-blue-400"
+      >
+        {{ t('auth.sign_in') }}
+      </NuxtLink>
     </div>
   </div>
 </template>
-
-<style scoped>
-.register-view {
-  display: flex;
-  flex-direction: column;
-  gap: 1.25rem;
-}
-
-.card-header {
-  text-align: center;
-}
-
-.card-header h2 {
-  font-size: 1.5rem;
-  margin-bottom: 0.25rem;
-}
-
-.subtitle {
-  color: var(--text-muted);
-  font-size: 0.875rem;
-}
-
-.role-selector {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.75rem;
-}
-
-.role-option {
-  display: flex;
-  align-items: center;
-  gap: 0.65rem;
-  padding: 0.65rem 0.75rem;
-  background: var(--bg-subtle);
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  transition: background-color 0.15s ease, border-color 0.15s ease;
-}
-
-.role-option:hover {
-  background: var(--bg-surface-hover);
-  border-color: var(--text-muted);
-}
-
-.role-option.selected {
-  border-color: var(--primary);
-  background: var(--primary-subtle);
-}
-
-.role-option.selected .role-icon-box {
-  color: #818cf8;
-}
-
-.radio-hidden {
-  display: none;
-}
-
-.role-icon-box {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--text-muted);
-  flex-shrink: 0;
-}
-
-.role-text {
-  display: flex;
-  flex-direction: column;
-}
-
-.role-title {
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--text-main);
-}
-
-.role-desc {
-  font-size: 0.72rem;
-  color: var(--text-dim);
-}
-
-.btn-block {
-  width: 100%;
-  padding: 0.75rem;
-  margin-top: 0.5rem;
-  font-size: 0.95rem;
-}
-
-.password-input-wrap {
-  position: relative;
-  display: flex;
-  align-items: center;
-}
-
-.password-input {
-  width: 100%;
-  padding-right: 2.5rem;
-}
-
-.password-toggle-btn {
-  position: absolute;
-  right: 0.75rem;
-  background: transparent;
-  border: none;
-  color: var(--text-dim);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0.25rem;
-  border-radius: var(--radius-sm);
-  transition: color 0.15s ease;
-}
-
-.password-toggle-btn:hover {
-  color: var(--text-main);
-}
-
-.signin-prompt {
-  text-align: center;
-  font-size: 0.85rem;
-  color: var(--text-muted);
-  margin-top: 0.25rem;
-}
-
-.signin-link {
-  color: var(--primary);
-  font-weight: 600;
-  margin-left: 0.35rem;
-}
-
-.signin-link:hover {
-  text-decoration: underline;
-}
-
-.consent-group {
-  margin: 0.5rem 0 0.25rem;
-}
-
-.consent-checkbox-label {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.65rem;
-  cursor: pointer;
-  user-select: none;
-}
-
-.checkbox-input {
-  margin-top: 0.2rem;
-  width: 16px;
-  height: 16px;
-  accent-color: var(--primary);
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  flex-shrink: 0;
-}
-
-.consent-text {
-  font-size: 0.8rem;
-  color: var(--text-muted);
-  line-height: 1.45;
-}
-
-.legal-link {
-  color: var(--primary);
-  font-weight: 600;
-  text-decoration: underline;
-  text-underline-offset: 2px;
-}
-
-.legal-link:hover {
-  color: var(--primary-hover);
-}
-
-.version-tag {
-  color: var(--text-dim);
-  font-size: 0.75rem;
-  margin-left: 0.2rem;
-}
-</style>

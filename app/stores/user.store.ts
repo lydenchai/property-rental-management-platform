@@ -18,7 +18,9 @@ export function useUserStore() {
   const technicianCount = computed(() => state.users.filter((u) => u.role === 'TECHNICIAN').length);
 
   const activeUsersCount = computed(() => state.users.filter((u) => u.status === 'ACTIVE').length);
-  const suspendedUsersCount = computed(() => state.users.filter((u) => u.status === 'SUSPENDED').length);
+  const suspendedUsersCount = computed(
+    () => state.users.filter((u) => u.status === 'SUSPENDED').length
+  );
 
   async function fetchUsers(filter: { role?: string; status?: string; search?: string } = {}) {
     state.isLoading = true;

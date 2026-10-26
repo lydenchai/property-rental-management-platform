@@ -6,7 +6,7 @@ import type {
   CreatePropertyInput,
   UpdatePropertyInput,
   CreateUnitInput,
-  UpdateUnitInput
+  UpdateUnitInput,
 } from '~~/shared/types';
 
 export function usePropertyStore() {
@@ -197,7 +197,8 @@ export function usePropertyStore() {
           state.selectedProperty.units = [...(state.selectedProperty.units || []), unit];
           state.selectedProperty.unitsCount = (state.selectedProperty.unitsCount || 0) + 1;
           if (unit.status === 'AVAILABLE') {
-            state.selectedProperty.availableUnitsCount = (state.selectedProperty.availableUnitsCount || 0) + 1;
+            state.selectedProperty.availableUnitsCount =
+              (state.selectedProperty.availableUnitsCount || 0) + 1;
           }
           state.currentProperty = state.selectedProperty;
         }
@@ -243,7 +244,10 @@ export function usePropertyStore() {
         if (state.selectedProperty?.units && updated) {
           const idx = state.selectedProperty.units.findIndex((u) => u.id === unitId);
           if (idx !== -1) {
-            state.selectedProperty.units[idx] = { ...state.selectedProperty.units[idx], ...updated };
+            state.selectedProperty.units[idx] = {
+              ...state.selectedProperty.units[idx],
+              ...updated,
+            };
           }
           state.currentProperty = state.selectedProperty;
         }
@@ -274,10 +278,18 @@ export function usePropertyStore() {
       if (data.value) {
         if (state.selectedProperty?.units) {
           const unit = state.selectedProperty.units.find((u) => u.id === unitId);
-          state.selectedProperty.units = state.selectedProperty.units.filter((u) => u.id !== unitId);
-          state.selectedProperty.unitsCount = Math.max(0, (state.selectedProperty.unitsCount || 1) - 1);
+          state.selectedProperty.units = state.selectedProperty.units.filter(
+            (u) => u.id !== unitId
+          );
+          state.selectedProperty.unitsCount = Math.max(
+            0,
+            (state.selectedProperty.unitsCount || 1) - 1
+          );
           if (unit?.status === 'AVAILABLE') {
-            state.selectedProperty.availableUnitsCount = Math.max(0, (state.selectedProperty.availableUnitsCount || 1) - 1);
+            state.selectedProperty.availableUnitsCount = Math.max(
+              0,
+              (state.selectedProperty.availableUnitsCount || 1) - 1
+            );
           }
           state.currentProperty = state.selectedProperty;
         }

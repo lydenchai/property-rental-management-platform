@@ -1,7 +1,9 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('Authentication Flows', () => {
-  test('should display login page with form elements and strict flat UI styling', async ({ page }) => {
+  test('should display login page with form elements and strict flat UI styling', async ({
+    page,
+  }) => {
     await page.goto('/login');
 
     await expect(page).toHaveTitle(/Sign In|RentEase/);

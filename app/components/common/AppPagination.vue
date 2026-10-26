@@ -1,11 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import {
-  ChevronLeft,
-  ChevronRight,
-  ChevronsLeft,
-  ChevronsRight
-} from '@lucide/vue';
+import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from '@lucide/vue';
 
 interface Props {
   currentPage: number;
@@ -91,17 +86,35 @@ function onPageSizeChange(event: Event) {
 </script>
 
 <template>
-  <div class="pagination-container" v-if="totalItems > 0">
+  <div
+    v-if="totalItems > 0"
+    class="flex flex-col items-center justify-between gap-3 border-t border-neutral-200 bg-white px-5 py-3 text-xs text-neutral-500 dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-400 sm:flex-row"
+  >
     <!-- Left: Items Info & Per-Page Selector -->
-    <div class="pagination-info-group">
-      <span class="pagination-summary">
-        {{ $t('common.showing') }} <strong class="summary-highlight">{{ startItem }}–{{ endItem }}</strong> {{ $t('common.of') }} <strong
-          class="summary-highlight">{{ totalItems }}</strong> {{ itemName }}
+    <div class="flex flex-wrap items-center gap-3">
+      <span>
+        {{ $t('common.showing') }}
+        <strong class="font-medium text-neutral-900 dark:text-white"
+          >{{ startItem }}–{{ endItem }}</strong
+        >
+        {{ $t('common.of') }}
+        <strong class="font-medium text-neutral-900 dark:text-white">{{ totalItems }}</strong>
+        {{ itemName }}
       </span>
 
-      <div v-if="showPageSize" class="page-size-selector">
-        <label for="page-size-select" class="page-size-label">{{ $t('common.per_page') }}</label>
-        <select id="page-size-select" :value="pageSize" @change="onPageSizeChange" class="page-size-select">
+      <div
+        v-if="showPageSize"
+        class="flex items-center gap-1.5 border-l border-neutral-200 pl-2 dark:border-neutral-700"
+      >
+        <label for="page-size-select" class="text-[11px] text-neutral-400">{{
+          $t('common.per_page')
+        }}</label>
+        <select
+          id="page-size-select"
+          :value="pageSize"
+          @change="onPageSizeChange"
+          class="focus:outline-hidden rounded border border-neutral-300 bg-white px-2 py-0.5 text-xs text-neutral-800 focus:ring-2 focus:ring-blue-500 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-200"
+        >
           <option v-for="opt in pageSizeOptions" :key="opt" :value="opt">
             {{ opt }}
           </option>
@@ -110,189 +123,73 @@ function onPageSizeChange(event: Event) {
     </div>
 
     <!-- Right: Page Navigation Buttons -->
-    <nav class="pagination-nav" aria-label="Pagination Navigation">
+    <nav class="inline-flex items-center gap-1" aria-label="Pagination Navigation">
       <!-- First Page -->
-      <button type="button" class="pagination-btn pagination-arrow" :disabled="currentPage <= 1" @click="goToPage(1)"
-        :title="$t('common.first_page')" :aria-label="$t('common.first_page')">
-        <ChevronsLeft :size="15" />
+      <button
+        type="button"
+        :disabled="currentPage <= 1"
+        @click="goToPage(1)"
+        class="flex h-7 w-7 cursor-pointer items-center justify-center rounded border border-neutral-200 bg-white text-neutral-600 transition-colors hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-700"
+        :title="$t('common.first_page')"
+        :aria-label="$t('common.first_page')"
+      >
+        <ChevronsLeft :size="14" />
       </button>
 
       <!-- Previous Page -->
-      <button type="button" class="pagination-btn pagination-arrow" :disabled="currentPage <= 1"
-        @click="goToPage(currentPage - 1)" :title="$t('common.prev_page')" :aria-label="$t('common.prev_page')">
-        <ChevronLeft :size="15" />
+      <button
+        type="button"
+        :disabled="currentPage <= 1"
+        @click="goToPage(currentPage - 1)"
+        class="flex h-7 w-7 cursor-pointer items-center justify-center rounded border border-neutral-200 bg-white text-neutral-600 transition-colors hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-700"
+        :title="$t('common.prev_page')"
+        :aria-label="$t('common.prev_page')"
+      >
+        <ChevronLeft :size="14" />
       </button>
 
       <!-- Page Numbers -->
       <template v-for="(item, idx) in displayedPages" :key="idx">
-        <span v-if="item === '...'" class="pagination-ellipsis">
-          &hellip;
-        </span>
-        <button v-else type="button" :class="['pagination-btn', 'pagination-num', { active: item === currentPage }]"
-          :aria-current="item === currentPage ? 'page' : undefined" @click="goToPage(Number(item))">
+        <span v-if="item === '...'" class="px-1 text-neutral-400"> &hellip; </span>
+        <button
+          v-else
+          type="button"
+          :class="[
+            'flex h-7 min-w-[28px] cursor-pointer items-center justify-center rounded border px-2 text-xs transition-colors',
+            item === currentPage
+              ? 'shadow-xs border-neutral-900 bg-neutral-900 font-semibold text-white dark:border-blue-600 dark:bg-blue-600'
+              : 'border border-neutral-200 bg-white font-medium text-neutral-700 hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-700',
+          ]"
+          :aria-current="item === currentPage ? 'page' : undefined"
+          @click="goToPage(Number(item))"
+        >
           {{ item }}
         </button>
       </template>
 
       <!-- Next Page -->
-      <button type="button" class="pagination-btn pagination-arrow" :disabled="currentPage >= totalPages"
-        @click="goToPage(currentPage + 1)" :title="$t('common.next_page')" :aria-label="$t('common.next_page')">
-        <ChevronRight :size="15" />
+      <button
+        type="button"
+        :disabled="currentPage >= totalPages"
+        @click="goToPage(currentPage + 1)"
+        class="flex h-7 w-7 cursor-pointer items-center justify-center rounded border border-neutral-200 bg-white text-neutral-600 transition-colors hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-700"
+        :title="$t('common.next_page')"
+        :aria-label="$t('common.next_page')"
+      >
+        <ChevronRight :size="14" />
       </button>
 
       <!-- Last Page -->
-      <button type="button" class="pagination-btn pagination-arrow" :disabled="currentPage >= totalPages"
-        @click="goToPage(totalPages)" :title="$t('common.last_page')" :aria-label="$t('common.last_page')">
-        <ChevronsRight :size="15" />
+      <button
+        type="button"
+        :disabled="currentPage >= totalPages"
+        @click="goToPage(totalPages)"
+        class="flex h-7 w-7 cursor-pointer items-center justify-center rounded border border-neutral-200 bg-white text-neutral-600 transition-colors hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-700"
+        :title="$t('common.last_page')"
+        :aria-label="$t('common.last_page')"
+      >
+        <ChevronsRight :size="14" />
       </button>
     </nav>
   </div>
 </template>
-
-<style scoped>
-.pagination-container {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0.65rem 1.15rem;
-  background: var(--bg-surface);
-  border-top: 1px solid var(--border-subtle);
-  border-bottom-left-radius: inherit;
-  border-bottom-right-radius: inherit;
-  font-size: 0.825rem;
-  color: var(--text-muted);
-  position: sticky;
-  bottom: 0;
-  z-index: 10;
-}
-
-@media (min-width: 640px) {
-  .pagination-container {
-    flex-direction: row;
-    gap: 1rem;
-  }
-}
-
-.pagination-info-group {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  flex-wrap: wrap;
-}
-
-.pagination-summary {
-  font-size: 0.825rem;
-  color: var(--text-muted);
-}
-
-.summary-highlight {
-  color: var(--text-main);
-  font-weight: 600;
-}
-
-.page-size-selector {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-}
-
-.page-size-label {
-  font-size: 0.775rem;
-  color: var(--text-dim);
-}
-
-.page-size-select {
-  padding: 0.25rem 0.55rem;
-  font-size: 0.775rem;
-  font-weight: 500;
-  color: var(--text-main);
-  background: var(--bg-primary);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-sm);
-  outline: none;
-  cursor: pointer;
-  transition: border-color 0.15s ease;
-}
-
-.page-size-select:focus {
-  border-color: var(--border-focus);
-}
-
-.pagination-nav {
-  display: flex;
-  align-items: center;
-  gap: 0.3rem;
-}
-
-.pagination-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 32px;
-  height: 32px;
-  padding: 0 0.5rem;
-  border-radius: 6px;
-  font-size: 0.825rem;
-  font-weight: 500;
-  color: var(--text-muted);
-  background: transparent;
-  border: 1px solid transparent;
-  cursor: pointer;
-  user-select: none;
-  transition: all 0.15s ease;
-  box-shadow: none;
-}
-
-.pagination-btn:hover:not(:disabled) {
-  color: var(--text-main);
-  background: var(--bg-surface-hover);
-  border-color: var(--border-default);
-}
-
-.pagination-btn.active {
-  background: #2563eb;
-  color: #ffffff !important;
-  border-color: #2563eb;
-  font-weight: 600;
-  box-shadow: 0 1px 3px rgba(37, 99, 235, 0.25);
-}
-
-html.dark .pagination-btn.active {
-  background: #3b82f6;
-  color: #ffffff !important;
-  border-color: #3b82f6;
-}
-
-.pagination-btn:disabled {
-  opacity: 0.35;
-  cursor: not-allowed;
-  pointer-events: none;
-  background: transparent;
-  border-color: transparent;
-}
-
-.pagination-arrow {
-  color: var(--text-muted);
-  background: var(--bg-surface);
-  border: 1px solid var(--border-subtle);
-}
-
-.pagination-arrow:hover:not(:disabled) {
-  color: #2563eb;
-  border-color: #2563eb;
-  background: rgba(37, 99, 235, 0.04);
-}
-
-.pagination-ellipsis {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 28px;
-  height: 32px;
-  color: var(--text-dim);
-  font-size: 0.85rem;
-  letter-spacing: 0.1em;
-}
-</style>
