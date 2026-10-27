@@ -76,8 +76,9 @@ const assignForm = ref<AssignTechnicianInput>({
 });
 
 const ticketToUpdate = ref<MaintenanceItem | null>(null);
+const updateError = ref<string | null>(null);
 const updateForm = ref<UpdateProgressInput>({
-  status: 'RESOLVED',
+  status: 'IN_PROGRESS',
   resolutionNotes: '',
 });
 
@@ -169,6 +170,7 @@ async function executeAssign() {
 
 function openUpdateModal(ticket: MaintenanceItem) {
   ticketToUpdate.value = ticket;
+  updateError.value = null;
   updateForm.value = {
     status: ticket.status === 'ASSIGNED' ? 'IN_PROGRESS' : 'RESOLVED',
     resolutionNotes: ticket.resolutionNotes || '',
@@ -177,9 +179,16 @@ function openUpdateModal(ticket: MaintenanceItem) {
 
 async function executeUpdateProgress() {
   if (!ticketToUpdate.value) return;
+  updateError.value = null;
+  const payload: UpdateProgressInput = {
+    status: updateForm.value.status,
+    ...(updateForm.value.resolutionNotes?.trim()
+      ? { resolutionNotes: updateForm.value.resolutionNotes.trim() }
+      : {}),
+  };
   const res = (await maintenanceStore.updateProgress(
     ticketToUpdate.value.id,
-    updateForm.value
+    payload
   )) as any;
   if (res.success) {
     successMessage.value = res.message || 'Progress updated successfully';
@@ -187,6 +196,8 @@ async function executeUpdateProgress() {
     setTimeout(() => {
       successMessage.value = null;
     }, 4000);
+  } else {
+    updateError.value = res.error || 'Failed to update progress';
   }
 }
 
@@ -650,10 +661,10 @@ onMounted(() => {
                     <span>{{ t('maintenance.assign_technician') }}</span>
                   </button>
 
-                  <!-- Technician / Admin: Update Progress -->
+                  <!-- Technician / Admin / Landlord: Update Progress -->
                   <button
                     v-if="
-                      (isTechnician || isAdmin) &&
+                      (isTechnician || isAdmin || isLandlord) &&
                       (ticket.status === 'ASSIGNED' || ticket.status === 'IN_PROGRESS')
                     "
                     @click="openUpdateModal(ticket)"
@@ -922,6 +933,13 @@ onMounted(() => {
 
           <form @submit.prevent="executeUpdateProgress" class="space-y-4 p-6">
             <div
+              v-if="updateError"
+              class="flex items-center gap-2 rounded-lg border border-rose-200 bg-rose-50 p-3 text-xs text-rose-700 dark:border-rose-900/40 dark:bg-rose-950/20 dark:text-rose-400"
+            >
+              <AlertCircle :size="15" class="shrink-0 text-rose-600 dark:text-rose-400" />
+              <span>{{ updateError }}</span>
+            </div>
+            <div
               class="space-y-1.5 rounded-lg border border-neutral-200 bg-neutral-50 p-4 text-xs text-neutral-700 dark:border-neutral-800 dark:bg-neutral-800/50 dark:text-neutral-300"
             >
               <div>
@@ -959,7 +977,6 @@ onMounted(() => {
               <textarea
                 v-model="updateForm.resolutionNotes"
                 rows="4"
-                required
                 class="focus:outline-hidden w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 placeholder-neutral-400 focus:ring-2 focus:ring-primary-500 dark:border-neutral-700 dark:bg-neutral-800 dark:text-white"
                 placeholder="Detail parts replaced, repairs performed, and tests conducted..."
               ></textarea>

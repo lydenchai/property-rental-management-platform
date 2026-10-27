@@ -166,7 +166,8 @@ export function useMaintenanceStore() {
       });
 
       if (data.value) {
-        const updated = data.value.data?.ticket || data.value.data;
+        const updated =
+          data.value.data?.ticket || data.value.data?.request || data.value.data;
         const idx = state.requests.findIndex((r) => r.id === id);
         if (idx !== -1 && updated) {
           state.requests[idx] = { ...state.requests[idx], ...updated };
@@ -197,7 +198,8 @@ export function useMaintenanceStore() {
       });
 
       if (data.value) {
-        const updated = data.value.data?.ticket || data.value.data;
+        const updated =
+          data.value.data?.ticket || data.value.data?.request || data.value.data;
         const idx = state.requests.findIndex((r) => r.id === id);
         if (idx !== -1 && updated) {
           state.requests[idx] = { ...state.requests[idx], ...updated };

@@ -37,9 +37,10 @@ export const UpdateProgressSchema = z.object({
   status: z.enum(['IN_PROGRESS', 'RESOLVED']),
   resolutionNotes: z
     .string()
-    .min(5, 'Please provide progress or resolution details')
     .max(2000)
-    .optional(),
+    .optional()
+    .nullable()
+    .transform((val) => (val && val.trim().length > 0 ? val.trim() : undefined)),
 });
 
 export type UpdateProgressInput = z.infer<typeof UpdateProgressSchema>;

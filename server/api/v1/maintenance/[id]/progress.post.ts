@@ -6,7 +6,11 @@ import { createApiResponse, handleApiError, createValidationError } from '../../
 
 export default defineEventHandler(async (event) => {
   try {
-    const user = requireRole(event, [UserRole.TECHNICIAN, UserRole.ADMIN]);
+    const user = requireRole(event, [
+      UserRole.TECHNICIAN,
+      UserRole.LANDLORD,
+      UserRole.ADMIN,
+    ]);
     const id = event.context.params?.id;
 
     if (!id) {
