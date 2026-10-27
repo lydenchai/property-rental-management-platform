@@ -21,10 +21,19 @@ definePageMeta({
 });
 
 const { t } = useI18n();
-const { isTenant } = useAuth();
+const { isTenant, isLandlord, isAdmin } = useAuth();
 const applicationStore = useApplicationStore();
 
-const { applications, isLoading, isSubmittingReview, errorMessage } = applicationStore;
+const {
+  applications,
+  isLoading,
+  isSubmittingReview,
+  errorMessage,
+  totalCount,
+  pendingCount,
+  approvedCount,
+  rejectedCount,
+} = applicationStore;
 
 const { loadApplications, reviewApplication } = applicationStore;
 
@@ -36,16 +45,27 @@ const searchQuery = ref('');
 const appToReview = ref<ApplicationItem | null>(null);
 const reviewDecision = ref<'APPROVED' | 'REJECTED'>('APPROVED');
 const reviewReason = ref('');
+const reviewError = ref<string | null>(null);
 
 const filteredApplications = computed(() => {
+  const query = searchQuery.value.trim().toLowerCase();
+  const tab = activeTab.value;
+
   return applications.value.filter((app) => {
-    if (activeTab.value !== 'ALL' && app.status !== activeTab.value) return false;
-    if (searchQuery.value.trim()) {
-      const q = searchQuery.value.toLowerCase();
+    if (tab !== 'ALL' && app.status !== tab) return false;
+    if (query) {
       const unitNum = app.unit?.unitNumber?.toLowerCase() || '';
       const propTitle = app.property?.title?.toLowerCase() || '';
       const tenantName = app.tenant?.fullName?.toLowerCase() || '';
-      if (!unitNum.includes(q) && !propTitle.includes(q) && !tenantName.includes(q)) return false;
+      const tenantEmail = app.tenant?.email?.toLowerCase() || '';
+      if (
+        !unitNum.includes(query) &&
+        !propTitle.includes(query) &&
+        !tenantName.includes(query) &&
+        !tenantEmail.includes(query)
+      ) {
+        return false;
+      }
     }
     return true;
   });
@@ -67,6 +87,7 @@ watch([activeTab, searchQuery], () => {
 function openReviewModal(app: ApplicationItem, decision: 'APPROVED' | 'REJECTED') {
   appToReview.value = app;
   reviewDecision.value = decision;
+  reviewError.value = null;
   reviewReason.value =
     decision === 'APPROVED'
       ? 'Application meets credit and income criteria. Lease agreement drafted.'
@@ -74,19 +95,30 @@ function openReviewModal(app: ApplicationItem, decision: 'APPROVED' | 'REJECTED'
 }
 
 async function submitReview() {
-  if (!appToReview.value) return;
+  if (!appToReview.value || isSubmittingReview.value) return;
+
+  const sanitizedReason = reviewReason.value.trim();
+  if (sanitizedReason.length < 3) {
+    reviewError.value = 'Please provide a review reason with at least 3 characters.';
+    return;
+  }
+
+  reviewError.value = null;
   const res = (await reviewApplication(appToReview.value.id, {
     status: reviewDecision.value,
-    reason: reviewReason.value,
+    reason: sanitizedReason,
   })) as any;
 
   if (res.success) {
     successMessage.value =
       res.message || `Application ${reviewDecision.value.toLowerCase()} successfully.`;
     appToReview.value = null;
+    reviewError.value = null;
     setTimeout(() => {
       successMessage.value = null;
     }, 4000);
+  } else {
+    reviewError.value = res.error || 'Failed to review application. Please try again.';
   }
 }
 
@@ -183,7 +215,7 @@ onMounted(() => {
                   ? 'bg-primary-700 text-white'
                   : 'bg-neutral-100 text-neutral-600 dark:bg-neutral-700 dark:text-neutral-300',
               ]"
-              >{{ applications.length }}</span
+              >{{ totalCount }}</span
             >
           </button>
           <button
@@ -204,7 +236,7 @@ onMounted(() => {
                   ? 'bg-primary-700 text-white'
                   : 'bg-neutral-100 text-neutral-600 dark:bg-neutral-700 dark:text-neutral-300',
               ]"
-              >{{ applications.filter((a) => a.status === 'PENDING').length }}</span
+              >{{ pendingCount }}</span
             >
           </button>
           <button
@@ -225,7 +257,7 @@ onMounted(() => {
                   ? 'bg-primary-700 text-white'
                   : 'bg-neutral-100 text-neutral-600 dark:bg-neutral-700 dark:text-neutral-300',
               ]"
-              >{{ applications.filter((a) => a.status === 'APPROVED').length }}</span
+              >{{ approvedCount }}</span
             >
           </button>
           <button
@@ -246,7 +278,7 @@ onMounted(() => {
                   ? 'bg-primary-700 text-white'
                   : 'bg-neutral-100 text-neutral-600 dark:bg-neutral-700 dark:text-neutral-300',
               ]"
-              >{{ applications.filter((a) => a.status === 'REJECTED').length }}</span
+              >{{ rejectedCount }}</span
             >
           </button>
         </div>
@@ -356,11 +388,14 @@ onMounted(() => {
                 </div>
 
                 <!-- Landlord / Admin Review Actions -->
-                <div v-else class="inline-flex items-center justify-end gap-1.5">
+                <div
+                  v-else-if="isLandlord || isAdmin"
+                  class="inline-flex items-center justify-end gap-1.5"
+                >
                   <template v-if="app.status === 'PENDING'">
                     <button
                       @click="openReviewModal(app, 'APPROVED')"
-                      class="shadow-xs inline-flex items-center gap-1 rounded-lg bg-emerald-600 px-2.5 py-1 text-xs font-medium text-white transition-colors hover:bg-emerald-700"
+                      class="shadow-xs inline-flex cursor-pointer items-center gap-1 rounded-lg bg-emerald-600 px-2.5 py-1 text-xs font-medium text-white transition-colors hover:bg-emerald-700"
                       :title="t('applications.approve')"
                     >
                       <CheckCircle2 :size="13" />
@@ -368,7 +403,7 @@ onMounted(() => {
                     </button>
                     <button
                       @click="openReviewModal(app, 'REJECTED')"
-                      class="inline-flex items-center gap-1 rounded-lg border border-rose-200 px-2.5 py-1 text-xs font-medium text-rose-600 transition-colors hover:bg-rose-50 dark:border-rose-800 dark:text-rose-400 dark:hover:bg-rose-950/30"
+                      class="inline-flex cursor-pointer items-center gap-1 rounded-lg border border-rose-200 px-2.5 py-1 text-xs font-medium text-rose-600 transition-colors hover:bg-rose-50 dark:border-rose-800 dark:text-rose-400 dark:hover:bg-rose-950/30"
                       :title="t('applications.reject')"
                     >
                       <XCircle :size="13" />
@@ -384,6 +419,9 @@ onMounted(() => {
                   <span v-else class="text-xs text-neutral-400 dark:text-neutral-500">
                     Rejected
                   </span>
+                </div>
+                <div v-else class="text-xs text-neutral-400 dark:text-neutral-500">
+                  {{ t('common.not_available') }}
                 </div>
               </td>
             </tr>
@@ -421,6 +459,13 @@ onMounted(() => {
           </div>
 
           <form @submit.prevent="submitReview" class="space-y-4 p-6">
+            <div
+              v-if="reviewError"
+              class="flex items-center gap-2 rounded-lg border border-rose-200 bg-rose-50 p-3 text-xs text-rose-700 dark:border-rose-900/40 dark:bg-rose-950/20 dark:text-rose-400"
+            >
+              <AlertCircle :size="15" class="shrink-0 text-rose-600 dark:text-rose-400" />
+              <span>{{ reviewError }}</span>
+            </div>
             <div
               class="space-y-1.5 rounded-lg border border-neutral-200 bg-neutral-50 p-4 text-xs text-neutral-700 dark:border-neutral-800 dark:bg-neutral-800/50 dark:text-neutral-300"
             >
@@ -491,9 +536,9 @@ onMounted(() => {
               </button>
               <button
                 type="submit"
-                :disabled="isSubmittingReview"
+                :disabled="isSubmittingReview || reviewReason.trim().length < 3"
                 :class="[
-                  'shadow-xs cursor-pointer rounded-lg px-4 py-2 text-xs font-medium text-white transition-colors disabled:opacity-50',
+                  'shadow-xs cursor-pointer rounded-lg px-4 py-2 text-xs font-medium text-white transition-colors disabled:cursor-not-allowed disabled:opacity-50',
                   reviewDecision === 'REJECTED'
                     ? 'bg-rose-600 hover:bg-rose-700'
                     : 'bg-primary-600 hover:bg-primary-700',

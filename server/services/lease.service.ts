@@ -318,9 +318,15 @@ export class LeaseService {
 
   // Helper hydrators
   private async hydrateApplication(app: any) {
-    const unit = await unitRepo.findById(app.unitId);
-    let property: any = null;
-    if (unit) {
+    if (app.unit && (app.property || app.unit?.property)) {
+      return {
+        ...app,
+        property: app.property || app.unit.property,
+      };
+    }
+    const unit = app.unit || (await unitRepo.findById(app.unitId));
+    let property: any = app.property || unit?.property;
+    if (!property && unit?.propertyId) {
       property = await propertyRepo.findById(unit.propertyId);
     }
     return {
@@ -331,9 +337,15 @@ export class LeaseService {
   }
 
   private async hydrateLease(lease: any) {
-    const unit = await unitRepo.findById(lease.unitId);
-    let property: any = null;
-    if (unit) {
+    if (lease.unit && (lease.property || lease.unit?.property)) {
+      return {
+        ...lease,
+        property: lease.property || lease.unit.property,
+      };
+    }
+    const unit = lease.unit || (await unitRepo.findById(lease.unitId));
+    let property: any = lease.property || unit?.property;
+    if (!property && unit?.propertyId) {
       property = await propertyRepo.findById(unit.propertyId);
     }
     return {

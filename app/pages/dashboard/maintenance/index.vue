@@ -186,10 +186,7 @@ async function executeUpdateProgress() {
       ? { resolutionNotes: updateForm.value.resolutionNotes.trim() }
       : {}),
   };
-  const res = (await maintenanceStore.updateProgress(
-    ticketToUpdate.value.id,
-    payload
-  )) as any;
+  const res = (await maintenanceStore.updateProgress(ticketToUpdate.value.id, payload)) as any;
   if (res.success) {
     successMessage.value = res.message || 'Progress updated successfully';
     ticketToUpdate.value = null;
