@@ -1,15 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, watch, nextTick } from 'vue';
-import {
-  MapPin,
-  Layers,
-  Maximize2,
-  Minimize2,
-  RefreshCw,
-  ExternalLink,
-  Building,
-  ArrowRight,
-} from '@lucide/vue';
+import { MapPin, Maximize2, Minimize2, RefreshCw } from '@lucide/vue';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { useTheme } from '../../composables/useTheme';
 

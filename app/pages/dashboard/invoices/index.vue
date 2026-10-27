@@ -228,7 +228,7 @@ onMounted(async () => {
         </div>
         <div class="mt-3">
           <div class="font-mono text-2xl font-bold text-neutral-900 dark:text-white">
-            ${{ totalOutstanding.toLocaleString() }}
+            ${{ (totalOutstanding ?? 0).toLocaleString() }}
           </div>
           <div class="mt-0.5 text-xs text-neutral-500 dark:text-neutral-400">
             {{ t('invoices.unsettled_balance') }}
@@ -252,7 +252,7 @@ onMounted(async () => {
         </div>
         <div class="mt-3">
           <div class="font-mono text-2xl font-bold text-neutral-900 dark:text-white">
-            ${{ totalCollected.toLocaleString() }}
+            ${{ (totalCollected ?? 0).toLocaleString() }}
           </div>
           <div class="mt-0.5 text-xs text-neutral-500 dark:text-neutral-400">
             {{ t('invoices.verified_cleared') }}
@@ -276,7 +276,7 @@ onMounted(async () => {
         </div>
         <div class="mt-3">
           <div class="font-mono text-2xl font-bold text-neutral-900 dark:text-white">
-            ${{ totalInvoiced.toLocaleString() }}
+            ${{ (totalInvoiced ?? 0).toLocaleString() }}
           </div>
           <div class="mt-0.5 text-xs text-neutral-500 dark:text-neutral-400">
             {{ invoices.length }} {{ t('invoices.title') }}

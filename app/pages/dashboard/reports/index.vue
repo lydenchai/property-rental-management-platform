@@ -21,7 +21,7 @@ definePageMeta({
 });
 
 const { t } = useI18n();
-const { user, isAdmin, isLandlord } = useAuth();
+const { isAdmin, isLandlord } = useAuth();
 const router = useRouter();
 
 // Restrict access to Landlord and Admin

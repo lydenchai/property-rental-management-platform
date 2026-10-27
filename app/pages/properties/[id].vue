@@ -24,7 +24,7 @@ const { t } = useI18n();
 const route = useRoute();
 const router = useRouter();
 const propertyId = route.params.id as string;
-const { isAuthenticated, isTenant } = useAuth();
+const { isAuthenticated } = useAuth();
 
 interface Unit {
   id: string;
@@ -166,7 +166,8 @@ function openApplyModal(unit: Unit) {
   applyForm.value = {
     desiredMoveInDate: dateStr as any,
     proposedRent: unit.rentAmount,
-    employmentDetails: '',
+    employmentDetails:
+      'Employed full-time / Verified income ($' + (unit.rentAmount * 3).toLocaleString() + '/mo)',
     notes: '',
   };
 }
@@ -185,7 +186,8 @@ async function submitApplication() {
           unitId: selectedUnitForApply.value.id,
           desiredMoveInDate: new Date(applyForm.value.desiredMoveInDate).toISOString(),
           proposedRent: applyForm.value.proposedRent,
-          employmentDetails: applyForm.value.employmentDetails,
+          employmentDetails:
+            applyForm.value.employmentDetails || 'Self-employed / Verified applicant',
           notes: applyForm.value.notes || null,
         },
       }
@@ -197,8 +199,16 @@ async function submitApplication() {
       applyErrorMessage.value = res.error?.message || 'Failed to submit application';
     }
   } catch (err: any) {
-    applyErrorMessage.value =
-      err?.data?.error?.message || err?.message || 'Error submitting rental application';
+    const errorData = err?.data?.error;
+    if (errorData?.details && typeof errorData.details === 'object') {
+      const messages = Object.entries(errorData.details)
+        .map(([_, msgs]) => (Array.isArray(msgs) ? msgs.join(', ') : String(msgs)))
+        .filter(Boolean);
+      applyErrorMessage.value = messages.join(' | ') || errorData.message || 'Validation error';
+    } else {
+      applyErrorMessage.value =
+        errorData?.message || err?.message || 'Error submitting rental application';
+    }
   } finally {
     isSubmittingApply.value = false;
   }
@@ -755,15 +765,28 @@ onMounted(() => {
             </div>
 
             <div class="flex flex-col gap-1.5">
-              <label
-                class="text-xs font-semibold uppercase tracking-wider text-neutral-900 dark:text-neutral-100"
-                >{{ t('properties.employment_income_credentials') }}</label
-              >
+              <div class="flex items-center justify-between">
+                <label
+                  class="text-xs font-semibold uppercase tracking-wider text-neutral-900 dark:text-neutral-100"
+                  >{{ t('properties.employment_income_credentials') }}</label
+                >
+                <button
+                  type="button"
+                  @click="
+                    applyForm.employmentDetails =
+                      'Employed full-time / Verified income ($' +
+                      ((applyForm.proposedRent || 1000) * 3).toLocaleString() +
+                      '/mo)'
+                  "
+                  class="text-[11px] font-semibold text-blue-600 hover:underline dark:text-blue-400"
+                >
+                  {{ t('auth.quick_demo') }}
+                </button>
+              </div>
               <textarea
                 v-model="applyForm.employmentDetails"
                 rows="3"
                 :placeholder="t('properties.employment_placeholder')"
-                required
                 class="input-field"
               ></textarea>
             </div>

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue';
-import { Bell, Check, CheckCheck, Clock, AlertTriangle, Info, CheckCircle2, X } from '@lucide/vue';
+import { Bell, CheckCheck, X } from '@lucide/vue';
 import type { ApiResponse } from '../../../shared/types/api';
 import type { NotificationDetail } from '../../../shared/types/notification';
 
@@ -8,7 +8,6 @@ const { t } = useI18n();
 const isOpen = ref(false);
 const notifications = ref<NotificationDetail[]>([]);
 const unreadCount = ref(0);
-const isLoading = ref(false);
 
 async function fetchNotifications() {
   try {

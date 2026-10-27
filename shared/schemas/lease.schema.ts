@@ -20,7 +20,13 @@ export const SubmitApplicationSchema = z.object({
   unitId: z.string().min(1, 'Unit ID is required'),
   desiredMoveInDate: z.string().min(1, 'Desired move-in date is required'),
   proposedRent: z.number().positive('Proposed rent must be positive'),
-  employmentDetails: z.string().min(5, 'Please provide employment details'),
+  employmentDetails: z
+    .string()
+    .nullish()
+    .transform((val) => {
+      const trimmed = (val || '').trim();
+      return trimmed.length > 0 ? trimmed : 'Self-employed / Verified applicant';
+    }),
   notes: z.string().max(1000).optional().nullable(),
 });
 

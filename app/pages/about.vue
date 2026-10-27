@@ -2,7 +2,6 @@
 import { computed } from 'vue';
 import {
   Building2,
-  Users,
   Compass,
   ShieldCheck,
   CheckCircle2,
@@ -10,8 +9,6 @@ import {
   MapPin,
   Clock,
   Layers,
-  Award,
-  HeartHandshake,
 } from '@lucide/vue';
 
 definePageMeta({

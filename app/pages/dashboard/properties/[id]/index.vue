@@ -28,7 +28,7 @@ const route = useRoute();
 const propertyId = route.params.id as string;
 
 const propertyStore = usePropertyStore();
-const { isLoading, isSubmitting, errorMessage } = propertyStore;
+const { isLoading, errorMessage } = propertyStore;
 const { fetchPropertyById, createUnit, updateUnit, deleteUnit } = propertyStore;
 
 interface Unit {

@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { computed } from 'vue';
 import { Search, FileText, X } from '@lucide/vue';
 import AppPagination from './AppPagination.vue';
 

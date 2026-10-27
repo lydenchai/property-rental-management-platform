@@ -5,7 +5,6 @@ import {
   Navigation,
   ExternalLink,
   RefreshCw,
-  Layers,
   Maximize2,
   Minimize2,
   Copy,

@@ -14,7 +14,6 @@ import {
   Check,
   FileText,
   DollarSign,
-  Layers,
   ChevronRight,
   Lock,
   Database,

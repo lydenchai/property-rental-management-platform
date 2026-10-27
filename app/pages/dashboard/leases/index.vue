@@ -603,7 +603,8 @@ onMounted(() => {
               >
               <pre
                 class="max-h-48 overflow-y-auto whitespace-pre-wrap font-mono text-xs leading-relaxed text-neutral-700 dark:text-neutral-300"
-                >{{ leaseToSign.termsAndConditions }}</pre>
+              >
+            {{ leaseToSign.termsAndConditions }}</pre>
             </div>
 
             <label
@@ -729,7 +730,8 @@ onMounted(() => {
               >
               <pre
                 class="max-h-56 overflow-y-auto whitespace-pre-wrap font-mono text-xs leading-relaxed text-neutral-700 dark:text-neutral-300"
-                >{{ viewLeaseModal.termsAndConditions }}</pre>
+              >
+            {{ viewLeaseModal.termsAndConditions }}</pre>
             </div>
 
             <div class="flex justify-end pt-2">

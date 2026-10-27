@@ -2,18 +2,11 @@
 import { ref, computed, onMounted, watch } from 'vue';
 import {
   ClipboardList,
-  Search,
   CheckCircle2,
   XCircle,
-  Clock,
   AlertCircle,
   Building,
-  User,
-  FileSignature,
-  FileText,
-  DollarSign,
   Calendar,
-  MessageSquare,
   X,
 } from '@lucide/vue';
 import { useAuth } from '../../../composables/useAuth';
@@ -28,21 +21,12 @@ definePageMeta({
 });
 
 const { t } = useI18n();
-const { user, isLandlord, isTenant, isAdmin } = useAuth();
+const { isTenant } = useAuth();
 const applicationStore = useApplicationStore();
 
-const {
-  applications,
-  isLoading,
-  isSubmittingReview,
-  errorMessage,
-  totalCount,
-  pendingCount,
-  approvedCount,
-  rejectedCount,
-} = applicationStore;
+const { applications, isLoading, isSubmittingReview, errorMessage } = applicationStore;
 
-const { fetchApplications, loadApplications, reviewApplication } = applicationStore;
+const { loadApplications, reviewApplication } = applicationStore;
 
 const successMessage = ref<string | null>(null);
 const activeTab = ref<'ALL' | 'PENDING' | 'APPROVED' | 'REJECTED'>('ALL');

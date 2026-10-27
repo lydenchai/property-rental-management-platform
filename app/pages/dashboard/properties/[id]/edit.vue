@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
-import { ArrowLeft, Building, Plus, CheckCircle2, AlertCircle } from '@lucide/vue';
+import { ArrowLeft, Building, Plus, AlertCircle } from '@lucide/vue';
 import { usePropertyStore } from '../../../../stores/property.store';
 
 definePageMeta({

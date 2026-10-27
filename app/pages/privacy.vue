@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import { ShieldCheck, Lock, Database, FileText, AlertCircle, Clock, ArrowRight } from '@lucide/vue';
+import { ShieldCheck, AlertCircle, ArrowRight } from '@lucide/vue';
 
 definePageMeta({
   layout: 'default',
