@@ -2,8 +2,10 @@
 import { ref, computed, onMounted, watch } from 'vue';
 import { Users, UserCheck, UserX, AlertCircle, CheckCircle2, Filter } from '@lucide/vue';
 import { useAuth } from '../../../composables/useAuth';
-import type { UserAccount } from '~~/shared/types';
+import type { UserAccount, TableColumn } from '~~/shared/types';
 import AppTableCard from '../../../components/common/AppTableCard.vue';
+import AppDataTable from '../../../components/common/AppDataTable.vue';
+import AppModal from '../../../components/common/AppModal.vue';
 
 definePageMeta({
   layout: 'dashboard',
@@ -39,6 +41,15 @@ const searchQuery = ref('');
 
 // Status change modal
 const userToToggle = ref<UserAccount | null>(null);
+
+const columns = computed<TableColumn[]>(() => [
+  { key: 'name', label: t('users.col_name_email') },
+  { key: 'phone', label: t('users.col_phone') },
+  { key: 'role', label: t('users.col_role') },
+  { key: 'status', label: t('users.col_status') },
+  { key: 'registered', label: t('users.col_registered') },
+  { key: 'actions', label: t('users.col_actions'), align: 'right' },
+]);
 
 const filteredUsers = computed(() => {
   return users.value.filter((u) => {
@@ -238,183 +249,164 @@ onMounted(() => {
         </div>
       </template>
 
-      <div class="overflow-x-auto">
-        <table class="w-full text-left text-sm text-neutral-700 dark:text-neutral-200">
-          <thead
-            class="border-b border-neutral-200 bg-neutral-50 text-xs font-semibold uppercase tracking-wider text-neutral-500 dark:border-neutral-800 dark:bg-neutral-800/60 dark:text-neutral-400"
+      <AppDataTable
+        :columns="columns"
+        :items="paginatedUsers"
+        :is-loading="isLoading"
+        min-width="min-w-[700px]"
+      >
+        <template #cell-name="slotProps">
+          <div class="flex flex-col">
+            <span class="font-semibold text-neutral-900 dark:text-white">{{
+              slotProps?.item?.fullName
+            }}</span>
+            <span class="font-mono text-xs text-neutral-500 dark:text-neutral-400">{{
+              slotProps?.item?.email
+            }}</span>
+          </div>
+        </template>
+
+        <template #cell-phone="slotProps">
+          <span class="text-xs text-neutral-500 dark:text-neutral-400">
+            {{ slotProps?.item?.phone || 'N/A' }}
+          </span>
+        </template>
+
+        <template #cell-role="slotProps">
+          <span
+            :class="[
+              'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium',
+              slotProps?.item?.role === 'ADMIN'
+                ? 'border-purple-200 bg-purple-50 text-purple-700 dark:border-purple-800 dark:bg-purple-950/30 dark:text-purple-400'
+                : slotProps?.item?.role === 'LANDLORD'
+                  ? 'border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-800 dark:bg-blue-950/30 dark:text-blue-400'
+                  : slotProps?.item?.role === 'TENANT'
+                    ? 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-400'
+                    : 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-400',
+            ]"
           >
-            <tr>
-              <th class="px-4 py-3">{{ t('users.col_name_email') }}</th>
-              <th class="px-4 py-3">{{ t('users.col_phone') }}</th>
-              <th class="px-4 py-3">{{ t('users.col_role') }}</th>
-              <th class="px-4 py-3">{{ t('users.col_status') }}</th>
-              <th class="px-4 py-3">{{ t('users.col_registered') }}</th>
-              <th class="px-4 py-3 text-right">{{ t('users.col_actions') }}</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-neutral-200 dark:divide-neutral-800">
-            <tr
-              v-for="u in paginatedUsers"
-              :key="u.id"
-              class="transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-800/40"
-            >
-              <td class="px-4 py-3.5">
-                <div class="flex flex-col">
-                  <span class="font-semibold text-neutral-900 dark:text-white">{{
-                    u.fullName
-                  }}</span>
-                  <span class="font-mono text-xs text-neutral-500 dark:text-neutral-400">{{
-                    u.email
-                  }}</span>
-                </div>
-              </td>
-              <td class="px-4 py-3.5 text-xs text-neutral-500 dark:text-neutral-400">
-                {{ u.phone || 'N/A' }}
-              </td>
-              <td class="px-4 py-3.5">
-                <span
-                  :class="[
-                    'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium',
-                    u.role === 'ADMIN'
-                      ? 'border-purple-200 bg-purple-50 text-purple-700 dark:border-purple-800 dark:bg-purple-950/30 dark:text-purple-400'
-                      : u.role === 'LANDLORD'
-                        ? 'border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-800 dark:bg-blue-950/30 dark:text-blue-400'
-                        : u.role === 'TENANT'
-                          ? 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-400'
-                          : 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-400',
-                  ]"
-                >
-                  <span class="h-1.5 w-1.5 rounded-full bg-current"></span>
-                  <span>{{
-                    u.role === 'ADMIN'
-                      ? t('users.roles.admin')
-                      : u.role === 'LANDLORD'
-                        ? t('users.roles.landlord')
-                        : u.role === 'TENANT'
-                          ? t('users.roles.tenant')
-                          : t('users.roles.technician')
-                  }}</span>
-                </span>
-              </td>
-              <td class="px-4 py-3.5">
-                <span
-                  :class="[
-                    'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium',
-                    u.status === 'ACTIVE'
-                      ? 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-400'
-                      : 'border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-800 dark:bg-rose-950/30 dark:text-rose-400',
-                  ]"
-                >
-                  <span class="h-1.5 w-1.5 rounded-full bg-current"></span>
-                  <span>{{
-                    u.status === 'ACTIVE' ? t('common.active') : t('common.suspended')
-                  }}</span>
-                </span>
-              </td>
-              <td class="px-4 py-3.5 text-xs text-neutral-500 dark:text-neutral-400">
-                {{ new Date(u.createdAt).toLocaleDateString() }}
-              </td>
-              <td class="px-4 py-3.5 text-right">
-                <button
-                  v-if="u.role !== 'ADMIN'"
-                  @click="userToToggle = u"
-                  :class="[
-                    'inline-flex cursor-pointer items-center gap-1 rounded-lg border px-2.5 py-1 text-xs font-medium transition-colors',
-                    u.status === 'ACTIVE'
-                      ? 'border-rose-200 text-rose-600 hover:bg-rose-50 dark:border-rose-800 dark:text-rose-400 dark:hover:bg-rose-950/30'
-                      : 'border-emerald-200 text-emerald-600 hover:bg-emerald-50 dark:border-emerald-800 dark:text-emerald-400 dark:hover:bg-emerald-950/30',
-                  ]"
-                >
-                  <component :is="u.status === 'ACTIVE' ? UserX : UserCheck" :size="13" />
-                  <span>{{
-                    u.status === 'ACTIVE' ? t('users.suspend') : t('users.activate')
-                  }}</span>
-                </button>
-                <span v-else class="text-xs italic text-neutral-400 dark:text-neutral-500">{{
-                  t('users.protected')
-                }}</span>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+            <span class="h-1.5 w-1.5 rounded-full bg-current"></span>
+            <span>{{
+              slotProps?.item?.role === 'ADMIN'
+                ? t('users.roles.admin')
+                : slotProps?.item?.role === 'LANDLORD'
+                  ? t('users.roles.landlord')
+                  : slotProps?.item?.role === 'TENANT'
+                    ? t('users.roles.tenant')
+                    : t('users.roles.technician')
+            }}</span>
+          </span>
+        </template>
+
+        <template #cell-status="slotProps">
+          <span
+            :class="[
+              'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium',
+              slotProps?.item?.status === 'ACTIVE'
+                ? 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-400'
+                : 'border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-800 dark:bg-rose-950/30 dark:text-rose-400',
+            ]"
+          >
+            <span class="h-1.5 w-1.5 rounded-full bg-current"></span>
+            <span>{{
+              slotProps?.item?.status === 'ACTIVE' ? t('common.active') : t('common.suspended')
+            }}</span>
+          </span>
+        </template>
+
+        <template #cell-registered="slotProps">
+          <span class="text-xs text-neutral-500 dark:text-neutral-400">
+            {{
+              slotProps?.item?.createdAt
+                ? new Date(slotProps.item.createdAt).toLocaleDateString()
+                : '—'
+            }}
+          </span>
+        </template>
+
+        <template #cell-actions="slotProps">
+          <button
+            v-if="slotProps?.item && slotProps.item.role !== 'ADMIN'"
+            @click="userToToggle = slotProps.item"
+            :class="[
+              'inline-flex cursor-pointer items-center gap-1 rounded-lg border px-2.5 py-1 text-xs font-medium transition-colors',
+              slotProps.item.status === 'ACTIVE'
+                ? 'border-rose-200 text-rose-600 hover:bg-rose-50 dark:border-rose-800 dark:text-rose-400 dark:hover:bg-rose-950/30'
+                : 'border-emerald-200 text-emerald-600 hover:bg-emerald-50 dark:border-emerald-800 dark:text-emerald-400 dark:hover:bg-emerald-950/30',
+            ]"
+          >
+            <component :is="slotProps.item.status === 'ACTIVE' ? UserX : UserCheck" :size="13" />
+            <span>{{
+              slotProps.item.status === 'ACTIVE' ? t('users.suspend') : t('users.activate')
+            }}</span>
+          </button>
+          <span v-else class="text-xs italic text-neutral-400 dark:text-neutral-500">{{
+            t('users.protected')
+          }}</span>
+        </template>
+      </AppDataTable>
     </AppTableCard>
 
-    <!-- Toggle Status Modal -->
-    <Teleport to="body">
-      <div
-        v-if="userToToggle"
-        class="backdrop-blur-xs fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
-      >
-        <div
-          class="w-full max-w-md overflow-hidden rounded-xl border border-neutral-200 bg-white shadow-xl dark:border-neutral-800 dark:bg-neutral-900"
+    <!-- Toggle Status Modal using AppModal -->
+    <AppModal
+      :model-value="!!userToToggle"
+      :title="t('users.confirm_status_change')"
+      :icon="userToToggle?.status === 'ACTIVE' ? UserX : UserCheck"
+      size="md"
+      @update:model-value="if (!$event) userToToggle = null;"
+    >
+      <div v-if="userToToggle" class="space-y-4">
+        <p class="text-sm leading-relaxed text-neutral-700 dark:text-neutral-300">
+          {{
+            t('users.status_prompt', {
+              name: userToToggle.fullName,
+              email: userToToggle.email,
+              from: userToToggle.status,
+              to: userToToggle.status === 'ACTIVE' ? 'SUSPENDED' : 'ACTIVE',
+            })
+          }}
+        </p>
+
+        <p
+          v-if="userToToggle.status === 'ACTIVE'"
+          class="text-xs text-neutral-500 dark:text-neutral-400"
         >
-          <div
-            class="flex items-center justify-between border-b border-neutral-200 px-6 py-4 dark:border-neutral-800"
-          >
-            <h3 class="text-base font-semibold text-neutral-900 dark:text-white">
-              {{ t('users.confirm_status_change') }}
-            </h3>
-            <button
-              @click="userToToggle = null"
-              class="cursor-pointer text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200"
-            >
-              <X :size="18" />
-            </button>
-          </div>
-
-          <div class="space-y-4 p-6">
-            <p class="text-sm leading-relaxed text-neutral-700 dark:text-neutral-300">
-              {{
-                t('users.status_prompt', {
-                  name: userToToggle.fullName,
-                  email: userToToggle.email,
-                  from: userToToggle.status,
-                  to: userToToggle.status === 'ACTIVE' ? 'SUSPENDED' : 'ACTIVE',
-                })
-              }}
-            </p>
-
-            <p
-              v-if="userToToggle.status === 'ACTIVE'"
-              class="text-xs text-neutral-500 dark:text-neutral-400"
-            >
-              {{ t('users.suspend_warning') }}
-            </p>
-            <p v-else class="text-xs text-neutral-500 dark:text-neutral-400">
-              {{ t('users.activate_warning') }}
-            </p>
-
-            <div class="flex items-center justify-end gap-3 pt-2">
-              <button
-                type="button"
-                @click="userToToggle = null"
-                class="rounded-lg border border-neutral-300 bg-white px-4 py-2 text-xs font-medium text-neutral-700 transition-colors hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-200 dark:hover:bg-neutral-700"
-              >
-                {{ t('common.cancel') }}
-              </button>
-              <button
-                @click="executeToggleStatus"
-                :disabled="isToggling"
-                :class="[
-                  'shadow-xs cursor-pointer rounded-lg px-4 py-2 text-xs font-medium text-white transition-colors disabled:opacity-50',
-                  userToToggle.status === 'ACTIVE'
-                    ? 'bg-rose-600 hover:bg-rose-700'
-                    : 'bg-emerald-600 hover:bg-emerald-700',
-                ]"
-              >
-                <span>{{
-                  isToggling
-                    ? t('common.updating')
-                    : userToToggle.status === 'ACTIVE'
-                      ? t('users.suspend')
-                      : t('users.activate')
-                }}</span>
-              </button>
-            </div>
-          </div>
-        </div>
+          {{ t('users.suspend_warning') }}
+        </p>
+        <p v-else class="text-xs text-neutral-500 dark:text-neutral-400">
+          {{ t('users.activate_warning') }}
+        </p>
       </div>
-    </Teleport>
+
+      <template #footer>
+        <div v-if="userToToggle" class="flex items-center justify-end gap-3">
+          <button
+            type="button"
+            @click="userToToggle = null"
+            class="rounded-lg border border-neutral-300 bg-white px-4 py-2 text-xs font-medium text-neutral-700 transition-colors hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-200 dark:hover:bg-neutral-700"
+          >
+            {{ t('common.cancel') }}
+          </button>
+          <button
+            @click="executeToggleStatus"
+            :disabled="isToggling"
+            :class="[
+              'shadow-xs cursor-pointer rounded-lg px-4 py-2 text-xs font-medium text-white transition-colors disabled:opacity-50',
+              userToToggle.status === 'ACTIVE'
+                ? 'bg-rose-600 hover:bg-rose-700'
+                : 'bg-emerald-600 hover:bg-emerald-700',
+            ]"
+          >
+            <span>{{
+              isToggling
+                ? t('common.updating')
+                : userToToggle.status === 'ACTIVE'
+                  ? t('users.suspend')
+                  : t('users.activate')
+            }}</span>
+          </button>
+        </div>
+      </template>
+    </AppModal>
   </div>
 </template>

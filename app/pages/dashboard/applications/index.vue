@@ -11,8 +11,10 @@ import {
 } from '@lucide/vue';
 import { useAuth } from '../../../composables/useAuth';
 import { useApplicationStore } from '../../../stores/application.store';
-import type { ApplicationItem } from '~~/shared/types';
+import type { ApplicationItem, TableColumn } from '~~/shared/types';
 import AppTableCard from '../../../components/common/AppTableCard.vue';
+import AppDataTable from '../../../components/common/AppDataTable.vue';
+import ApplicationReviewModal from '../../../components/applications/ApplicationReviewModal.vue';
 
 definePageMeta({
   layout: 'dashboard',
@@ -44,7 +46,6 @@ const searchQuery = ref('');
 // Review modal state
 const appToReview = ref<ApplicationItem | null>(null);
 const reviewDecision = ref<'APPROVED' | 'REJECTED'>('APPROVED');
-const reviewReason = ref('');
 const reviewError = ref<string | null>(null);
 
 const filteredApplications = computed(() => {
@@ -80,6 +81,21 @@ const paginatedApplications = computed(() => {
   return filteredApplications.value.slice(start, start + pageSize.value);
 });
 
+const columns = computed<TableColumn[]>(() => {
+  const cols: TableColumn[] = [{ key: 'property', label: t('applications.col_property') }];
+  if (!isTenant.value) {
+    cols.push({ key: 'applicant', label: t('applications.col_applicant') });
+  }
+  cols.push(
+    { key: 'moveIn', label: t('applications.col_move_in') },
+    { key: 'rent', label: t('leases.col_rent') },
+    { key: 'status', label: t('applications.col_status') },
+    { key: 'submitted', label: t('applications.col_submitted') },
+    { key: 'actions', label: t('applications.col_actions'), align: 'right' }
+  );
+  return cols;
+});
+
 watch([activeTab, searchQuery], () => {
   currentPage.value = 1;
 });
@@ -88,25 +104,15 @@ function openReviewModal(app: ApplicationItem, decision: 'APPROVED' | 'REJECTED'
   appToReview.value = app;
   reviewDecision.value = decision;
   reviewError.value = null;
-  reviewReason.value =
-    decision === 'APPROVED'
-      ? 'Application meets credit and income criteria. Lease agreement drafted.'
-      : 'Unable to approve application at this time based on qualification criteria.';
 }
 
-async function submitReview() {
-  if (!appToReview.value || isSubmittingReview.value) return;
-
-  const sanitizedReason = reviewReason.value.trim();
-  if (sanitizedReason.length < 3) {
-    reviewError.value = 'Please provide a review reason with at least 3 characters.';
-    return;
-  }
+async function handleSubmitReview(payload: { applicationId: string; reason: string }) {
+  if (isSubmittingReview.value) return;
 
   reviewError.value = null;
-  const res = (await reviewApplication(appToReview.value.id, {
+  const res = (await reviewApplication(payload.applicationId, {
     status: reviewDecision.value,
-    reason: sanitizedReason,
+    reason: payload.reason,
   })) as any;
 
   if (res.success) {
@@ -284,278 +290,159 @@ onMounted(() => {
         </div>
       </template>
 
-      <div class="overflow-x-auto">
-        <table class="w-full text-left text-sm text-neutral-700 dark:text-neutral-200">
-          <thead
-            class="border-b border-neutral-200 bg-neutral-50 text-xs font-semibold uppercase tracking-wider text-neutral-500 dark:border-neutral-800 dark:bg-neutral-800/60 dark:text-neutral-400"
-          >
-            <tr>
-              <th class="px-4 py-3">{{ t('applications.col_property') }}</th>
-              <th v-if="!isTenant" class="px-4 py-3">{{ t('applications.col_applicant') }}</th>
-              <th class="px-4 py-3">{{ t('applications.col_move_in') }}</th>
-              <th class="px-4 py-3">{{ t('leases.col_rent') }}</th>
-              <th class="px-4 py-3">{{ t('applications.col_status') }}</th>
-              <th class="px-4 py-3">{{ t('applications.col_submitted') }}</th>
-              <th class="px-4 py-3 text-right">{{ t('applications.col_actions') }}</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-neutral-200 dark:divide-neutral-800">
-            <tr
-              v-for="app in paginatedApplications"
-              :key="app.id"
-              class="transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-800/40"
+      <AppDataTable
+        :columns="columns"
+        :items="paginatedApplications"
+        :is-loading="isLoading"
+        min-width="min-w-[750px]"
+      >
+        <template #cell-property="slotProps">
+          <div class="flex flex-col">
+            <span class="font-semibold text-neutral-900 dark:text-white"
+              >{{ t('dashboard.metrics.unit') }}
+              {{ slotProps?.item?.unit?.unitNumber || 'N/A' }}</span
             >
-              <td class="px-4 py-3.5">
-                <div class="flex flex-col">
-                  <span class="font-semibold text-neutral-900 dark:text-white"
-                    >{{ t('dashboard.metrics.unit') }} {{ app.unit?.unitNumber || 'N/A' }}</span
-                  >
-                  <span class="text-xs text-neutral-500 dark:text-neutral-400">{{
-                    app.property?.title || 'Skyline Complex'
-                  }}</span>
-                </div>
-              </td>
-              <td v-if="!isTenant" class="px-4 py-3.5">
-                <div class="flex flex-col">
-                  <span class="font-medium text-neutral-900 dark:text-white">{{
-                    app.tenant?.fullName || 'Prospective Tenant'
-                  }}</span>
-                  <span class="text-xs text-neutral-500 dark:text-neutral-400">{{
-                    app.tenant?.email
-                  }}</span>
-                </div>
-              </td>
-              <td class="px-4 py-3.5">
-                <div
-                  class="flex items-center gap-1.5 text-xs text-neutral-600 dark:text-neutral-300"
-                >
-                  <Calendar :size="14" class="shrink-0 text-neutral-400" />
-                  <span>{{ new Date(app.desiredMoveInDate).toLocaleDateString() }}</span>
-                </div>
-              </td>
-              <td class="px-4 py-3.5 font-semibold text-neutral-900 dark:text-white">
-                ${{ app.proposedRent.toLocaleString() }}
-                <span class="text-xs font-normal text-neutral-500">{{
-                  t('properties.rent_per_month')
-                }}</span>
-              </td>
-              <td class="px-4 py-3.5">
-                <span
-                  :class="[
-                    'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium',
-                    app.status === 'APPROVED'
-                      ? 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-400'
-                      : app.status === 'PENDING'
-                        ? 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-400'
-                        : app.status === 'REJECTED'
-                          ? 'border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-800 dark:bg-rose-950/30 dark:text-rose-400'
-                          : 'border-neutral-200 bg-neutral-100 text-neutral-700',
-                  ]"
-                >
-                  <span class="h-1.5 w-1.5 rounded-full bg-current"></span>
-                  <span>{{
-                    app.status === 'PENDING'
-                      ? t('applications.status.pending')
-                      : app.status === 'APPROVED'
-                        ? t('applications.status.approved')
-                        : app.status === 'REJECTED'
-                          ? t('applications.status.rejected')
-                          : app.status
-                  }}</span>
-                </span>
-              </td>
-              <td class="px-4 py-3.5 text-xs text-neutral-500 dark:text-neutral-400">
-                {{ new Date(app.createdAt).toLocaleDateString() }}
-              </td>
-              <td class="px-4 py-3.5 text-right">
-                <!-- Tenant Actions -->
-                <div v-if="isTenant">
-                  <span
-                    v-if="app.status === 'APPROVED'"
-                    class="text-xs font-semibold text-emerald-600 dark:text-emerald-400"
-                  >
-                    {{ t('applications.status.approved') }}
-                  </span>
-                  <span
-                    v-else-if="app.status === 'PENDING'"
-                    class="text-xs text-amber-600 dark:text-amber-400"
-                  >
-                    {{ t('applications.status.pending') }}
-                  </span>
-                  <span v-else class="text-xs text-neutral-500 dark:text-neutral-400">
-                    {{ t('applications.status.rejected') }}
-                  </span>
-                </div>
+            <span class="text-xs text-neutral-500 dark:text-neutral-400">{{
+              slotProps?.item?.property?.title || 'Skyline Complex'
+            }}</span>
+          </div>
+        </template>
 
-                <!-- Landlord / Admin Review Actions -->
-                <div
-                  v-else-if="isLandlord || isAdmin"
-                  class="inline-flex items-center justify-end gap-1.5"
-                >
-                  <template v-if="app.status === 'PENDING'">
-                    <button
-                      @click="openReviewModal(app, 'APPROVED')"
-                      class="shadow-xs inline-flex cursor-pointer items-center gap-1 rounded-lg bg-emerald-600 px-2.5 py-1 text-xs font-medium text-white transition-colors hover:bg-emerald-700"
-                      :title="t('applications.approve')"
-                    >
-                      <CheckCircle2 :size="13" />
-                      <span>{{ t('applications.approve') }}</span>
-                    </button>
-                    <button
-                      @click="openReviewModal(app, 'REJECTED')"
-                      class="inline-flex cursor-pointer items-center gap-1 rounded-lg border border-rose-200 px-2.5 py-1 text-xs font-medium text-rose-600 transition-colors hover:bg-rose-50 dark:border-rose-800 dark:text-rose-400 dark:hover:bg-rose-950/30"
-                      :title="t('applications.reject')"
-                    >
-                      <XCircle :size="13" />
-                      <span>{{ t('applications.reject') }}</span>
-                    </button>
-                  </template>
-                  <span
-                    v-else-if="app.status === 'APPROVED'"
-                    class="text-xs font-medium text-emerald-600 dark:text-emerald-400"
-                  >
-                    Lease Drafted
-                  </span>
-                  <span v-else class="text-xs text-neutral-400 dark:text-neutral-500">
-                    Rejected
-                  </span>
-                </div>
-                <div v-else class="text-xs text-neutral-400 dark:text-neutral-500">
-                  {{ t('common.not_available') }}
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+        <template #cell-applicant="slotProps">
+          <div class="flex flex-col">
+            <span class="font-medium text-neutral-900 dark:text-white">{{
+              slotProps?.item?.tenant?.fullName || 'Prospective Tenant'
+            }}</span>
+            <span class="text-xs text-neutral-500 dark:text-neutral-400">{{
+              slotProps?.item?.tenant?.email || 'N/A'
+            }}</span>
+          </div>
+        </template>
+
+        <template #cell-moveIn="slotProps">
+          <div class="flex items-center gap-1.5 text-xs text-neutral-600 dark:text-neutral-300">
+            <Calendar :size="14" class="shrink-0 text-neutral-400" />
+            <span>{{
+              slotProps?.item?.desiredMoveInDate
+                ? new Date(slotProps.item.desiredMoveInDate).toLocaleDateString()
+                : '—'
+            }}</span>
+          </div>
+        </template>
+
+        <template #cell-rent="slotProps">
+          <div class="font-semibold text-neutral-900 dark:text-white">
+            ${{
+              slotProps?.item?.proposedRent ? slotProps.item.proposedRent.toLocaleString() : '0'
+            }}
+            <span class="text-xs font-normal text-neutral-500">{{
+              t('properties.rent_per_month')
+            }}</span>
+          </div>
+        </template>
+
+        <template #cell-status="slotProps">
+          <span
+            :class="[
+              'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium',
+              slotProps?.item?.status === 'APPROVED'
+                ? 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-400'
+                : slotProps?.item?.status === 'PENDING'
+                  ? 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-400'
+                  : slotProps?.item?.status === 'REJECTED'
+                    ? 'border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-800 dark:bg-rose-950/30 dark:text-rose-400'
+                    : 'border-neutral-200 bg-neutral-100 text-neutral-700',
+            ]"
+          >
+            <span class="h-1.5 w-1.5 rounded-full bg-current"></span>
+            <span>{{
+              slotProps?.item?.status === 'PENDING'
+                ? t('applications.status.pending')
+                : slotProps?.item?.status === 'APPROVED'
+                  ? t('applications.status.approved')
+                  : slotProps?.item?.status === 'REJECTED'
+                    ? t('applications.status.rejected')
+                    : slotProps?.item?.status || '—'
+            }}</span>
+          </span>
+        </template>
+
+        <template #cell-submitted="slotProps">
+          <span class="text-xs text-neutral-500 dark:text-neutral-400">
+            {{
+              slotProps?.item?.createdAt
+                ? new Date(slotProps.item.createdAt).toLocaleDateString()
+                : '—'
+            }}
+          </span>
+        </template>
+
+        <template #cell-actions="slotProps">
+          <!-- Tenant Actions -->
+          <div v-if="isTenant">
+            <span
+              v-if="slotProps?.item?.status === 'APPROVED'"
+              class="text-xs font-semibold text-emerald-600 dark:text-emerald-400"
+            >
+              {{ t('applications.status.approved') }}
+            </span>
+            <span
+              v-else-if="slotProps?.item?.status === 'PENDING'"
+              class="text-xs text-amber-600 dark:text-amber-400"
+            >
+              {{ t('applications.status.pending') }}
+            </span>
+            <span v-else class="text-xs text-neutral-500 dark:text-neutral-400">
+              {{ t('applications.status.rejected') }}
+            </span>
+          </div>
+
+          <!-- Landlord / Admin Review Actions -->
+          <div
+            v-else-if="isLandlord || isAdmin"
+            class="inline-flex items-center justify-end gap-1.5"
+          >
+            <template v-if="slotProps?.item?.status === 'PENDING'">
+              <button
+                @click="slotProps?.item && openReviewModal(slotProps.item, 'APPROVED')"
+                class="shadow-xs inline-flex cursor-pointer items-center gap-1 rounded-lg bg-emerald-600 px-2.5 py-1 text-xs font-medium text-white transition-colors hover:bg-emerald-700"
+                :title="t('applications.approve')"
+              >
+                <CheckCircle2 :size="13" />
+                <span>{{ t('applications.approve') }}</span>
+              </button>
+              <button
+                @click="slotProps?.item && openReviewModal(slotProps.item, 'REJECTED')"
+                class="inline-flex cursor-pointer items-center gap-1 rounded-lg border border-rose-200 px-2.5 py-1 text-xs font-medium text-rose-600 transition-colors hover:bg-rose-50 dark:border-rose-800 dark:text-rose-400 dark:hover:bg-rose-950/30"
+                :title="t('applications.reject')"
+              >
+                <XCircle :size="13" />
+                <span>{{ t('applications.reject') }}</span>
+              </button>
+            </template>
+            <span
+              v-else-if="slotProps?.item?.status === 'APPROVED'"
+              class="text-xs font-medium text-emerald-600 dark:text-emerald-400"
+            >
+              Lease Drafted
+            </span>
+            <span v-else class="text-xs text-neutral-400 dark:text-neutral-500"> Rejected </span>
+          </div>
+          <div v-else class="text-xs text-neutral-400 dark:text-neutral-500">
+            {{ t('common.not_available') }}
+          </div>
+        </template>
+      </AppDataTable>
     </AppTableCard>
 
     <!-- Review Decision Modal -->
-    <Teleport to="body">
-      <div
-        v-if="appToReview"
-        class="backdrop-blur-xs fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
-      >
-        <div
-          class="w-full max-w-lg overflow-hidden rounded-xl border border-neutral-200 bg-white shadow-xl dark:border-neutral-800 dark:bg-neutral-900"
-        >
-          <div
-            class="flex items-center justify-between border-b border-neutral-200 px-6 py-4 dark:border-neutral-800"
-          >
-            <h3 class="text-base font-semibold text-neutral-900 dark:text-white">
-              {{
-                reviewDecision === 'APPROVED'
-                  ? t('applications.approve_modal_title')
-                  : t('applications.reject_modal_title')
-              }}
-            </h3>
-            <button
-              type="button"
-              @click="appToReview = null"
-              class="cursor-pointer text-neutral-400 transition-colors hover:text-neutral-600 dark:hover:text-neutral-200"
-            >
-              <X :size="18" />
-            </button>
-          </div>
-
-          <form @submit.prevent="submitReview" class="space-y-4 p-6">
-            <div
-              v-if="reviewError"
-              class="flex items-center gap-2 rounded-lg border border-rose-200 bg-rose-50 p-3 text-xs text-rose-700 dark:border-rose-900/40 dark:bg-rose-950/20 dark:text-rose-400"
-            >
-              <AlertCircle :size="15" class="shrink-0 text-rose-600 dark:text-rose-400" />
-              <span>{{ reviewError }}</span>
-            </div>
-            <div
-              class="space-y-1.5 rounded-lg border border-neutral-200 bg-neutral-50 p-4 text-xs text-neutral-700 dark:border-neutral-800 dark:bg-neutral-800/50 dark:text-neutral-300"
-            >
-              <div>
-                <strong class="text-neutral-900 dark:text-white"
-                  >{{ t('applications.applicant_label') }}:</strong
-                >
-                {{ appToReview.tenant?.fullName || 'Tenant' }} ({{ appToReview.tenant?.email }})
-              </div>
-              <div>
-                <strong class="text-neutral-900 dark:text-white"
-                  >{{ t('applications.unit_label') }}:</strong
-                >
-                Unit {{ appToReview.unit?.unitNumber }} ({{ appToReview.property?.title }})
-              </div>
-              <div>
-                <strong class="text-neutral-900 dark:text-white"
-                  >{{ t('applications.desired_move_in_label') }}:</strong
-                >
-                {{ new Date(appToReview.desiredMoveInDate).toLocaleDateString() }}
-              </div>
-              <div>
-                <strong class="text-neutral-900 dark:text-white"
-                  >{{ t('applications.proposed_rent_label') }}:</strong
-                >
-                ${{ appToReview.proposedRent }}/month
-              </div>
-              <div class="mt-2 border-t border-neutral-200 pt-2 dark:border-neutral-700">
-                <span
-                  class="mb-1 block text-[10px] font-bold uppercase tracking-wider text-neutral-500 dark:text-neutral-400"
-                  >{{ t('applications.credentials_label') }}:</span
-                >
-                <p class="text-neutral-800 dark:text-neutral-200">
-                  {{ appToReview.employmentDetails }}
-                </p>
-              </div>
-            </div>
-
-            <div class="space-y-1.5">
-              <label class="block text-xs font-semibold text-neutral-700 dark:text-neutral-300">
-                {{ t('applications.review_notes_label') }}
-              </label>
-              <textarea
-                v-model="reviewReason"
-                rows="3"
-                required
-                class="focus:outline-hidden w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 placeholder-neutral-400 focus:ring-2 focus:ring-primary-500 dark:border-neutral-700 dark:bg-neutral-800 dark:text-white"
-                :placeholder="t('applications.review_notes_placeholder')"
-              ></textarea>
-            </div>
-
-            <p
-              v-if="reviewDecision === 'APPROVED'"
-              class="text-xs leading-relaxed text-neutral-500 dark:text-neutral-400"
-            >
-              {{
-                t('applications.approval_auto_note', { unit: appToReview.unit?.unitNumber || '' })
-              }}
-            </p>
-
-            <div class="flex items-center justify-end gap-3 pt-2">
-              <button
-                type="button"
-                @click="appToReview = null"
-                class="cursor-pointer rounded-lg border border-neutral-300 bg-white px-4 py-2 text-xs font-medium text-neutral-700 transition-colors hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-200 dark:hover:bg-neutral-700"
-              >
-                {{ t('common.cancel') }}
-              </button>
-              <button
-                type="submit"
-                :disabled="isSubmittingReview || reviewReason.trim().length < 3"
-                :class="[
-                  'shadow-xs cursor-pointer rounded-lg px-4 py-2 text-xs font-medium text-white transition-colors disabled:cursor-not-allowed disabled:opacity-50',
-                  reviewDecision === 'REJECTED'
-                    ? 'bg-rose-600 hover:bg-rose-700'
-                    : 'bg-primary-600 hover:bg-primary-700',
-                ]"
-              >
-                <span>{{
-                  isSubmittingReview
-                    ? t('applications.processing_btn')
-                    : reviewDecision === 'APPROVED'
-                      ? t('applications.confirm_approval_btn')
-                      : t('applications.confirm_rejection_btn')
-                }}</span>
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </Teleport>
+    <ApplicationReviewModal
+      :application="appToReview"
+      :decision="reviewDecision"
+      :is-submitting="isSubmittingReview"
+      :error="reviewError"
+      @close="appToReview = null"
+      @submit="handleSubmitReview"
+    />
   </div>
 </template>

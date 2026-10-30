@@ -88,17 +88,19 @@ function onPageSizeChange(event: Event) {
 <template>
   <div
     v-if="totalItems > 0"
-    class="flex flex-col items-center justify-between gap-3 border-t border-neutral-200 bg-white px-5 py-3 text-xs text-neutral-500 dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-400 sm:flex-row"
+    class="flex flex-col items-center justify-between gap-3 border-t border-neutral-200 bg-white px-3.5 py-3 text-xs text-neutral-500 dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-400 sm:flex-row sm:px-5"
   >
     <!-- Left: Items Info & Per-Page Selector -->
-    <div class="flex flex-wrap items-center gap-3">
+    <div
+      class="flex flex-wrap items-center justify-center gap-2 text-center sm:justify-start sm:gap-3 sm:text-left"
+    >
       <span>
         {{ $t('common.showing') }}
-        <strong class="font-medium text-neutral-900 dark:text-white"
+        <strong class="px-1 font-medium text-neutral-900 dark:text-white"
           >{{ startItem }}–{{ endItem }}</strong
         >
         {{ $t('common.of') }}
-        <strong class="font-medium text-neutral-900 dark:text-white">{{ totalItems }}</strong>
+        <strong class="px-1 font-medium text-neutral-900 dark:text-white">{{ totalItems }}</strong>
         {{ itemName }}
       </span>
 
@@ -113,7 +115,7 @@ function onPageSizeChange(event: Event) {
           id="page-size-select"
           :value="pageSize"
           @change="onPageSizeChange"
-          class="focus:outline-hidden rounded border border-neutral-300 bg-white px-2 py-0.5 text-xs text-neutral-800 focus:ring-2 focus:ring-blue-500 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-200"
+          class="focus:outline-hidden rounded border border-neutral-300 bg-white px-1.5 py-0.5 text-xs text-neutral-800 focus:ring-2 focus:ring-blue-500 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-200"
         >
           <option v-for="opt in pageSizeOptions" :key="opt" :value="opt">
             {{ opt }}
@@ -123,13 +125,16 @@ function onPageSizeChange(event: Event) {
     </div>
 
     <!-- Right: Page Navigation Buttons -->
-    <nav class="inline-flex items-center gap-1" aria-label="Pagination Navigation">
-      <!-- First Page -->
+    <nav
+      class="inline-flex flex-wrap items-center justify-center gap-1"
+      aria-label="Pagination Navigation"
+    >
+      <!-- First Page (hidden on mobile) -->
       <button
         type="button"
         :disabled="currentPage <= 1"
         @click="goToPage(1)"
-        class="flex h-7 w-7 cursor-pointer items-center justify-center rounded border border-neutral-200 bg-white text-neutral-600 transition-colors hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-700"
+        class="hidden h-7 w-7 cursor-pointer items-center justify-center rounded border border-neutral-200 bg-white text-neutral-600 transition-colors hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-700 sm:inline-flex"
         :title="$t('common.first_page')"
         :aria-label="$t('common.first_page')"
       >
@@ -179,12 +184,12 @@ function onPageSizeChange(event: Event) {
         <ChevronRight :size="14" />
       </button>
 
-      <!-- Last Page -->
+      <!-- Last Page (hidden on mobile) -->
       <button
         type="button"
         :disabled="currentPage >= totalPages"
         @click="goToPage(totalPages)"
-        class="flex h-7 w-7 cursor-pointer items-center justify-center rounded border border-neutral-200 bg-white text-neutral-600 transition-colors hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-700"
+        class="hidden h-7 w-7 cursor-pointer items-center justify-center rounded border border-neutral-200 bg-white text-neutral-600 transition-colors hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-700 sm:inline-flex"
         :title="$t('common.last_page')"
         :aria-label="$t('common.last_page')"
       >

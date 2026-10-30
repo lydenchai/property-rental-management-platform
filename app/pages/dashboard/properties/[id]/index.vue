@@ -13,9 +13,15 @@ import {
   ExternalLink,
   X,
 } from '@lucide/vue';
+import type { TableColumn } from '~~/shared/types';
 import { usePropertyStore } from '../../../../stores/property.store';
 import AppTableCard from '../../../../components/common/AppTableCard.vue';
+import AppDataTable from '../../../../components/common/AppDataTable.vue';
 import PropertyMap from '../../../../components/common/PropertyMap.vue';
+import UnitFormModal, {
+  type UnitFormData,
+} from '../../../../components/properties/UnitFormModal.vue';
+import UnitDeleteModal from '../../../../components/properties/UnitDeleteModal.vue';
 
 definePageMeta({
   layout: 'dashboard',
@@ -79,7 +85,7 @@ const unitForm = ref({
   rentAmount: 500,
   depositAmount: 500,
   status: 'AVAILABLE',
-});
+}) as any;
 
 // Unit Delete Modal state
 const unitToDelete = ref<Unit | null>(null);
@@ -94,6 +100,17 @@ const paginatedUnits = computed(() => {
   const start = (currentUnitPage.value - 1) * unitPageSize.value;
   return units.slice(start, start + unitPageSize.value);
 });
+
+const columns = computed<TableColumn[]>(() => [
+  { key: 'unitNumber', label: t('properties.col_unit_number') },
+  { key: 'floor', label: t('properties.col_floor') },
+  { key: 'size', label: t('properties.col_size') },
+  { key: 'bedroomsBath', label: t('properties.col_bedrooms_bath') },
+  { key: 'monthlyRent', label: t('properties.col_monthly_rent') },
+  { key: 'deposit', label: t('properties.col_deposit') },
+  { key: 'status', label: t('properties.col_occupancy_status') },
+  { key: 'actions', label: t('properties.col_actions'), align: 'right' },
+]);
 
 async function loadProperty() {
   const res = await fetchPropertyById(propertyId);
@@ -169,22 +186,22 @@ function getUnitBadgeClass(status: string) {
 
 const toast = useToast();
 
-async function handleSaveUnit() {
+async function handleSaveUnit(formData: UnitFormData) {
   isSubmittingUnit.value = true;
   try {
     if (editingUnitId.value) {
-      const res = await updateUnit(propertyId, editingUnitId.value, unitForm.value);
+      const res = await updateUnit(propertyId, editingUnitId.value, formData);
       if (res.success) {
-        toast.success(`Unit ${unitForm.value.unitNumber} updated successfully.`);
+        toast.success(`Unit ${formData.unitNumber} updated successfully.`);
         isUnitModalOpen.value = false;
         await loadProperty();
       } else {
         toast.error(res.error || 'Failed to update unit.');
       }
     } else {
-      const res = await createUnit(propertyId, unitForm.value);
+      const res = await createUnit(propertyId, formData);
       if (res.success) {
-        toast.success(`Unit ${unitForm.value.unitNumber} added to property.`);
+        toast.success(`Unit ${formData.unitNumber} added to property.`);
         isUnitModalOpen.value = false;
         await loadProperty();
       } else {
@@ -202,13 +219,16 @@ function confirmDeleteUnit(unit: Unit) {
   unitToDelete.value = unit;
 }
 
-async function executeDeleteUnit() {
-  if (!unitToDelete.value) return;
+async function executeDeleteUnit(unitId: string) {
   isDeleting.value = true;
   try {
-    const res = await deleteUnit(propertyId, unitToDelete.value.id);
+    const res = await deleteUnit(propertyId, unitId);
     if (res.success) {
-      toast.success(`Unit ${unitToDelete.value.unitNumber} removed.`);
+      toast.success(
+        unitToDelete.value
+          ? `Unit ${unitToDelete.value.unitNumber} removed.`
+          : 'Unit removed successfully.'
+      );
       unitToDelete.value = null;
       await loadProperty();
     } else {
@@ -372,66 +392,86 @@ onMounted(() => {
           </button>
         </template>
 
-        <table class="data-table">
-          <thead>
-            <tr>
-              <th>{{ t('properties.col_unit_number') }}</th>
-              <th>{{ t('properties.col_floor') }}</th>
-              <th>{{ t('properties.col_size') }}</th>
-              <th>{{ t('properties.col_bedrooms_bath') }}</th>
-              <th>{{ t('properties.col_monthly_rent') }}</th>
-              <th>{{ t('properties.col_deposit') }}</th>
-              <th>{{ t('properties.col_occupancy_status') }}</th>
-              <th class="text-right">{{ t('properties.col_actions') }}</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="unit in paginatedUnits" :key="unit.id">
-              <td class="font-semibold text-neutral-900 dark:text-white">
-                {{ t('properties.unit_label', { number: unit.unitNumber }) }}
-              </td>
-              <td>{{ t('properties.level', { floor: unit.floor }) }}</td>
-              <td>{{ t('properties.sq_m', { size: unit.sizeSqFt }) }}</td>
-              <td>
-                {{
-                  unit.bedrooms === 0
-                    ? t('properties.studio')
-                    : t('properties.bed_short', { count: unit.bedrooms })
-                }}
-                / {{ t('properties.bath_short', { count: unit.bathrooms }) }}
-              </td>
-              <td class="font-semibold text-neutral-900 dark:text-white">
-                ${{ unit.rentAmount.toLocaleString() }}
-              </td>
-              <td>${{ unit.depositAmount.toLocaleString() }}</td>
-              <td>
-                <span :class="['badge badge-pill', getUnitBadgeClass(unit.status)]">
-                  <span class="badge-dot" />
-                  <span>{{ formatUnitStatus(unit.status) }}</span>
-                </span>
-              </td>
-              <td class="text-right">
-                <div class="flex items-center justify-end gap-1.5">
-                  <button
-                    @click="openEditUnitModal(unit)"
-                    class="btn-secondary btn-sm"
-                    :title="t('common.edit')"
-                  >
-                    <Edit3 :size="13" />
-                    <span>{{ t('common.edit') }}</span>
-                  </button>
-                  <button
-                    @click="confirmDeleteUnit(unit)"
-                    class="rounded-md p-1.5 text-neutral-500 transition-colors hover:bg-rose-50 hover:text-rose-600 dark:text-neutral-400 dark:hover:bg-rose-950/30 dark:hover:text-rose-400"
-                    :title="t('properties.remove_unit')"
-                  >
-                    <Trash2 :size="13" />
-                  </button>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+        <AppDataTable
+          :columns="columns"
+          :items="paginatedUnits"
+          :is-loading="isLoading"
+          min-width="min-w-[700px]"
+        >
+          <template #cell-unitNumber="slotProps">
+            <span class="font-semibold text-neutral-900 dark:text-white">
+              {{ t('properties.unit_label', { number: slotProps?.item?.unitNumber || '' }) }}
+            </span>
+          </template>
+
+          <template #cell-floor="slotProps">
+            <span>{{ t('properties.level', { floor: slotProps?.item?.floor ?? 0 }) }}</span>
+          </template>
+
+          <template #cell-size="slotProps">
+            <span>{{ t('properties.sq_m', { size: slotProps?.item?.sizeSqFt ?? 0 }) }}</span>
+          </template>
+
+          <template #cell-bedroomsBath="slotProps">
+            <span>
+              {{
+                slotProps?.item?.bedrooms === 0
+                  ? t('properties.studio')
+                  : t('properties.bed_short', { count: slotProps?.item?.bedrooms ?? 1 })
+              }}
+              / {{ t('properties.bath_short', { count: slotProps?.item?.bathrooms ?? 1 }) }}
+            </span>
+          </template>
+
+          <template #cell-monthlyRent="slotProps">
+            <span class="font-semibold text-neutral-900 dark:text-white">
+              {{
+                slotProps?.item?.rentAmount != null
+                  ? '$' + slotProps.item.rentAmount.toLocaleString()
+                  : '—'
+              }}
+            </span>
+          </template>
+
+          <template #cell-deposit="slotProps">
+            <span>{{
+              slotProps?.item?.depositAmount != null
+                ? '$' + slotProps.item.depositAmount.toLocaleString()
+                : '—'
+            }}</span>
+          </template>
+
+          <template #cell-status="slotProps">
+            <span
+              v-if="slotProps?.item?.status"
+              :class="['badge badge-pill', getUnitBadgeClass(slotProps.item.status)]"
+            >
+              <span class="badge-dot" />
+              <span>{{ formatUnitStatus(slotProps.item.status) }}</span>
+            </span>
+            <span v-else>—</span>
+          </template>
+
+          <template #cell-actions="slotProps">
+            <div v-if="slotProps?.item?.id" class="flex items-center justify-end gap-1.5">
+              <button
+                @click="openEditUnitModal(slotProps.item)"
+                class="btn-secondary btn-sm"
+                :title="t('common.edit')"
+              >
+                <Edit3 :size="13" />
+                <span>{{ t('common.edit') }}</span>
+              </button>
+              <button
+                @click="confirmDeleteUnit(slotProps.item)"
+                class="rounded-md p-1.5 text-neutral-500 transition-colors hover:bg-rose-50 hover:text-rose-600 dark:text-neutral-400 dark:hover:bg-rose-950/30 dark:hover:text-rose-400"
+                :title="t('properties.remove_unit')"
+              >
+                <Trash2 :size="13" />
+              </button>
+            </div>
+          </template>
+        </AppDataTable>
       </AppTableCard>
     </div>
 
@@ -454,220 +494,21 @@ onMounted(() => {
     </div>
 
     <!-- Unit Add / Edit Modal -->
-    <Teleport to="body">
-      <div
-        v-if="isUnitModalOpen"
-        class="backdrop-blur-xs fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
-      >
-        <div
-          class="flex w-full max-w-lg flex-col gap-5 rounded-2xl border border-neutral-200 bg-white p-6 shadow-xl dark:border-neutral-800 dark:bg-neutral-900"
-        >
-          <div
-            class="flex items-center justify-between border-b border-neutral-100 pb-3 dark:border-neutral-800"
-          >
-            <h3 class="text-lg font-bold text-neutral-900 dark:text-white">
-              {{ editingUnitId ? t('properties.edit_unit') : t('properties.add_unit_to_property') }}
-            </h3>
-            <button
-              @click="isUnitModalOpen = false"
-              class="cursor-pointer text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200"
-            >
-              <X :size="18" />
-            </button>
-          </div>
-
-          <form @submit.prevent="handleSaveUnit" class="flex flex-col gap-4">
-            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div class="flex flex-col gap-1.5">
-                <label
-                  for="u-number"
-                  class="text-xs font-semibold uppercase tracking-wider text-neutral-900 dark:text-neutral-100"
-                  >{{ t('properties.unit_number_label') }}</label
-                >
-                <input
-                  id="u-number"
-                  v-model="unitForm.unitNumber"
-                  type="text"
-                  placeholder="e.g. 101A"
-                  required
-                  class="input-field"
-                />
-              </div>
-
-              <div class="flex flex-col gap-1.5">
-                <label
-                  for="u-floor"
-                  class="text-xs font-semibold uppercase tracking-wider text-neutral-900 dark:text-neutral-100"
-                  >{{ t('properties.floor_level_label') }}</label
-                >
-                <input
-                  id="u-floor"
-                  v-model.number="unitForm.floor"
-                  type="number"
-                  min="0"
-                  required
-                  class="input-field"
-                />
-              </div>
-            </div>
-
-            <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
-              <div class="flex flex-col gap-1.5">
-                <label
-                  for="u-size"
-                  class="text-xs font-semibold uppercase tracking-wider text-neutral-900 dark:text-neutral-100"
-                  >{{ t('properties.area_sqm_label') }}</label
-                >
-                <input
-                  id="u-size"
-                  v-model.number="unitForm.sizeSqFt"
-                  type="number"
-                  min="10"
-                  required
-                  class="input-field"
-                />
-              </div>
-
-              <div class="flex flex-col gap-1.5">
-                <label
-                  for="u-beds"
-                  class="text-xs font-semibold uppercase tracking-wider text-neutral-900 dark:text-neutral-100"
-                  >{{ t('properties.bedrooms') }} *</label
-                >
-                <input
-                  id="u-beds"
-                  v-model.number="unitForm.bedrooms"
-                  type="number"
-                  min="0"
-                  required
-                  class="input-field"
-                />
-              </div>
-
-              <div class="flex flex-col gap-1.5">
-                <label
-                  for="u-baths"
-                  class="text-xs font-semibold uppercase tracking-wider text-neutral-900 dark:text-neutral-100"
-                  >{{ t('properties.bathrooms') }} *</label
-                >
-                <input
-                  id="u-baths"
-                  v-model.number="unitForm.bathrooms"
-                  type="number"
-                  min="0.5"
-                  step="0.5"
-                  required
-                  class="input-field"
-                />
-              </div>
-            </div>
-
-            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div class="flex flex-col gap-1.5">
-                <label
-                  for="u-rent"
-                  class="text-xs font-semibold uppercase tracking-wider text-neutral-900 dark:text-neutral-100"
-                  >{{ t('properties.monthly_rent_label') }}</label
-                >
-                <input
-                  id="u-rent"
-                  v-model.number="unitForm.rentAmount"
-                  type="number"
-                  min="1"
-                  required
-                  class="input-field"
-                />
-              </div>
-
-              <div class="flex flex-col gap-1.5">
-                <label
-                  for="u-deposit"
-                  class="text-xs font-semibold uppercase tracking-wider text-neutral-900 dark:text-neutral-100"
-                  >{{ t('properties.security_deposit_label') }}</label
-                >
-                <input
-                  id="u-deposit"
-                  v-model.number="unitForm.depositAmount"
-                  type="number"
-                  min="0"
-                  required
-                  class="input-field"
-                />
-              </div>
-            </div>
-
-            <div class="flex flex-col gap-1.5">
-              <label
-                for="u-status"
-                class="text-xs font-semibold uppercase tracking-wider text-neutral-900 dark:text-neutral-100"
-                >{{ t('properties.unit_status_label') }}</label
-              >
-              <select id="u-status" v-model="unitForm.status" class="input-field">
-                <option value="AVAILABLE">{{ t('properties.status.vacant') }}</option>
-                <option value="RESERVED">{{ t('properties.status.reserved') }}</option>
-                <option value="OCCUPIED">{{ t('properties.status.occupied') }}</option>
-                <option value="MAINTENANCE">{{ t('properties.status.maintenance') }}</option>
-              </select>
-            </div>
-
-            <div
-              class="flex items-center justify-end gap-2 border-t border-neutral-100 pt-3 dark:border-neutral-800"
-            >
-              <button type="button" @click="isUnitModalOpen = false" class="btn-secondary">
-                {{ t('common.cancel') }}
-              </button>
-              <button type="submit" :disabled="isSubmittingUnit" class="btn-primary">
-                <span>{{
-                  isSubmittingUnit ? t('properties.saving') : t('properties.save_unit')
-                }}</span>
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </Teleport>
+    <UnitFormModal
+      :is-open="isUnitModalOpen"
+      :unit-id="editingUnitId"
+      :initial-data="unitForm"
+      :is-submitting="isSubmittingUnit"
+      @close="isUnitModalOpen = false"
+      @submit="handleSaveUnit"
+    />
 
     <!-- Unit Delete Confirmation Modal -->
-    <Teleport to="body">
-      <div
-        v-if="unitToDelete"
-        class="backdrop-blur-xs fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
-      >
-        <div
-          class="flex w-full max-w-md flex-col gap-4 rounded-2xl border border-neutral-200 bg-white p-6 shadow-xl dark:border-neutral-800 dark:bg-neutral-900"
-        >
-          <div
-            class="flex items-center justify-between border-b border-neutral-100 pb-3 dark:border-neutral-800"
-          >
-            <h3 class="text-lg font-bold text-neutral-900 dark:text-white">
-              {{ t('properties.remove_unit') }}
-            </h3>
-            <button
-              @click="unitToDelete = null"
-              class="cursor-pointer text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200"
-            >
-              <X :size="18" />
-            </button>
-          </div>
-          <div class="flex flex-col gap-3">
-            <p class="text-sm text-neutral-700 dark:text-neutral-300">
-              {{ t('properties.remove_unit_confirm', { number: unitToDelete.unitNumber }) }}
-            </p>
-            <div
-              class="flex items-center justify-end gap-2 border-t border-neutral-100 pt-3 dark:border-neutral-800"
-            >
-              <button @click="unitToDelete = null" class="btn-secondary">
-                {{ t('common.cancel') }}
-              </button>
-              <button @click="executeDeleteUnit" :disabled="isDeleting" class="btn-danger">
-                <span>{{
-                  isDeleting ? t('properties.removing') : t('properties.confirm_remove')
-                }}</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </Teleport>
+    <UnitDeleteModal
+      :unit="unitToDelete"
+      :is-deleting="isDeleting"
+      @close="unitToDelete = null"
+      @confirm="executeDeleteUnit"
+    />
   </div>
 </template>

@@ -1,11 +1,21 @@
 <script setup lang="ts">
-import { Building2 } from '@lucide/vue';
+import { ref, watch } from 'vue';
+import { Building2, Menu, X } from '@lucide/vue';
 import { useAuth } from '../composables/useAuth';
 import ThemeToggle from '../components/common/ThemeToggle.vue';
 import LanguageSwitcher from '../components/common/LanguageSwitcher.vue';
 
 const { t } = useI18n();
 const { isAuthenticated, logout } = useAuth();
+const route = useRoute();
+const isMobileMenuOpen = ref(false);
+
+watch(
+  () => route.path,
+  () => {
+    isMobileMenuOpen.value = false;
+  }
+);
 </script>
 
 <template>
@@ -16,9 +26,7 @@ const { isAuthenticated, logout } = useAuth();
     <header
       class="sticky top-0 z-50 border-b border-neutral-200 bg-white/95 backdrop-blur-sm transition-colors duration-200 dark:border-neutral-800 dark:bg-neutral-950/95"
     >
-      <div
-        class="mx-auto flex max-w-7xl items-center justify-between gap-2 px-4 py-3.5 sm:px-6 md:gap-0"
-      >
+      <div class="mx-auto flex max-w-7xl items-center justify-between gap-2 px-4 py-3 sm:px-6">
         <NuxtLink
           to="/"
           class="flex items-center gap-2.5 text-xl font-bold text-neutral-900 transition-opacity hover:opacity-90 dark:text-white"
@@ -31,6 +39,7 @@ const { isAuthenticated, logout } = useAuth();
           <span>Rent<span class="text-blue-600 dark:text-blue-500">Ease</span></span>
         </NuxtLink>
 
+        <!-- Desktop Navigation -->
         <nav class="hidden items-center gap-6 md:flex">
           <NuxtLink
             to="/"
@@ -64,19 +73,109 @@ const { isAuthenticated, logout } = useAuth();
           </NuxtLink>
         </nav>
 
-        <div class="flex items-center gap-2 sm:gap-3">
+        <!-- Right Utilities & Auth Actions -->
+        <div class="flex items-center gap-1.5 sm:gap-2.5">
           <LanguageSwitcher />
           <ThemeToggle />
+
+          <!-- Desktop Auth Buttons -->
+          <div class="hidden items-center gap-2 sm:flex">
+            <template v-if="isAuthenticated">
+              <NuxtLink
+                to="/dashboard"
+                class="inline-flex items-center justify-center rounded-md bg-neutral-900 px-3.5 py-1.5 text-xs font-medium text-white shadow-sm transition-colors hover:bg-neutral-800 dark:bg-blue-600 dark:hover:bg-blue-700 sm:text-sm"
+              >
+                {{ t('nav.dashboard') }}
+              </NuxtLink>
+              <button
+                @click="logout"
+                class="inline-flex items-center justify-center rounded-md border border-neutral-300 bg-white px-3.5 py-1.5 text-xs font-medium text-neutral-900 shadow-sm transition-colors hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100 dark:hover:bg-neutral-800 sm:text-sm"
+              >
+                {{ t('nav.log_out') }}
+              </button>
+            </template>
+            <template v-else>
+              <NuxtLink
+                to="/login"
+                class="inline-flex items-center justify-center rounded-md border border-neutral-300 bg-white px-3.5 py-1.5 text-xs font-medium text-neutral-900 shadow-sm transition-colors hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100 dark:hover:bg-neutral-800 sm:text-sm"
+              >
+                {{ t('nav.sign_in') }}
+              </NuxtLink>
+              <NuxtLink
+                to="/register"
+                class="inline-flex items-center justify-center rounded-md bg-neutral-900 px-3.5 py-1.5 text-xs font-medium text-white shadow-sm transition-colors hover:bg-neutral-800 dark:bg-blue-600 dark:hover:bg-blue-700 sm:text-sm"
+              >
+                {{ t('nav.get_started') }}
+              </NuxtLink>
+            </template>
+          </div>
+
+          <!-- Mobile Hamburger Toggle -->
+          <button
+            type="button"
+            class="inline-flex h-8 w-8 items-center justify-center rounded-md border border-neutral-200 bg-white text-neutral-700 transition-colors hover:bg-neutral-100 dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-200 dark:hover:bg-neutral-800 md:hidden"
+            @click="isMobileMenuOpen = !isMobileMenuOpen"
+            :aria-expanded="isMobileMenuOpen"
+            aria-label="Toggle navigation menu"
+          >
+            <X v-if="isMobileMenuOpen" :size="18" />
+            <Menu v-else :size="18" />
+          </button>
+        </div>
+      </div>
+
+      <!-- Mobile Navigation Drawer Dropdown -->
+      <div
+        v-if="isMobileMenuOpen"
+        class="border-b border-neutral-200 bg-white px-4 py-4 shadow-lg transition-all dark:border-neutral-800 dark:bg-neutral-950 md:hidden"
+      >
+        <nav class="flex flex-col gap-1">
+          <NuxtLink
+            to="/"
+            class="rounded-lg px-3 py-2 text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-neutral-900 [&.router-link-active]:bg-neutral-100 [&.router-link-active]:font-semibold dark:[&.router-link-active]:bg-neutral-900 dark:[&.router-link-active]:text-white"
+          >
+            {{ t('nav.home') }}
+          </NuxtLink>
+          <NuxtLink
+            to="/properties"
+            class="rounded-lg px-3 py-2 text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-neutral-900 [&.router-link-active]:bg-neutral-100 [&.router-link-active]:font-semibold dark:[&.router-link-active]:bg-neutral-900 dark:[&.router-link-active]:text-white"
+          >
+            {{ t('nav.properties') }}
+          </NuxtLink>
+          <NuxtLink
+            to="/about"
+            class="rounded-lg px-3 py-2 text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-neutral-900 [&.router-link-active]:bg-neutral-100 [&.router-link-active]:font-semibold dark:[&.router-link-active]:bg-neutral-900 dark:[&.router-link-active]:text-white"
+          >
+            {{ t('nav.about') }}
+          </NuxtLink>
+          <NuxtLink
+            to="/faq"
+            class="rounded-lg px-3 py-2 text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-neutral-900 [&.router-link-active]:bg-neutral-100 [&.router-link-active]:font-semibold dark:[&.router-link-active]:bg-neutral-900 dark:[&.router-link-active]:text-white"
+          >
+            {{ t('nav.faq') }}
+          </NuxtLink>
+          <NuxtLink
+            to="/contact"
+            class="rounded-lg px-3 py-2 text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-neutral-900 [&.router-link-active]:bg-neutral-100 [&.router-link-active]:font-semibold dark:[&.router-link-active]:bg-neutral-900 dark:[&.router-link-active]:text-white"
+          >
+            {{ t('nav.contact') }}
+          </NuxtLink>
+        </nav>
+
+        <!-- Mobile Auth Actions (shown on mobile screens < sm) -->
+        <div
+          class="mt-3 flex flex-col gap-2 border-t border-neutral-200 pt-3 dark:border-neutral-800 sm:hidden"
+        >
           <template v-if="isAuthenticated">
             <NuxtLink
               to="/dashboard"
-              class="inline-flex items-center justify-center rounded-md bg-neutral-900 px-3 py-1.5 text-xs font-medium text-white shadow-sm transition-colors hover:bg-neutral-800 dark:bg-blue-600 dark:hover:bg-blue-700 sm:px-4 sm:py-2 sm:text-sm"
+              class="inline-flex w-full items-center justify-center rounded-lg bg-neutral-900 px-4 py-2 text-xs font-medium text-white shadow-sm transition-colors hover:bg-neutral-800 dark:bg-blue-600 dark:hover:bg-blue-700"
             >
               {{ t('nav.dashboard') }}
             </NuxtLink>
             <button
               @click="logout"
-              class="inline-flex items-center justify-center rounded-md border border-neutral-300 bg-white px-3 py-1.5 text-xs font-medium text-neutral-900 shadow-sm transition-colors hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100 dark:hover:bg-neutral-800 sm:px-4 sm:py-2 sm:text-sm"
+              class="inline-flex w-full items-center justify-center rounded-lg border border-neutral-300 bg-white px-4 py-2 text-xs font-medium text-neutral-900 shadow-sm transition-colors hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100 dark:hover:bg-neutral-800"
             >
               {{ t('nav.log_out') }}
             </button>
@@ -84,13 +183,13 @@ const { isAuthenticated, logout } = useAuth();
           <template v-else>
             <NuxtLink
               to="/login"
-              class="inline-flex items-center justify-center rounded-md border border-neutral-300 bg-white px-3 py-1.5 text-xs font-medium text-neutral-900 shadow-sm transition-colors hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100 dark:hover:bg-neutral-800 sm:px-4 sm:py-2 sm:text-sm"
+              class="inline-flex w-full items-center justify-center rounded-lg border border-neutral-300 bg-white px-4 py-2 text-xs font-medium text-neutral-900 shadow-sm transition-colors hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100 dark:hover:bg-neutral-800"
             >
               {{ t('nav.sign_in') }}
             </NuxtLink>
             <NuxtLink
               to="/register"
-              class="inline-flex items-center justify-center rounded-md bg-neutral-900 px-3 py-1.5 text-xs font-medium text-white shadow-sm transition-colors hover:bg-neutral-800 dark:bg-blue-600 dark:hover:bg-blue-700 sm:px-4 sm:py-2 sm:text-sm"
+              class="inline-flex w-full items-center justify-center rounded-lg bg-neutral-900 px-4 py-2 text-xs font-medium text-white shadow-sm transition-colors hover:bg-neutral-800 dark:bg-blue-600 dark:hover:bg-blue-700"
             >
               {{ t('nav.get_started') }}
             </NuxtLink>

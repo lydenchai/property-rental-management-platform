@@ -16,8 +16,16 @@ import {
 } from '@lucide/vue';
 import { useAuth } from '../../../composables/useAuth';
 import { useInvoiceStore } from '../../../stores/invoice.store';
-import type { InvoiceItem } from '~~/shared/types';
+import type { InvoiceItem, TableColumn } from '~~/shared/types';
 import AppTableCard from '../../../components/common/AppTableCard.vue';
+import AppDataTable from '../../../components/common/AppDataTable.vue';
+import GenerateInvoiceModal, {
+  type GenerateInvoiceFormData,
+} from '../../../components/invoices/GenerateInvoiceModal.vue';
+import RecordPaymentModal, {
+  type PaymentFormData,
+} from '../../../components/invoices/RecordPaymentModal.vue';
+import InvoiceReceiptModal from '../../../components/invoices/InvoiceReceiptModal.vue';
 
 definePageMeta({
   layout: 'dashboard',
@@ -53,21 +61,9 @@ const searchQuery = ref('');
 
 // Generate Invoice Modal
 const isGenerateModalOpen = ref(false);
-const generateForm = ref({
-  leaseId: 'lease-skyline-101a',
-  dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-  amountDue: 1650,
-  notes: 'Monthly Residential Rent',
-});
 
 // Pay / Record Payment Modal
 const invoiceToPay = ref<InvoiceItem | null>(null);
-const paymentForm = ref({
-  amount: 0,
-  method: 'BANK_TRANSFER',
-  referenceNumber: '',
-  notes: '',
-});
 
 // Filtered invoices
 const filteredInvoices = computed(() => {
@@ -95,14 +91,25 @@ const paginatedInvoices = computed(() => {
   return filteredInvoices.value.slice(start, start + pageSize.value);
 });
 
+const columns = computed<TableColumn[]>(() => [
+  { key: 'invoiceNumber', label: t('invoices.col_invoice_num') },
+  { key: 'propertyUnit', label: t('invoices.col_property_unit') },
+  { key: 'tenant', label: t('invoices.col_tenant') },
+  { key: 'dueDate', label: t('invoices.col_due_date') },
+  { key: 'amountDue', label: t('invoices.col_amount') },
+  { key: 'amountPaid', label: t('invoices.col_paid') },
+  { key: 'status', label: t('invoices.col_status') },
+  { key: 'actions', label: t('invoices.col_actions'), align: 'right' },
+]);
+
 watch([activeTab, searchQuery], () => {
   currentPage.value = 1;
 });
 
-async function executeGenerateInvoice() {
+async function executeGenerateInvoice(formData: GenerateInvoiceFormData) {
   const res = (await generateInvoice({
-    ...generateForm.value,
-    dueDate: generateForm.value.dueDate!,
+    ...formData,
+    dueDate: formData.dueDate,
   })) as any;
 
   if (res.success) {
@@ -116,23 +123,16 @@ async function executeGenerateInvoice() {
 
 function openPayModal(inv: InvoiceItem) {
   invoiceToPay.value = inv;
-  const remaining = Math.max(0, Number(inv.amountDue) - Number(inv.amountPaid));
-  paymentForm.value = {
-    amount: remaining,
-    method: isTenant.value ? 'CREDIT_CARD' : 'BANK_TRANSFER',
-    referenceNumber: '',
-    notes: '',
-  };
 }
 
-async function executeRecordPayment() {
+async function executeRecordPayment(paymentData: PaymentFormData) {
   if (!invoiceToPay.value) return;
   const res = (await recordPayment({
     invoiceId: invoiceToPay.value.id,
-    amount: Number(paymentForm.value.amount),
-    method: paymentForm.value.method,
-    referenceNumber: paymentForm.value.referenceNumber || undefined,
-    notes: paymentForm.value.notes || undefined,
+    amount: Number(paymentData.amount),
+    method: paymentData.method,
+    referenceNumber: paymentData.referenceNumber || undefined,
+    notes: paymentData.notes || undefined,
   })) as any;
 
   if (res.success) {
@@ -147,10 +147,6 @@ async function executeRecordPayment() {
       successMessage.value = null;
     }, 4000);
   }
-}
-
-function printReceipt() {
-  window.print();
 }
 
 onMounted(async () => {
@@ -395,576 +391,162 @@ onMounted(async () => {
         </div>
       </template>
 
-      <div class="overflow-x-auto">
-        <table class="w-full text-left text-sm text-neutral-700 dark:text-neutral-200">
-          <thead
-            class="border-b border-neutral-200 bg-neutral-50 text-xs font-semibold uppercase tracking-wider text-neutral-500 dark:border-neutral-800 dark:bg-neutral-800/60 dark:text-neutral-400"
-          >
-            <tr>
-              <th class="px-4 py-3">{{ t('invoices.col_invoice_num') }}</th>
-              <th class="px-4 py-3">{{ t('invoices.col_property_unit') }}</th>
-              <th class="px-4 py-3">{{ t('invoices.col_tenant') }}</th>
-              <th class="px-4 py-3">{{ t('invoices.col_due_date') }}</th>
-              <th class="px-4 py-3">{{ t('invoices.col_amount') }}</th>
-              <th class="px-4 py-3">{{ t('invoices.col_paid') }}</th>
-              <th class="px-4 py-3">{{ t('invoices.col_status') }}</th>
-              <th class="px-4 py-3 text-right">{{ t('invoices.col_actions') }}</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-neutral-200 dark:divide-neutral-800">
-            <tr
-              v-for="inv in paginatedInvoices"
-              :key="inv.id"
-              class="transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-800/40"
+      <AppDataTable
+        :columns="columns"
+        :items="paginatedInvoices"
+        :is-loading="isLoading"
+        min-width="min-w-[850px]"
+      >
+        <template #cell-invoiceNumber="slotProps">
+          <div class="flex flex-col">
+            <span class="font-mono font-semibold text-neutral-900 dark:text-white">{{
+              slotProps?.item?.invoiceNumber || '—'
+            }}</span>
+            <span class="text-xs text-neutral-500 dark:text-neutral-400"
+              >{{ t('common.created_at') }}:
+              {{
+                slotProps?.item?.issueDate
+                  ? new Date(slotProps.item.issueDate).toLocaleDateString()
+                  : '—'
+              }}</span
             >
-              <td class="px-4 py-3.5">
-                <div class="flex flex-col">
-                  <span class="font-mono font-semibold text-neutral-900 dark:text-white">{{
-                    inv.invoiceNumber
-                  }}</span>
-                  <span class="text-xs text-neutral-500 dark:text-neutral-400"
-                    >{{ t('common.created_at') }}:
-                    {{ new Date(inv.issueDate).toLocaleDateString() }}</span
-                  >
-                </div>
-              </td>
-              <td class="px-4 py-3.5">
-                <div class="flex flex-col">
-                  <span class="font-semibold text-neutral-900 dark:text-white"
-                    >{{ t('dashboard.metrics.unit') }}
-                    {{ inv.lease?.unit?.unitNumber || '101A' }}</span
-                  >
-                  <span class="text-xs text-neutral-500 dark:text-neutral-400">{{
-                    inv.lease?.unit?.property?.title || 'Skyline Heights'
-                  }}</span>
-                </div>
-              </td>
-              <td class="px-4 py-3.5">
-                <div class="flex flex-col text-xs">
-                  <span class="font-medium text-neutral-900 dark:text-white">{{
-                    inv.tenant?.fullName || 'Sarah Jenkins'
-                  }}</span>
-                  <span class="text-neutral-500 dark:text-neutral-400">{{
-                    inv.tenant?.email || 'tenant@example.com'
-                  }}</span>
-                </div>
-              </td>
-              <td class="px-4 py-3.5">
-                <div
-                  class="flex items-center gap-1.5 text-xs text-neutral-600 dark:text-neutral-300"
-                >
-                  <Calendar :size="14" class="shrink-0 text-neutral-400" />
-                  <span>{{ new Date(inv.dueDate).toLocaleDateString() }}</span>
-                </div>
-              </td>
-              <td class="px-4 py-3.5 font-mono font-semibold text-neutral-900 dark:text-white">
-                ${{ inv.amountDue.toLocaleString() }}
-              </td>
-              <td class="px-4 py-3.5">
-                <div class="flex flex-col font-mono text-xs">
-                  <span class="font-semibold text-neutral-900 dark:text-white"
-                    >${{ inv.amountPaid.toLocaleString() }}</span
-                  >
-                  <span
-                    v-if="inv.amountDue > inv.amountPaid"
-                    class="text-neutral-500 dark:text-neutral-400"
-                  >
-                    (${{ (inv.amountDue - inv.amountPaid).toLocaleString() }} left)
-                  </span>
-                </div>
-              </td>
-              <td class="px-4 py-3.5">
-                <span
-                  :class="[
-                    'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium',
-                    inv.status === 'PAID'
-                      ? 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-400'
-                      : inv.status === 'PARTIALLY_PAID'
-                        ? 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-400'
-                        : inv.status === 'OVERDUE'
-                          ? 'border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-800 dark:bg-rose-950/30 dark:text-rose-400'
-                          : 'border-sky-200 bg-sky-50 text-sky-700 dark:border-sky-800 dark:bg-sky-950/30 dark:text-sky-400',
-                  ]"
-                >
-                  <span class="h-1.5 w-1.5 rounded-full bg-current"></span>
-                  <span>{{
-                    inv.status === 'PAID'
-                      ? t('invoices.status.paid')
-                      : inv.status === 'PARTIALLY_PAID'
-                        ? t('invoices.status.partially_paid')
-                        : inv.status === 'UNPAID'
-                          ? t('invoices.status.unpaid')
-                          : inv.status === 'OVERDUE'
-                            ? t('invoices.status.overdue')
-                            : inv.status
-                  }}</span>
-                </span>
-              </td>
-              <td class="px-4 py-3.5 text-right">
-                <div class="inline-flex items-center justify-end gap-1.5">
-                  <button
-                    v-if="inv.status !== 'PAID' && inv.status !== 'CANCELLED'"
-                    @click="openPayModal(inv)"
-                    class="shadow-xs inline-flex cursor-pointer items-center gap-1 rounded-lg bg-primary-600 px-2.5 py-1 text-xs font-medium text-white transition-colors hover:bg-primary-700"
-                  >
-                    <CreditCard :size="13" />
-                    <span>{{
-                      isTenant ? t('invoices.pay_now') : t('invoices.record_payment')
-                    }}</span>
-                  </button>
+          </div>
+        </template>
 
-                  <button
-                    v-if="inv.payments && inv.payments.length > 0"
-                    @click="viewReceipt(inv.payments[0]!.id)"
-                    class="inline-flex cursor-pointer items-center gap-1 rounded-lg border border-neutral-300 px-2.5 py-1 text-xs font-medium text-neutral-700 transition-colors hover:bg-neutral-50 dark:border-neutral-700 dark:text-neutral-200 dark:hover:bg-neutral-800"
-                    :title="t('invoices.view_receipt')"
-                  >
-                    <Receipt :size="13" />
-                    <span>{{ t('invoices.view_receipt') }}</span>
-                  </button>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+        <template #cell-propertyUnit="slotProps">
+          <div class="flex flex-col">
+            <span class="font-semibold text-neutral-900 dark:text-white"
+              >{{ t('dashboard.metrics.unit') }}
+              {{ slotProps?.item?.lease?.unit?.unitNumber || '101A' }}</span
+            >
+            <span class="text-xs text-neutral-500 dark:text-neutral-400">{{
+              slotProps?.item?.lease?.unit?.property?.title || 'Skyline Heights'
+            }}</span>
+          </div>
+        </template>
+
+        <template #cell-tenant="slotProps">
+          <div class="flex flex-col text-xs">
+            <span class="font-medium text-neutral-900 dark:text-white">{{
+              slotProps?.item?.tenant?.fullName || 'Sarah Jenkins'
+            }}</span>
+            <span class="text-neutral-500 dark:text-neutral-400">{{
+              slotProps?.item?.tenant?.email || 'tenant@example.com'
+            }}</span>
+          </div>
+        </template>
+
+        <template #cell-dueDate="slotProps">
+          <div class="flex items-center gap-1.5 text-xs text-neutral-600 dark:text-neutral-300">
+            <Calendar :size="14" class="shrink-0 text-neutral-400" />
+            <span>{{
+              slotProps?.item?.dueDate ? new Date(slotProps.item.dueDate).toLocaleDateString() : '—'
+            }}</span>
+          </div>
+        </template>
+
+        <template #cell-amountDue="slotProps">
+          <span class="font-mono font-semibold text-neutral-900 dark:text-white">
+            ${{ slotProps?.item?.amountDue ? slotProps.item.amountDue.toLocaleString() : '0' }}
+          </span>
+        </template>
+
+        <template #cell-amountPaid="slotProps">
+          <div class="flex flex-col font-mono text-xs">
+            <span class="font-semibold text-neutral-900 dark:text-white"
+              >${{
+                slotProps?.item?.amountPaid ? slotProps.item.amountPaid.toLocaleString() : '0'
+              }}</span
+            >
+            <span
+              v-if="(slotProps?.item?.amountDue ?? 0) > (slotProps?.item?.amountPaid ?? 0)"
+              class="text-neutral-500 dark:text-neutral-400"
+            >
+              (${{
+                (
+                  (slotProps?.item?.amountDue ?? 0) - (slotProps?.item?.amountPaid ?? 0)
+                ).toLocaleString()
+              }}
+              left)
+            </span>
+          </div>
+        </template>
+
+        <template #cell-status="slotProps">
+          <span
+            :class="[
+              'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium',
+              slotProps?.item?.status === 'PAID'
+                ? 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-400'
+                : slotProps?.item?.status === 'PARTIALLY_PAID'
+                  ? 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-400'
+                  : slotProps?.item?.status === 'OVERDUE'
+                    ? 'border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-800 dark:bg-rose-950/30 dark:text-rose-400'
+                    : 'border-sky-200 bg-sky-50 text-sky-700 dark:border-sky-800 dark:bg-sky-950/30 dark:text-sky-400',
+            ]"
+          >
+            <span class="h-1.5 w-1.5 rounded-full bg-current"></span>
+            <span>{{
+              slotProps?.item?.status === 'PAID'
+                ? t('invoices.status.paid')
+                : slotProps?.item?.status === 'PARTIALLY_PAID'
+                  ? t('invoices.status.partially_paid')
+                  : slotProps?.item?.status === 'UNPAID'
+                    ? t('invoices.status.unpaid')
+                    : slotProps?.item?.status === 'OVERDUE'
+                      ? t('invoices.status.overdue')
+                      : slotProps?.item?.status || '—'
+            }}</span>
+          </span>
+        </template>
+
+        <template #cell-actions="slotProps">
+          <div class="inline-flex items-center justify-end gap-1.5">
+            <button
+              v-if="slotProps?.item?.status !== 'PAID' && slotProps?.item?.status !== 'CANCELLED'"
+              @click="slotProps?.item && openPayModal(slotProps.item)"
+              class="shadow-xs inline-flex cursor-pointer items-center gap-1 rounded-lg bg-primary-600 px-2.5 py-1 text-xs font-medium text-white transition-colors hover:bg-primary-700"
+            >
+              <CreditCard :size="13" />
+              <span>{{ isTenant ? t('invoices.pay_now') : t('invoices.record_payment') }}</span>
+            </button>
+
+            <button
+              v-if="slotProps?.item?.payments && slotProps.item.payments.length > 0"
+              @click="
+                slotProps?.item?.payments?.[0]?.id && viewReceipt(slotProps.item.payments[0]!.id)
+              "
+              class="inline-flex cursor-pointer items-center gap-1 rounded-lg border border-neutral-300 px-2.5 py-1 text-xs font-medium text-neutral-700 transition-colors hover:bg-neutral-50 dark:border-neutral-700 dark:text-neutral-200 dark:hover:bg-neutral-800"
+              :title="t('invoices.view_receipt')"
+            >
+              <Receipt :size="13" />
+              <span>{{ t('invoices.view_receipt') }}</span>
+            </button>
+          </div>
+        </template>
+      </AppDataTable>
     </AppTableCard>
 
     <!-- Generate Invoice Modal -->
-    <Teleport to="body">
-      <div
-        v-if="isGenerateModalOpen"
-        class="backdrop-blur-xs fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
-      >
-        <div
-          class="w-full max-w-lg overflow-hidden rounded-xl border border-neutral-200 bg-white shadow-xl dark:border-neutral-800 dark:bg-neutral-900"
-        >
-          <div
-            class="flex items-center justify-between border-b border-neutral-200 px-6 py-4 dark:border-neutral-800"
-          >
-            <h3 class="text-base font-semibold text-neutral-900 dark:text-white">
-              {{ t('invoices.generate_modal_title') }}
-            </h3>
-            <button
-              type="button"
-              @click="isGenerateModalOpen = false"
-              class="cursor-pointer text-neutral-400 transition-colors hover:text-neutral-600 dark:hover:text-neutral-200"
-            >
-              <X :size="18" />
-            </button>
-          </div>
-
-          <form @submit.prevent="executeGenerateInvoice" class="space-y-4 p-6">
-            <div class="space-y-1.5">
-              <label class="block text-xs font-medium text-neutral-700 dark:text-neutral-300">
-                {{ t('invoices.active_lease_select_label') }} *
-              </label>
-              <input
-                v-model="generateForm.leaseId"
-                type="text"
-                required
-                class="focus:outline-hidden w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 placeholder-neutral-400 focus:ring-2 focus:ring-primary-500 dark:border-neutral-700 dark:bg-neutral-800 dark:text-white"
-                placeholder="e.g. lease-skyline-101a"
-              />
-            </div>
-
-            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div class="space-y-1.5">
-                <label class="block text-xs font-medium text-neutral-700 dark:text-neutral-300">
-                  {{ t('invoices.due_date') }} *
-                </label>
-                <input
-                  v-model="generateForm.dueDate"
-                  type="date"
-                  required
-                  class="focus:outline-hidden w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 focus:ring-2 focus:ring-primary-500 dark:border-neutral-700 dark:bg-neutral-800 dark:text-white"
-                />
-              </div>
-              <div class="space-y-1.5">
-                <label class="block text-xs font-medium text-neutral-700 dark:text-neutral-300">
-                  {{ t('invoices.amount_due_label') }} *
-                </label>
-                <input
-                  v-model.number="generateForm.amountDue"
-                  type="number"
-                  min="1"
-                  step="0.01"
-                  required
-                  class="focus:outline-hidden w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 focus:ring-2 focus:ring-primary-500 dark:border-neutral-700 dark:bg-neutral-800 dark:text-white"
-                />
-              </div>
-            </div>
-
-            <div class="space-y-1.5">
-              <label class="block text-xs font-medium text-neutral-700 dark:text-neutral-300">
-                {{ t('invoices.invoice_memo_label') }}
-              </label>
-              <input
-                v-model="generateForm.notes"
-                type="text"
-                class="focus:outline-hidden w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 placeholder-neutral-400 focus:ring-2 focus:ring-primary-500 dark:border-neutral-700 dark:bg-neutral-800 dark:text-white"
-                :placeholder="t('invoices.invoice_memo_placeholder')"
-              />
-            </div>
-
-            <div class="flex items-center justify-end gap-3 pt-2">
-              <button
-                type="button"
-                @click="isGenerateModalOpen = false"
-                class="cursor-pointer rounded-lg border border-neutral-300 bg-white px-4 py-2 text-xs font-medium text-neutral-700 transition-colors hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-200 dark:hover:bg-neutral-700"
-              >
-                {{ t('common.cancel') }}
-              </button>
-              <button
-                type="submit"
-                :disabled="isGenerating"
-                class="shadow-xs inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-primary-600 px-4 py-2 text-xs font-medium text-white transition-colors hover:bg-primary-700 disabled:opacity-50"
-              >
-                <Plus :size="14" />
-                <span>{{
-                  isGenerating ? t('invoices.generating_btn') : t('invoices.create_invoice_btn')
-                }}</span>
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </Teleport>
+    <GenerateInvoiceModal
+      :is-open="isGenerateModalOpen"
+      :is-generating="isGenerating"
+      @close="isGenerateModalOpen = false"
+      @submit="executeGenerateInvoice"
+    />
 
     <!-- Record / Pay Modal -->
-    <Teleport to="body">
-      <div
-        v-if="invoiceToPay"
-        class="backdrop-blur-xs fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
-      >
-        <div
-          class="w-full max-w-lg overflow-hidden rounded-xl border border-neutral-200 bg-white shadow-xl dark:border-neutral-800 dark:bg-neutral-900"
-        >
-          <div
-            class="flex items-center justify-between border-b border-neutral-200 px-6 py-4 dark:border-neutral-800"
-          >
-            <h3 class="text-base font-semibold text-neutral-900 dark:text-white">
-              {{ isTenant ? t('invoices.pay_rent_invoice_title') : t('invoices.record_payment') }}
-            </h3>
-            <button
-              type="button"
-              @click="invoiceToPay = null"
-              class="cursor-pointer text-neutral-400 transition-colors hover:text-neutral-600 dark:hover:text-neutral-200"
-            >
-              <X :size="18" />
-            </button>
-          </div>
-
-          <form @submit.prevent="executeRecordPayment" class="space-y-4 p-6">
-            <div
-              class="space-y-1.5 rounded-lg border border-neutral-200 bg-neutral-50 p-4 text-xs text-neutral-700 dark:border-neutral-800 dark:bg-neutral-800/50 dark:text-neutral-300"
-            >
-              <div>
-                <strong class="text-neutral-900 dark:text-white"
-                  >{{ t('invoices.invoice_num_label') }}:</strong
-                >
-                {{ invoiceToPay.invoiceNumber }}
-              </div>
-              <div>
-                <strong class="text-neutral-900 dark:text-white"
-                  >{{ t('invoices.total_due_label') }}:</strong
-                >
-                ${{ invoiceToPay.amountDue.toLocaleString() }}
-              </div>
-              <div>
-                <strong class="text-neutral-900 dark:text-white"
-                  >{{ t('invoices.already_paid_label') }}:</strong
-                >
-                ${{ invoiceToPay.amountPaid.toLocaleString() }}
-              </div>
-              <div>
-                <strong class="text-neutral-900 dark:text-white"
-                  >{{ t('invoices.remaining_balance_label') }}:</strong
-                >
-                ${{ (invoiceToPay.amountDue - invoiceToPay.amountPaid).toLocaleString() }}
-              </div>
-            </div>
-
-            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div class="space-y-1.5">
-                <label class="block text-xs font-medium text-neutral-700 dark:text-neutral-300">
-                  {{ t('invoices.amount_to_pay') }} *
-                </label>
-                <input
-                  v-model.number="paymentForm.amount"
-                  type="number"
-                  min="1"
-                  :max="invoiceToPay.amountDue - invoiceToPay.amountPaid"
-                  step="0.01"
-                  required
-                  class="focus:outline-hidden w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 focus:ring-2 focus:ring-primary-500 dark:border-neutral-700 dark:bg-neutral-800 dark:text-white"
-                />
-              </div>
-
-              <div class="space-y-1.5">
-                <label class="block text-xs font-medium text-neutral-700 dark:text-neutral-300">
-                  {{ t('invoices.payment_method') }} *
-                </label>
-                <select
-                  v-model="paymentForm.method"
-                  required
-                  class="focus:outline-hidden w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 focus:ring-2 focus:ring-primary-500 dark:border-neutral-700 dark:bg-neutral-800 dark:text-white"
-                >
-                  <option value="BANK_TRANSFER">{{ t('invoices.payment_method_bank') }}</option>
-                  <option value="CREDIT_CARD">{{ t('invoices.payment_method_card') }}</option>
-                  <option value="STRIPE_MOCK">{{ t('invoices.payment_method_stripe') }}</option>
-                  <option v-if="isLandlord || isAdmin" value="CASH">
-                    {{ t('invoices.payment_method_cash') }}
-                  </option>
-                  <option v-if="isLandlord || isAdmin" value="CHECK">
-                    {{ t('invoices.payment_method_check') }}
-                  </option>
-                </select>
-              </div>
-            </div>
-
-            <div class="space-y-1.5">
-              <label class="block text-xs font-medium text-neutral-700 dark:text-neutral-300">
-                {{ t('invoices.reference_number') }}
-              </label>
-              <input
-                v-model="paymentForm.referenceNumber"
-                type="text"
-                class="focus:outline-hidden w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 placeholder-neutral-400 focus:ring-2 focus:ring-primary-500 dark:border-neutral-700 dark:bg-neutral-800 dark:text-white"
-                :placeholder="t('invoices.ref_code_placeholder')"
-              />
-            </div>
-
-            <div class="space-y-1.5">
-              <label class="block text-xs font-medium text-neutral-700 dark:text-neutral-300">
-                {{ t('invoices.payment_notes') }}
-              </label>
-              <input
-                v-model="paymentForm.notes"
-                type="text"
-                class="focus:outline-hidden w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 placeholder-neutral-400 focus:ring-2 focus:ring-primary-500 dark:border-neutral-700 dark:bg-neutral-800 dark:text-white"
-                :placeholder="t('invoices.payment_notes')"
-              />
-            </div>
-
-            <div class="flex items-center justify-end gap-3 pt-2">
-              <button
-                type="button"
-                @click="invoiceToPay = null"
-                class="cursor-pointer rounded-lg border border-neutral-300 bg-white px-4 py-2 text-xs font-medium text-neutral-700 transition-colors hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-200 dark:hover:bg-neutral-700"
-              >
-                {{ t('common.cancel') }}
-              </button>
-              <button
-                type="submit"
-                :disabled="isPaying"
-                class="shadow-xs inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-primary-600 px-4 py-2 text-xs font-medium text-white transition-colors hover:bg-primary-700 disabled:opacity-50"
-              >
-                <DollarSign :size="14" />
-                <span>{{
-                  isPaying ? t('invoices.processing_btn') : t('invoices.confirm_payment')
-                }}</span>
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </Teleport>
+    <RecordPaymentModal
+      :invoice="invoiceToPay"
+      :is-paying="isPaying"
+      :is-tenant="isTenant"
+      :is-landlord="isLandlord"
+      :is-admin="isAdmin"
+      @close="invoiceToPay = null"
+      @submit="executeRecordPayment"
+    />
 
     <!-- Official Printable Digital Receipt Modal -->
-    <Teleport to="body">
-      <div
-        v-if="receiptData"
-        class="backdrop-blur-xs fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 print:static print:bg-transparent print:p-0"
-      >
-        <div
-          class="max-h-[90vh] w-full max-w-xl overflow-y-auto rounded-xl border border-neutral-200 bg-white shadow-xl dark:border-neutral-800 dark:bg-neutral-900 print:max-w-full print:border-none print:p-0 print:shadow-none"
-        >
-          <div
-            class="flex items-center justify-between border-b border-neutral-200 px-6 py-4 dark:border-neutral-800 print:hidden"
-          >
-            <h3 class="text-base font-semibold text-neutral-900 dark:text-white">
-              {{ t('invoices.receipt_header_title') }}
-            </h3>
-            <div class="flex items-center gap-2">
-              <button
-                type="button"
-                @click="printReceipt"
-                class="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-neutral-300 bg-white px-3 py-1.5 text-xs font-medium text-neutral-700 transition-colors hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-200 dark:hover:bg-neutral-700"
-              >
-                <Printer :size="14" />
-                <span>{{ t('invoices.print_btn') }}</span>
-              </button>
-              <button
-                type="button"
-                @click="receiptData = null"
-                class="cursor-pointer text-neutral-400 transition-colors hover:text-neutral-600 dark:hover:text-neutral-200"
-              >
-                <X :size="18" />
-              </button>
-            </div>
-          </div>
-
-          <div class="space-y-5 p-6 print:p-0">
-            <div class="flex items-start justify-between">
-              <div>
-                <div class="text-xl font-bold tracking-tight text-neutral-900 dark:text-white">
-                  Rent<span class="text-primary-600">Ease</span>
-                </div>
-                <div class="text-xs text-neutral-500 dark:text-neutral-400">
-                  Property Rental Management System
-                </div>
-              </div>
-              <div
-                class="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-400"
-              >
-                <CheckCircle2 :size="14" />
-                <span>CONFIRMED RECEIPT</span>
-              </div>
-            </div>
-
-            <hr class="border-neutral-200 dark:border-neutral-800" />
-
-            <div class="grid grid-cols-1 gap-4 text-xs sm:grid-cols-2">
-              <div>
-                <span
-                  class="block text-[10px] font-semibold uppercase text-neutral-500 dark:text-neutral-400"
-                  >Receipt Number</span
-                >
-                <strong class="font-mono text-sm text-neutral-900 dark:text-white">{{
-                  receiptData.receiptNumber
-                }}</strong>
-              </div>
-              <div>
-                <span
-                  class="block text-[10px] font-semibold uppercase text-neutral-500 dark:text-neutral-400"
-                  >Payment Date</span
-                >
-                <span class="text-neutral-800 dark:text-neutral-200">{{
-                  new Date(receiptData.paidAt).toLocaleString()
-                }}</span>
-              </div>
-              <div>
-                <span
-                  class="block text-[10px] font-semibold uppercase text-neutral-500 dark:text-neutral-400"
-                  >Payment Method</span
-                >
-                <span class="text-neutral-800 dark:text-neutral-200">{{
-                  receiptData.method.replace('_', ' ')
-                }}</span>
-              </div>
-              <div>
-                <span
-                  class="block text-[10px] font-semibold uppercase text-neutral-500 dark:text-neutral-400"
-                  >Reference Number</span
-                >
-                <span class="font-mono text-neutral-800 dark:text-neutral-200">{{
-                  receiptData.referenceNumber || 'N/A'
-                }}</span>
-              </div>
-            </div>
-
-            <div
-              class="grid grid-cols-1 gap-4 rounded-lg border border-neutral-200 bg-neutral-50 p-4 text-xs dark:border-neutral-800 dark:bg-neutral-800/40 sm:grid-cols-2"
-            >
-              <div class="space-y-0.5">
-                <span
-                  class="block text-[10px] font-semibold uppercase text-neutral-500 dark:text-neutral-400"
-                  >Tenant</span
-                >
-                <strong class="block text-neutral-900 dark:text-white">{{
-                  receiptData.tenant?.fullName
-                }}</strong>
-                <span class="text-neutral-500 dark:text-neutral-400">{{
-                  receiptData.tenant?.email
-                }}</span>
-              </div>
-              <div class="space-y-0.5">
-                <span
-                  class="block text-[10px] font-semibold uppercase text-neutral-500 dark:text-neutral-400"
-                  >Property & Unit</span
-                >
-                <strong class="block text-neutral-900 dark:text-white"
-                  >{{ receiptData.property?.title }} — Unit
-                  {{ receiptData.property?.unitNumber }}</strong
-                >
-                <span class="text-neutral-500 dark:text-neutral-400">{{
-                  receiptData.property?.address
-                }}</span>
-              </div>
-            </div>
-
-            <div class="overflow-x-auto">
-              <table class="w-full text-left text-xs text-neutral-700 dark:text-neutral-300">
-                <thead>
-                  <tr
-                    class="border-b border-neutral-200 text-[10px] font-semibold uppercase text-neutral-500 dark:border-neutral-800 dark:text-neutral-400"
-                  >
-                    <th class="py-2">Description</th>
-                    <th class="py-2 text-right">Amount</th>
-                  </tr>
-                </thead>
-                <tbody class="divide-y divide-neutral-200 dark:divide-neutral-800">
-                  <tr>
-                    <td class="py-3">
-                      <span class="font-medium text-neutral-900 dark:text-white"
-                        >Invoice {{ receiptData.invoice?.invoiceNumber }}</span
-                      >
-                      <span class="mt-0.5 block text-neutral-500 dark:text-neutral-400"
-                        >Due:
-                        {{ new Date(receiptData.invoice?.dueDate).toLocaleDateString() }}</span
-                      >
-                    </td>
-                    <td
-                      class="py-3 text-right font-mono font-semibold text-neutral-900 dark:text-white"
-                    >
-                      ${{ Number(receiptData.amount).toFixed(2) }}
-                    </td>
-                  </tr>
-                </tbody>
-                <tfoot>
-                  <tr class="border-t border-neutral-200 dark:border-neutral-800">
-                    <td class="py-2.5 font-semibold text-neutral-900 dark:text-white">
-                      Total Paid
-                    </td>
-                    <td
-                      class="py-2.5 text-right font-mono font-bold text-emerald-600 dark:text-emerald-400"
-                    >
-                      ${{ Number(receiptData.amount).toFixed(2) }}
-                    </td>
-                  </tr>
-                  <tr>
-                    <td class="py-1 text-neutral-500 dark:text-neutral-400">
-                      Remaining Invoice Balance
-                    </td>
-                    <td class="py-1 text-right font-mono text-neutral-700 dark:text-neutral-300">
-                      ${{ Number(receiptData.invoice?.remainingBalance || 0).toFixed(2) }}
-                    </td>
-                  </tr>
-                </tfoot>
-              </table>
-            </div>
-
-            <div class="border-t border-neutral-200 pt-2 text-center dark:border-neutral-800">
-              <span class="text-[11px] text-neutral-400 dark:text-neutral-500">
-                This is a computer-generated digital receipt and official proof of payment recorded
-                within the RentEase platform.
-              </span>
-            </div>
-          </div>
-
-          <div
-            class="flex justify-end border-t border-neutral-200 px-6 py-4 dark:border-neutral-800 print:hidden"
-          >
-            <button
-              @click="receiptData = null"
-              class="rounded-lg border border-neutral-300 bg-white px-4 py-2 text-xs font-medium text-neutral-700 transition-colors hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-200 dark:hover:bg-neutral-700"
-            >
-              Close
-            </button>
-          </div>
-        </div>
-      </div>
-    </Teleport>
+    <InvoiceReceiptModal :receipt="receiptData" @close="receiptData = null" />
   </div>
 </template>

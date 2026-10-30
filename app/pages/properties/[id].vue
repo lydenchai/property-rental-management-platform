@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import {
   MapPin,
   ArrowLeft,
@@ -16,9 +16,12 @@ import {
   X,
 } from '@lucide/vue';
 import PropertyMap from '../../components/common/PropertyMap.vue';
+import AppDataTable from '../../components/common/AppDataTable.vue';
 import UnitGalleryModal, { type UnitDetail } from '../../components/units/UnitGalleryModal.vue';
+import ApplyUnitModal, { type ApplyFormData } from '../../components/units/ApplyUnitModal.vue';
 import { useAuth } from '../../composables/useAuth';
 import type { ApiResponse } from '../../../shared/types/api';
+import type { TableColumn } from '~~/shared/types';
 
 const { t } = useI18n();
 const route = useRoute();
@@ -69,6 +72,18 @@ const errorMessage = ref<string | null>(null);
 
 // Unit view mode (grid cards vs table)
 const unitViewMode = ref<'grid' | 'table'>('grid');
+
+const unitTableColumns = computed<TableColumn[]>(() => [
+  { key: 'preview', label: t('properties.preview'), width: '80px' },
+  { key: 'unitNumber', label: t('properties.col_unit_number') },
+  { key: 'floor', label: t('properties.col_floor') },
+  { key: 'size', label: t('properties.floor_area') },
+  { key: 'bedroomsBath', label: t('properties.col_bedrooms_bath') },
+  { key: 'monthlyRent', label: t('properties.col_monthly_rent') },
+  { key: 'deposit', label: t('properties.security_deposit_label') },
+  { key: 'status', label: t('common.status') },
+  { key: 'actions', label: t('common.actions') },
+]);
 
 // Gallery modal state
 const selectedUnitForGallery = ref<Unit | null>(null);
@@ -122,13 +137,6 @@ const applySuccessMessage = ref<string | null>(null);
 const applyErrorMessage = ref<string | null>(null);
 const isSubmittingApply = ref(false);
 
-const applyForm = ref({
-  desiredMoveInDate: '',
-  proposedRent: 0,
-  employmentDetails: '',
-  notes: '',
-});
-
 async function fetchProperty() {
   isLoading.value = true;
   errorMessage.value = null;
@@ -157,22 +165,9 @@ function openApplyModal(unit: Unit) {
   selectedUnitForApply.value = unit;
   applySuccessMessage.value = null;
   applyErrorMessage.value = null;
-
-  // Set default move in date 14 days from now in YYYY-MM-DD
-  const d = new Date();
-  d.setDate(d.getDate() + 14);
-  const dateStr = d.toISOString().split('T')[0];
-
-  applyForm.value = {
-    desiredMoveInDate: dateStr as any,
-    proposedRent: unit.rentAmount,
-    employmentDetails:
-      'Employed full-time / Verified income ($' + (unit.rentAmount * 3).toLocaleString() + '/mo)',
-    notes: '',
-  };
 }
 
-async function submitApplication() {
+async function submitApplication(formData: ApplyFormData) {
   if (!selectedUnitForApply.value) return;
   isSubmittingApply.value = true;
   applyErrorMessage.value = null;
@@ -184,11 +179,10 @@ async function submitApplication() {
         method: 'POST',
         body: {
           unitId: selectedUnitForApply.value.id,
-          desiredMoveInDate: new Date(applyForm.value.desiredMoveInDate).toISOString(),
-          proposedRent: applyForm.value.proposedRent,
-          employmentDetails:
-            applyForm.value.employmentDetails || 'Self-employed / Verified applicant',
-          notes: applyForm.value.notes || null,
+          desiredMoveInDate: new Date(formData.desiredMoveInDate).toISOString(),
+          proposedRent: formData.proposedRent,
+          employmentDetails: formData.employmentDetails || 'Self-employed / Verified applicant',
+          notes: formData.notes || null,
         },
       }
     );
@@ -467,7 +461,7 @@ onMounted(() => {
             <!-- Thumbnail Strip under Card Hero -->
             <div
               v-if="unit.images && unit.images.length > 1"
-              class="flex items-center gap-1.5 border-b border-neutral-100 bg-neutral-50 p-2 dark:border-neutral-800 dark:bg-neutral-950/60"
+              class="flex items-center gap-1.5 overflow-x-auto border-b border-neutral-100 bg-neutral-50 p-2 dark:border-neutral-800 dark:bg-neutral-950/60"
             >
               <button
                 v-for="(img, idx) in unit.images.slice(0, 4)"
@@ -564,265 +558,129 @@ onMounted(() => {
 
         <!-- Table View -->
         <div v-else class="data-table-container">
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th style="width: 80px">{{ t('properties.preview') }}</th>
-                <th>{{ t('properties.col_unit_number') }}</th>
-                <th>{{ t('properties.col_floor') }}</th>
-                <th>{{ t('properties.floor_area') }}</th>
-                <th>{{ t('properties.col_bedrooms_bath') }}</th>
-                <th>{{ t('properties.col_monthly_rent') }}</th>
-                <th>{{ t('properties.security_deposit_label') }}</th>
-                <th>{{ t('common.status') }}</th>
-                <th>{{ t('common.actions') }}</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="unit in property.units" :key="unit.id">
-                <td>
-                  <button
-                    type="button"
-                    class="relative h-9 w-12 overflow-hidden rounded border border-neutral-200 dark:border-neutral-700"
-                    @click="openGalleryModal(unit, 0)"
-                    :title="t('properties.photos')"
-                  >
-                    <img
-                      :src="
-                        unit.images?.[0] ||
-                        'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=400&q=80'
-                      "
-                      :alt="`Unit ${unit.unitNumber}`"
-                      class="h-full w-full object-cover"
-                    />
-                    <span
-                      class="absolute bottom-0 right-0 bg-black/75 px-1 text-[9px] font-bold text-white"
-                      >{{ unit.images?.length || 1 }}</span
-                    >
-                  </button>
-                </td>
-                <td class="font-medium text-neutral-900 dark:text-white">
-                  {{ t('properties.unit_label', { number: unit.unitNumber }) }}
-                </td>
-                <td>{{ t('properties.level', { floor: unit.floor }) }}</td>
-                <td>{{ t('properties.sq_m', { size: unit.sizeSqFt }) }}</td>
-                <td>
-                  <span class="text-xs">
-                    {{
-                      unit.bedrooms === 0
-                        ? t('properties.studio')
-                        : t('properties.bed_short', { count: unit.bedrooms })
-                    }}
-                    / {{ t('properties.bath_short', { count: unit.bathrooms }) }}
-                  </span>
-                </td>
-                <td class="font-semibold text-neutral-900 dark:text-white">
-                  ${{ unit.rentAmount.toLocaleString() }} {{ t('properties.per_month_short') }}
-                </td>
-                <td>${{ unit.depositAmount.toLocaleString() }}</td>
-                <td>
-                  <span :class="['badge badge-pill', getUnitBadgeClass(unit.status)]">
-                    <span class="badge-dot" />
-                    <span>{{ formatUnitStatus(unit.status) }}</span>
-                  </span>
-                </td>
-                <td>
-                  <div class="flex items-center gap-1.5">
-                    <button
-                      type="button"
-                      @click="openGalleryModal(unit, 0)"
-                      class="btn-secondary btn-sm"
-                      :title="t('properties.photos')"
-                    >
-                      <ImageIcon :size="13" />
-                      <span>{{ t('properties.photos') }}</span>
-                    </button>
-                    <button
-                      v-if="unit.status === 'AVAILABLE'"
-                      @click="openApplyModal(unit)"
-                      class="btn-primary btn-sm"
-                    >
-                      <FileSignature :size="13" />
-                      <span>{{ t('properties.apply') }}</span>
-                    </button>
-                    <span
-                      v-else
-                      class="text-xs font-medium text-neutral-400 dark:text-neutral-500"
-                      >{{ t('properties.unavailable') }}</span
-                    >
-                  </div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+          <AppDataTable
+            :columns="unitTableColumns"
+            :items="property?.units || []"
+            :is-loading="isLoading"
+            min-width="min-w-[700px]"
+          >
+            <template #cell-preview="slotProps">
+              <button
+                v-if="slotProps?.item?.id"
+                type="button"
+                class="relative h-9 w-12 overflow-hidden rounded border border-neutral-200 dark:border-neutral-700"
+                @click="openGalleryModal(slotProps.item, 0)"
+                :title="t('properties.photos')"
+              >
+                <img
+                  :src="
+                    slotProps?.item?.images?.[0] ||
+                    'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=400&q=80'
+                  "
+                  :alt="`Unit ${slotProps?.item?.unitNumber || ''}`"
+                  class="h-full w-full object-cover"
+                />
+                <span
+                  class="absolute bottom-0 right-0 bg-black/75 px-1 text-[9px] font-bold text-white"
+                  >{{ slotProps?.item?.images?.length || 1 }}</span
+                >
+              </button>
+            </template>
+
+            <template #cell-unitNumber="slotProps">
+              <span class="font-medium text-neutral-900 dark:text-white">
+                {{ t('properties.unit_label', { number: slotProps?.item?.unitNumber || '' }) }}
+              </span>
+            </template>
+
+            <template #cell-floor="slotProps">
+              <span>{{ t('properties.level', { floor: slotProps?.item?.floor ?? 0 }) }}</span>
+            </template>
+
+            <template #cell-size="slotProps">
+              <span>{{ t('properties.sq_m', { size: slotProps?.item?.sizeSqFt ?? 0 }) }}</span>
+            </template>
+
+            <template #cell-bedroomsBath="slotProps">
+              <span class="text-xs">
+                {{
+                  slotProps?.item?.bedrooms === 0
+                    ? t('properties.studio')
+                    : t('properties.bed_short', { count: slotProps?.item?.bedrooms ?? 1 })
+                }}
+                / {{ t('properties.bath_short', { count: slotProps?.item?.bathrooms ?? 1 }) }}
+              </span>
+            </template>
+
+            <template #cell-monthlyRent="slotProps">
+              <span class="font-semibold text-neutral-900 dark:text-white">
+                ${{
+                  slotProps?.item?.rentAmount ? slotProps.item.rentAmount.toLocaleString() : '0'
+                }}
+                {{ t('properties.per_month_short') }}
+              </span>
+            </template>
+
+            <template #cell-deposit="slotProps">
+              <span
+                >${{
+                  slotProps?.item?.depositAmount
+                    ? slotProps.item.depositAmount.toLocaleString()
+                    : '0'
+                }}</span
+              >
+            </template>
+
+            <template #cell-status="slotProps">
+              <span
+                v-if="slotProps?.item?.status"
+                :class="['badge badge-pill', getUnitBadgeClass(slotProps.item.status)]"
+              >
+                <span class="badge-dot" />
+                <span>{{ formatUnitStatus(slotProps.item.status) }}</span>
+              </span>
+              <span v-else>—</span>
+            </template>
+
+            <template #cell-actions="slotProps">
+              <div v-if="slotProps?.item?.id" class="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  @click="openGalleryModal(slotProps.item, 0)"
+                  class="btn-secondary btn-sm"
+                  :title="t('properties.photos')"
+                >
+                  <ImageIcon :size="13" />
+                  <span>{{ t('properties.photos') }}</span>
+                </button>
+                <button
+                  v-if="slotProps.item.status === 'AVAILABLE'"
+                  @click="openApplyModal(slotProps.item)"
+                  class="btn-primary btn-sm"
+                >
+                  <FileSignature :size="13" />
+                  <span>{{ t('properties.apply') }}</span>
+                </button>
+                <span v-else class="text-xs font-medium text-neutral-400 dark:text-neutral-500">{{
+                  t('properties.unavailable')
+                }}</span>
+              </div>
+            </template>
+          </AppDataTable>
         </div>
       </section>
     </div>
 
     <!-- Application Modal -->
-    <Teleport to="body">
-      <div
-        v-if="selectedUnitForApply"
-        class="backdrop-blur-xs fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
-      >
-        <div
-          class="flex w-full max-w-lg flex-col gap-5 rounded-2xl border border-neutral-200 bg-white p-6 shadow-xl dark:border-neutral-800 dark:bg-neutral-900"
-        >
-          <div
-            class="flex items-center justify-between border-b border-neutral-100 pb-3 dark:border-neutral-800"
-          >
-            <h3 class="text-lg font-bold text-neutral-900 dark:text-white">
-              {{ t('properties.apply_for_unit', { number: selectedUnitForApply.unitNumber }) }}
-            </h3>
-            <button
-              @click="selectedUnitForApply = null"
-              class="cursor-pointer text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200"
-            >
-              <X :size="18" />
-            </button>
-          </div>
-
-          <div v-if="applySuccessMessage" class="alert-success">
-            <div class="flex flex-col gap-3">
-              <div class="flex items-start gap-2">
-                <CheckCircle2 :size="18" class="mt-0.5 shrink-0" />
-                <span>{{ applySuccessMessage }}</span>
-              </div>
-              <div class="mt-2 flex items-center gap-2">
-                <NuxtLink to="/dashboard/applications" class="btn-primary btn-sm">
-                  <span>{{ t('properties.view_my_applications') }}</span>
-                </NuxtLink>
-                <button @click="selectedUnitForApply = null" class="btn-secondary btn-sm">
-                  {{ t('common.close') }}
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <form v-else @submit.prevent="submitApplication" class="flex flex-col gap-4">
-            <div v-if="applyErrorMessage" class="alert-error">
-              <AlertCircle :size="15" />
-              <span>{{ applyErrorMessage }}</span>
-            </div>
-
-            <div
-              class="flex flex-col gap-1 rounded-xl border border-neutral-200 bg-neutral-50 p-3.5 text-xs text-neutral-600 dark:border-neutral-700/60 dark:bg-neutral-800/60 dark:text-neutral-300"
-            >
-              <div>
-                <strong>{{ t('properties.unit_singular') }}:</strong>
-                {{ t('properties.unit_label', { number: selectedUnitForApply.unitNumber }) }} ({{
-                  property?.title
-                }})
-              </div>
-              <div>
-                <strong>{{ t('properties.col_monthly_rent') }}:</strong> ${{
-                  selectedUnitForApply.rentAmount.toLocaleString()
-                }}{{ t('properties.per_month_short') }} &bull;
-                <strong>{{ t('properties.col_deposit') }}:</strong> ${{
-                  selectedUnitForApply.depositAmount.toLocaleString()
-                }}
-              </div>
-              <div>
-                <strong>{{ t('properties.col_size') }}:</strong>
-                {{
-                  selectedUnitForApply.bedrooms === 0
-                    ? t('properties.studio')
-                    : t('properties.bed_short', { count: selectedUnitForApply.bedrooms })
-                }}
-                / {{ t('properties.bath_short', { count: selectedUnitForApply.bathrooms }) }} ({{
-                  t('properties.sq_m', { size: selectedUnitForApply.sizeSqFt })
-                }})
-              </div>
-            </div>
-
-            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div class="flex flex-col gap-1.5">
-                <label
-                  class="text-xs font-semibold uppercase tracking-wider text-neutral-900 dark:text-neutral-100"
-                  >{{ t('properties.desired_move_in') }}</label
-                >
-                <input
-                  v-model="applyForm.desiredMoveInDate"
-                  type="date"
-                  required
-                  class="input-field"
-                />
-              </div>
-
-              <div class="flex flex-col gap-1.5">
-                <label
-                  class="text-xs font-semibold uppercase tracking-wider text-neutral-900 dark:text-neutral-100"
-                  >{{ t('properties.proposed_monthly_rent') }}</label
-                >
-                <input
-                  v-model.number="applyForm.proposedRent"
-                  type="number"
-                  min="1"
-                  required
-                  class="input-field"
-                />
-              </div>
-            </div>
-
-            <div class="flex flex-col gap-1.5">
-              <div class="flex items-center justify-between">
-                <label
-                  class="text-xs font-semibold uppercase tracking-wider text-neutral-900 dark:text-neutral-100"
-                  >{{ t('properties.employment_income_credentials') }}</label
-                >
-                <button
-                  type="button"
-                  @click="
-                    applyForm.employmentDetails =
-                      'Employed full-time / Verified income ($' +
-                      ((applyForm.proposedRent || 1000) * 3).toLocaleString() +
-                      '/mo)'
-                  "
-                  class="text-[11px] font-semibold text-blue-600 hover:underline dark:text-blue-400"
-                >
-                  {{ t('auth.quick_demo') }}
-                </button>
-              </div>
-              <textarea
-                v-model="applyForm.employmentDetails"
-                rows="3"
-                :placeholder="t('properties.employment_placeholder')"
-                class="input-field"
-              ></textarea>
-            </div>
-
-            <div class="flex flex-col gap-1.5">
-              <label
-                class="text-xs font-semibold uppercase tracking-wider text-neutral-900 dark:text-neutral-100"
-                >{{ t('properties.additional_notes_optional') }}</label
-              >
-              <input
-                v-model="applyForm.notes"
-                type="text"
-                :placeholder="t('properties.additional_notes_placeholder')"
-                class="input-field"
-              />
-            </div>
-
-            <div
-              class="flex items-center justify-end gap-2 border-t border-neutral-100 pt-2 dark:border-neutral-800"
-            >
-              <button type="button" @click="selectedUnitForApply = null" class="btn-secondary">
-                {{ t('common.cancel') }}
-              </button>
-              <button type="submit" :disabled="isSubmittingApply" class="btn-primary">
-                <FileSignature :size="14" />
-                <span>{{
-                  isSubmittingApply
-                    ? t('properties.submitting_application')
-                    : t('properties.submit_application')
-                }}</span>
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </Teleport>
+    <ApplyUnitModal
+      :unit="selectedUnitForApply"
+      :property-title="property?.title"
+      :is-submitting="isSubmittingApply"
+      :success-message="applySuccessMessage"
+      :error-message="applyErrorMessage"
+      @close="selectedUnitForApply = null"
+      @submit="submitApplication"
+    />
 
     <!-- Unit Photo Gallery Modal -->
     <UnitGalleryModal

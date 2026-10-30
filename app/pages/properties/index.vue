@@ -235,7 +235,7 @@ onMounted(() => {
             />
           </div>
 
-          <div class="ml-auto flex items-center gap-2">
+          <div class="flex w-full items-center justify-end gap-2 sm:ml-auto sm:w-auto">
             <button type="submit" class="btn-primary">
               <SlidersHorizontal :size="14" />
               <span>{{ t('properties.apply_filters') }}</span>
@@ -256,9 +256,9 @@ onMounted(() => {
 
     <!-- View Mode Switcher Bar -->
     <section
-      class="flex flex-col items-start justify-between gap-4 py-1 sm:flex-row sm:items-center"
+      class="flex flex-col items-start justify-between gap-3 py-1 sm:flex-row sm:items-center"
     >
-      <div class="text-sm text-neutral-600 dark:text-neutral-400">
+      <div class="text-xs text-neutral-600 dark:text-neutral-400 sm:text-sm">
         <strong class="text-neutral-900 dark:text-white">{{ properties.length }}</strong>
         {{
           properties.length === 1
@@ -268,13 +268,13 @@ onMounted(() => {
       </div>
 
       <div
-        class="inline-flex items-center gap-1 rounded-lg border border-neutral-200 bg-neutral-200/60 p-1 dark:border-neutral-700/60 dark:bg-neutral-800/60"
+        class="inline-flex max-w-full items-center gap-1 rounded-lg border border-neutral-200 bg-neutral-200/60 p-1 dark:border-neutral-700/60 dark:bg-neutral-800/60"
       >
         <button
           type="button"
           @click="viewMode = 'grid'"
           :class="[
-            'inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition-colors',
+            'inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-semibold transition-colors sm:px-3',
             viewMode === 'grid'
               ? 'shadow-xs bg-white text-neutral-900 dark:bg-neutral-900 dark:text-white'
               : 'text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white',
@@ -282,13 +282,13 @@ onMounted(() => {
           :title="t('properties.view_cards')"
         >
           <LayoutGrid :size="14" />
-          <span>{{ t('properties.view_cards') }}</span>
+          <span class="xs:inline hidden sm:inline">{{ t('properties.view_cards') }}</span>
         </button>
         <button
           type="button"
           @click="viewMode = 'split'"
           :class="[
-            'inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition-colors',
+            'inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-semibold transition-colors sm:px-3',
             viewMode === 'split'
               ? 'shadow-xs bg-white text-neutral-900 dark:bg-neutral-900 dark:text-white'
               : 'text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white',
@@ -296,13 +296,13 @@ onMounted(() => {
           :title="t('properties.view_split_map')"
         >
           <Columns2 :size="14" />
-          <span>{{ t('properties.view_split_map') }}</span>
+          <span class="xs:inline hidden sm:inline">{{ t('properties.view_split_map') }}</span>
         </button>
         <button
           type="button"
           @click="viewMode = 'map'"
           :class="[
-            'inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition-colors',
+            'inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-semibold transition-colors sm:px-3',
             viewMode === 'map'
               ? 'shadow-xs bg-white text-neutral-900 dark:bg-neutral-900 dark:text-white'
               : 'text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white',
@@ -310,7 +310,7 @@ onMounted(() => {
           :title="t('properties.view_map')"
         >
           <MapIcon :size="14" />
-          <span>{{ t('properties.view_map') }}</span>
+          <span class="xs:inline hidden sm:inline">{{ t('properties.view_map') }}</span>
         </button>
       </div>
     </section>

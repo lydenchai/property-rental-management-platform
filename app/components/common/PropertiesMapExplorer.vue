@@ -249,9 +249,13 @@ function changeStyle(styleId: string, fromUser: boolean = true) {
   }
 }
 
-function fitAllProperties() {
-  if (!mapInstance || !props.properties.length) return;
-  import('maplibre-gl').then(({ default: maplibregl }) => {
+async function fitAllProperties() {
+  if (!mapInstance || !props.properties?.length) return;
+  try {
+    const mod = await import('maplibre-gl');
+    const maplibregl = mod?.default || mod;
+    if (!maplibregl?.LngLatBounds) return;
+
     const bounds = new maplibregl.LngLatBounds();
     let hasCoords = false;
     props.properties.forEach((p) => {
@@ -264,7 +268,9 @@ function fitAllProperties() {
     if (hasCoords) {
       mapInstance.fitBounds(bounds, { padding: 60, maxZoom: 14, duration: 800 });
     }
-  });
+  } catch (err) {
+    console.warn('fitAllProperties caught:', err);
+  }
 }
 
 function flyToProperty(propertyId: string) {

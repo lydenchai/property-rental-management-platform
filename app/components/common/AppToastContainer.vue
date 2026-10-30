@@ -66,6 +66,7 @@ function getTypeStyles(type: ToastItem['type']) {
         role="alert"
       >
         <div
+          v-if="getIcon(toast.type)"
           :class="[
             'mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg',
             getTypeStyles(toast.type).icon,

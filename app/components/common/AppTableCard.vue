@@ -59,9 +59,9 @@ function onSearchInput(event: Event) {
     <!-- Header / Title (Optional) -->
     <div
       v-if="title || subtitle || $slots.header"
-      class="border-b border-neutral-200 px-6 py-4 dark:border-neutral-800"
+      class="border-b border-neutral-200 px-4 py-3.5 dark:border-neutral-800 sm:px-6 sm:py-4"
     >
-      <slot name="header">
+      <slot name="header" :item="{}">
         <div>
           <h3 v-if="title" class="text-base font-semibold text-neutral-900 dark:text-white">
             {{ title }}
@@ -76,9 +76,9 @@ function onSearchInput(event: Event) {
     <!-- Toolbar: Search + Filter Tabs (Left) + Actions (Right) -->
     <div
       v-if="showSearch || $slots['toolbar-start'] || $slots['toolbar-end']"
-      class="flex flex-wrap items-center justify-between gap-3 border-b border-neutral-200 bg-white px-5 py-3.5 dark:border-neutral-800 dark:bg-neutral-900"
+      class="flex flex-wrap items-center justify-between gap-3 border-b border-neutral-200 bg-white px-3.5 py-3 dark:border-neutral-800 dark:bg-neutral-900 sm:px-5 sm:py-3.5"
     >
-      <div class="flex min-w-[240px] flex-1 flex-wrap items-center gap-3">
+      <div class="flex min-w-0 flex-1 flex-wrap items-center gap-2.5 sm:gap-3">
         <!-- Search Input -->
         <div v-if="showSearch" class="relative flex w-full items-center sm:w-64">
           <Search :size="14" class="pointer-events-none absolute left-2.5 text-neutral-400" />
@@ -101,18 +101,18 @@ function onSearchInput(event: Event) {
         </div>
 
         <!-- Custom filters / tabs slot -->
-        <slot name="toolbar-start" />
+        <slot name="toolbar-start" :item="{}" />
       </div>
 
       <!-- Action buttons slot -->
-      <div v-if="$slots['toolbar-end']" class="flex items-center gap-2">
-        <slot name="toolbar-end" />
+      <div v-if="$slots['toolbar-end']" class="flex flex-wrap items-center gap-2">
+        <slot name="toolbar-end" :item="{}" />
       </div>
     </div>
 
     <!-- Loading State -->
     <div v-if="isLoading" class="flex flex-col items-center justify-center space-y-2 px-4 py-12">
-      <slot name="loading">
+      <slot name="loading" :item="{}">
         <div
           class="h-7 w-7 animate-spin rounded-full border-2 border-neutral-200 border-t-primary-600 dark:border-neutral-700"
         ></div>
@@ -125,8 +125,9 @@ function onSearchInput(event: Event) {
       v-else-if="isEmpty"
       class="flex flex-col items-center justify-center space-y-2 px-4 py-12 text-center"
     >
-      <slot name="empty">
+      <slot name="empty" :item="{}">
         <div
+          v-if="emptyIcon"
           class="mb-1 flex h-10 w-10 items-center justify-center rounded-xl bg-neutral-100 text-neutral-400 dark:bg-neutral-800"
         >
           <component :is="emptyIcon" :size="20" />
@@ -136,15 +137,15 @@ function onSearchInput(event: Event) {
           {{ emptyDescription }}
         </p>
         <div v-if="$slots['empty-action']" class="pt-2">
-          <slot name="empty-action" />
+          <slot name="empty-action" :item="{}" />
         </div>
       </slot>
     </div>
 
     <!-- Table Container (Horizontal Scrolling wrapper) -->
-    <div v-else class="flex flex-col">
-      <div class="overflow-x-auto">
-        <slot />
+    <div v-else class="flex min-w-0 flex-col">
+      <div class="overflow-x-auto scroll-smooth">
+        <slot :item="{}" />
       </div>
 
       <!-- Integrated Pagination Footer -->

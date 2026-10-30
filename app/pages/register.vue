@@ -129,7 +129,7 @@ async function handleRegister() {
         >
           {{ t('auth.register_as') }}
         </label>
-        <div class="grid grid-cols-2 gap-3">
+        <div class="grid grid-cols-1 gap-2.5 sm:grid-cols-2 sm:gap-3">
           <label
             :class="[
               'flex cursor-pointer items-center gap-3 rounded-lg border p-3 transition-colors',

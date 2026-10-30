@@ -22,7 +22,7 @@ const availableLocales = computed<LocaleItem[]>(() => {
 
 <template>
   <div
-    class="inline-flex items-center gap-1 rounded-lg border border-neutral-200 bg-white p-0.5 dark:border-neutral-700 dark:bg-neutral-800"
+    class="inline-flex items-center gap-1 rounded-lg border border-neutral-200 bg-white p-1 dark:border-neutral-700 dark:bg-neutral-800"
     role="group"
     aria-label="Language selection"
   >

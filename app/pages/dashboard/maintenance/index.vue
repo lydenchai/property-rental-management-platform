@@ -24,8 +24,17 @@ import type {
   AssignTechnicianInput,
   UpdateProgressInput,
   ConfirmResolutionInput,
+  TableColumn,
 } from '~~/shared/types';
 import AppTableCard from '../../../components/common/AppTableCard.vue';
+import AppDataTable from '../../../components/common/AppDataTable.vue';
+import CreateMaintenanceModal, {
+  type CreateMaintenanceFormData,
+} from '../../../components/maintenance/CreateMaintenanceModal.vue';
+import AssignTechnicianModal from '../../../components/maintenance/AssignTechnicianModal.vue';
+import UpdateTicketModal from '../../../components/maintenance/UpdateTicketModal.vue';
+import ConfirmResolutionModal from '../../../components/maintenance/ConfirmResolutionModal.vue';
+import TicketDetailsModal from '../../../components/maintenance/TicketDetailsModal.vue';
 
 definePageMeta({
   layout: 'dashboard',
@@ -62,32 +71,10 @@ const searchQuery = ref('');
 
 // Modals
 const isCreateModalOpen = ref(false);
-const createForm = ref<CreateMaintenanceInput>({
-  unitId: 'unit-skyline-101a',
-  title: '',
-  description: '',
-  priority: 'MEDIUM',
-});
-
 const ticketToAssign = ref<MaintenanceItem | null>(null);
-const assignForm = ref<AssignTechnicianInput>({
-  technicianId: 'user-tech-01',
-  notes: '',
-});
-
 const ticketToUpdate = ref<MaintenanceItem | null>(null);
 const updateError = ref<string | null>(null);
-const updateForm = ref<UpdateProgressInput>({
-  status: 'IN_PROGRESS',
-  resolutionNotes: '',
-});
-
 const ticketToConfirm = ref<MaintenanceItem | null>(null);
-const confirmForm = ref<ConfirmResolutionInput>({
-  confirmed: true,
-  feedback: '',
-});
-
 const viewingTicket = ref<MaintenanceItem | null>(null);
 
 const filteredRequests = computed(() => {
@@ -124,21 +111,25 @@ const paginatedRequests = computed(() => {
   return filteredRequests.value.slice(start, start + pageSize.value);
 });
 
+const columns = computed<TableColumn[]>(() => [
+  { key: 'priority', label: t('maintenance.col_priority') },
+  { key: 'ticket', label: t('maintenance.col_ticket') },
+  { key: 'unit', label: t('maintenance.col_unit_property') },
+  { key: 'requester', label: t('maintenance.col_requester') },
+  { key: 'technician', label: t('maintenance.col_technician') },
+  { key: 'status', label: t('maintenance.col_status') },
+  { key: 'actions', label: t('maintenance.col_actions'), align: 'right' },
+]);
+
 watch([activeTab, searchQuery], () => {
   currentPage.value = 1;
 });
 
-async function executeCreateTicket() {
-  const res = (await maintenanceStore.createTicket(createForm.value)) as any;
+async function executeCreateTicket(formData: CreateMaintenanceFormData) {
+  const res = (await maintenanceStore.createTicket(formData)) as any;
   if (res.success) {
     successMessage.value = res.message || 'Maintenance ticket created successfully';
     isCreateModalOpen.value = false;
-    createForm.value = {
-      unitId: 'unit-skyline-101a',
-      title: '',
-      description: '',
-      priority: 'MEDIUM',
-    };
     setTimeout(() => {
       successMessage.value = null;
     }, 4000);
@@ -147,18 +138,11 @@ async function executeCreateTicket() {
 
 function openAssignModal(ticket: MaintenanceItem) {
   ticketToAssign.value = ticket;
-  assignForm.value = {
-    technicianId: 'user-tech-01',
-    notes: '',
-  };
 }
 
-async function executeAssign() {
+async function executeAssign(payload: { technicianId: string; notes?: string }) {
   if (!ticketToAssign.value) return;
-  const res = (await maintenanceStore.assignTechnician(
-    ticketToAssign.value.id,
-    assignForm.value
-  )) as any;
+  const res = (await maintenanceStore.assignTechnician(ticketToAssign.value.id, payload)) as any;
   if (res.success) {
     successMessage.value = res.message || 'Technician assigned successfully';
     ticketToAssign.value = null;
@@ -171,21 +155,14 @@ async function executeAssign() {
 function openUpdateModal(ticket: MaintenanceItem) {
   ticketToUpdate.value = ticket;
   updateError.value = null;
-  updateForm.value = {
-    status: ticket.status === 'ASSIGNED' ? 'IN_PROGRESS' : 'RESOLVED',
-    resolutionNotes: ticket.resolutionNotes || '',
-  };
 }
 
-async function executeUpdateProgress() {
+async function executeUpdateProgress(payload: {
+  status: 'IN_PROGRESS' | 'RESOLVED';
+  resolutionNotes?: string;
+}) {
   if (!ticketToUpdate.value) return;
   updateError.value = null;
-  const payload: UpdateProgressInput = {
-    status: updateForm.value.status,
-    ...(updateForm.value.resolutionNotes?.trim()
-      ? { resolutionNotes: updateForm.value.resolutionNotes.trim() }
-      : {}),
-  };
   const res = (await maintenanceStore.updateProgress(ticketToUpdate.value.id, payload)) as any;
   if (res.success) {
     successMessage.value = res.message || 'Progress updated successfully';
@@ -200,18 +177,13 @@ async function executeUpdateProgress() {
 
 function openConfirmModal(ticket: MaintenanceItem) {
   ticketToConfirm.value = ticket;
-  confirmForm.value = {
-    confirmed: true,
-    feedback: '',
-  };
 }
 
-async function executeConfirmResolution() {
-  if (!ticketToConfirm.value) return;
-  const res = (await maintenanceStore.confirmResolution(
-    ticketToConfirm.value.id,
-    confirmForm.value
-  )) as any;
+async function executeConfirmResolution(ticketId: string) {
+  const res = (await maintenanceStore.confirmResolution(ticketId, {
+    confirmed: true,
+    feedback: '',
+  })) as any;
   if (res.success) {
     successMessage.value = res.message || 'Ticket closed and resolution confirmed';
     ticketToConfirm.value = null;
@@ -516,736 +488,221 @@ onMounted(() => {
         </div>
       </template>
 
-      <div class="overflow-x-auto">
-        <table class="w-full text-left text-sm text-neutral-700 dark:text-neutral-200">
-          <thead
-            class="border-b border-neutral-200 bg-neutral-50 text-xs font-semibold uppercase tracking-wider text-neutral-500 dark:border-neutral-800 dark:bg-neutral-800/60 dark:text-neutral-400"
+      <AppDataTable
+        :columns="columns"
+        :items="paginatedRequests"
+        :is-loading="isLoading"
+        min-width="min-w-[800px]"
+      >
+        <template #cell-priority="slotProps">
+          <span
+            :class="[
+              'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium',
+              slotProps?.item?.priority === 'EMERGENCY'
+                ? 'border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-800 dark:bg-rose-950/30 dark:text-rose-400'
+                : slotProps?.item?.priority === 'HIGH'
+                  ? 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-400'
+                  : slotProps?.item?.priority === 'MEDIUM'
+                    ? 'border-sky-200 bg-sky-50 text-sky-700 dark:border-sky-800 dark:bg-sky-950/30 dark:text-sky-400'
+                    : 'border-neutral-200 bg-neutral-100 text-neutral-700',
+            ]"
           >
-            <tr>
-              <th class="px-4 py-3">{{ t('maintenance.col_priority') }}</th>
-              <th class="px-4 py-3">{{ t('maintenance.col_ticket') }}</th>
-              <th class="px-4 py-3">{{ t('maintenance.col_unit_property') }}</th>
-              <th class="px-4 py-3">{{ t('maintenance.col_requester') }}</th>
-              <th class="px-4 py-3">{{ t('maintenance.col_technician') }}</th>
-              <th class="px-4 py-3">{{ t('maintenance.col_status') }}</th>
-              <th class="px-4 py-3 text-right">{{ t('maintenance.col_actions') }}</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-neutral-200 dark:divide-neutral-800">
-            <tr
-              v-for="ticket in paginatedRequests"
-              :key="ticket.id"
-              class="transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-800/40"
+            <span class="h-1.5 w-1.5 rounded-full bg-current"></span>
+            <span>{{
+              slotProps?.item?.priority === 'EMERGENCY'
+                ? t('dashboard.metrics.emergency_priority')
+                : slotProps?.item?.priority === 'HIGH'
+                  ? t('maintenance.priority.high')
+                  : slotProps?.item?.priority === 'MEDIUM'
+                    ? t('maintenance.priority.medium')
+                    : t('maintenance.priority.low')
+            }}</span>
+          </span>
+        </template>
+
+        <template #cell-ticket="slotProps">
+          <div class="flex max-w-xs flex-col">
+            <span class="truncate font-semibold text-neutral-900 dark:text-white">{{
+              slotProps?.item?.title || '—'
+            }}</span>
+            <span class="line-clamp-1 text-xs text-neutral-500 dark:text-neutral-400">{{
+              slotProps?.item?.description || ''
+            }}</span>
+            <span class="mt-0.5 text-[11px] text-neutral-400 dark:text-neutral-500"
+              >{{ t('maintenance.col_reported') }}:
+              {{
+                slotProps?.item?.requestedAt
+                  ? new Date(slotProps.item.requestedAt).toLocaleDateString()
+                  : '—'
+              }}</span
             >
-              <td class="px-4 py-3.5">
-                <span
-                  :class="[
-                    'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium',
-                    ticket.priority === 'EMERGENCY'
-                      ? 'border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-800 dark:bg-rose-950/30 dark:text-rose-400'
-                      : ticket.priority === 'HIGH'
-                        ? 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-400'
-                        : ticket.priority === 'MEDIUM'
-                          ? 'border-sky-200 bg-sky-50 text-sky-700 dark:border-sky-800 dark:bg-sky-950/30 dark:text-sky-400'
-                          : 'border-neutral-200 bg-neutral-100 text-neutral-700',
-                  ]"
-                >
-                  <span class="h-1.5 w-1.5 rounded-full bg-current"></span>
-                  <span>{{
-                    ticket.priority === 'EMERGENCY'
-                      ? t('dashboard.metrics.emergency_priority')
-                      : ticket.priority === 'HIGH'
-                        ? t('maintenance.priority.high')
-                        : ticket.priority === 'MEDIUM'
-                          ? t('maintenance.priority.medium')
-                          : t('maintenance.priority.low')
-                  }}</span>
-                </span>
-              </td>
-              <td class="px-4 py-3.5">
-                <div class="flex max-w-xs flex-col">
-                  <span class="truncate font-semibold text-neutral-900 dark:text-white">{{
-                    ticket.title
-                  }}</span>
-                  <span class="line-clamp-1 text-xs text-neutral-500 dark:text-neutral-400">{{
-                    ticket.description
-                  }}</span>
-                  <span class="mt-0.5 text-[11px] text-neutral-400 dark:text-neutral-500"
-                    >{{ t('maintenance.col_reported') }}:
-                    {{ new Date(ticket.requestedAt).toLocaleDateString() }}</span
-                  >
-                </div>
-              </td>
-              <td class="px-4 py-3.5">
-                <div class="flex flex-col">
-                  <span class="font-semibold text-neutral-900 dark:text-white"
-                    >{{ t('dashboard.metrics.unit') }} {{ ticket.unit?.unitNumber || '101A' }}</span
-                  >
-                  <span class="text-xs text-neutral-500 dark:text-neutral-400">{{
-                    ticket.unit?.property?.title || 'Skyline Heights'
-                  }}</span>
-                </div>
-              </td>
-              <td class="px-4 py-3.5">
-                <div class="flex flex-col text-xs">
-                  <span class="font-medium text-neutral-900 dark:text-white">{{
-                    ticket.tenant?.fullName || 'Sarah Jenkins'
-                  }}</span>
-                  <span class="text-neutral-500 dark:text-neutral-400">{{
-                    ticket.tenant?.phone || 'tenant@example.com'
-                  }}</span>
-                </div>
-              </td>
-              <td class="px-4 py-3.5">
-                <div
-                  v-if="ticket.assignments && ticket.assignments.length > 0"
-                  class="flex flex-col text-xs"
-                >
-                  <span class="font-medium text-neutral-900 dark:text-white">{{
-                    ticket.assignments[0]!.technician?.fullName || 'Alex Rivers'
-                  }}</span>
-                  <span class="text-neutral-500 dark:text-neutral-400"
-                    >{{ t('maintenance.filter_assigned') }}
-                    {{ new Date(ticket.assignments[0]!.assignedAt).toLocaleDateString() }}</span
-                  >
-                </div>
-                <div v-else class="text-xs italic text-neutral-400 dark:text-neutral-500">
-                  {{ t('common.not_available') }}
-                </div>
-              </td>
-              <td class="px-4 py-3.5">
-                <span
-                  :class="[
-                    'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium',
-                    ticket.status === 'RESOLVED'
-                      ? 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-400'
-                      : ticket.status === 'IN_PROGRESS'
-                        ? 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-400'
-                        : ticket.status === 'OPEN'
-                          ? 'border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-800 dark:bg-blue-950/30 dark:text-blue-400'
-                          : ticket.status === 'ASSIGNED'
-                            ? 'border-indigo-200 bg-indigo-50 text-indigo-700 dark:border-indigo-800 dark:bg-indigo-950/30 dark:text-indigo-400'
-                            : 'border-neutral-200 bg-neutral-100 text-neutral-700',
-                  ]"
-                >
-                  <span class="h-1.5 w-1.5 rounded-full bg-current"></span>
-                  <span>{{
-                    ticket.status === 'CONFIRMED_CLOSED'
-                      ? t('maintenance.status.confirmed_closed')
-                      : ticket.status === 'IN_PROGRESS'
-                        ? t('maintenance.status.in_progress')
-                        : ticket.status === 'OPEN'
-                          ? t('maintenance.status.open')
-                          : ticket.status === 'ASSIGNED'
-                            ? t('maintenance.status.assigned')
-                            : t('maintenance.status.resolved')
-                  }}</span>
-                </span>
-              </td>
-              <td class="px-4 py-3.5 text-right">
-                <div class="inline-flex items-center justify-end gap-1.5">
-                  <!-- Landlord / Admin: Assign Technician -->
-                  <button
-                    v-if="
-                      (isLandlord || isAdmin) &&
-                      (ticket.status === 'OPEN' || ticket.status === 'ASSIGNED')
-                    "
-                    @click="openAssignModal(ticket)"
-                    class="shadow-xs inline-flex cursor-pointer items-center gap-1 rounded-lg bg-primary-600 px-2.5 py-1 text-xs font-medium text-white transition-colors hover:bg-primary-700"
-                    :title="t('maintenance.assign_technician')"
-                  >
-                    <UserCheck :size="13" />
-                    <span>{{ t('maintenance.assign_technician') }}</span>
-                  </button>
+          </div>
+        </template>
 
-                  <!-- Technician / Admin / Landlord: Update Progress -->
-                  <button
-                    v-if="
-                      (isTechnician || isAdmin || isLandlord) &&
-                      (ticket.status === 'ASSIGNED' || ticket.status === 'IN_PROGRESS')
-                    "
-                    @click="openUpdateModal(ticket)"
-                    class="shadow-xs inline-flex cursor-pointer items-center gap-1 rounded-lg bg-amber-600 px-2.5 py-1 text-xs font-medium text-white transition-colors hover:bg-amber-700"
-                    :title="t('maintenance.update_progress')"
-                  >
-                    <Wrench :size="13" />
-                    <span>{{ t('maintenance.update_progress') }}</span>
-                  </button>
+        <template #cell-unit="slotProps">
+          <div class="flex flex-col">
+            <span class="font-semibold text-neutral-900 dark:text-white"
+              >{{ t('dashboard.metrics.unit') }}
+              {{ slotProps?.item?.unit?.unitNumber || '101A' }}</span
+            >
+            <span class="text-xs text-neutral-500 dark:text-neutral-400">{{
+              slotProps?.item?.unit?.property?.title || 'Skyline Heights'
+            }}</span>
+          </div>
+        </template>
 
-                  <!-- Tenant / Admin: Confirm Completion -->
-                  <button
-                    v-if="(isTenant || isAdmin) && ticket.status === 'RESOLVED'"
-                    @click="openConfirmModal(ticket)"
-                    class="shadow-xs inline-flex cursor-pointer items-center gap-1 rounded-lg bg-emerald-600 px-2.5 py-1 text-xs font-medium text-white transition-colors hover:bg-emerald-700"
-                    :title="t('maintenance.confirm_resolution')"
-                  >
-                    <CheckCheck :size="13" />
-                    <span>{{ t('maintenance.confirm_resolution') }}</span>
-                  </button>
+        <template #cell-requester="slotProps">
+          <div class="flex flex-col text-xs">
+            <span class="font-medium text-neutral-900 dark:text-white">{{
+              slotProps?.item?.tenant?.fullName || 'Sarah Jenkins'
+            }}</span>
+            <span class="text-neutral-500 dark:text-neutral-400">{{
+              slotProps?.item?.tenant?.phone || 'tenant@example.com'
+            }}</span>
+          </div>
+        </template>
 
-                  <!-- Details View -->
-                  <button
-                    @click="viewingTicket = ticket"
-                    class="inline-flex cursor-pointer items-center gap-1 rounded-lg border border-neutral-300 px-2.5 py-1 text-xs font-medium text-neutral-700 transition-colors hover:bg-neutral-50 dark:border-neutral-700 dark:text-neutral-200 dark:hover:bg-neutral-800"
-                    :title="t('properties.details')"
-                  >
-                    <FileText :size="13" />
-                    <span>{{ t('properties.details') }}</span>
-                  </button>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+        <template #cell-technician="slotProps">
+          <div
+            v-if="slotProps?.item?.assignments && slotProps.item.assignments.length > 0"
+            class="flex flex-col text-xs"
+          >
+            <span class="font-medium text-neutral-900 dark:text-white">{{
+              slotProps.item.assignments[0]!.technician?.fullName || 'Alex Rivers'
+            }}</span>
+            <span class="text-neutral-500 dark:text-neutral-400"
+              >{{ t('maintenance.filter_assigned') }}
+              {{ new Date(slotProps.item.assignments[0]!.assignedAt).toLocaleDateString() }}</span
+            >
+          </div>
+          <div v-else class="text-xs italic text-neutral-400 dark:text-neutral-500">
+            {{ t('common.not_available') }}
+          </div>
+        </template>
+
+        <template #cell-status="slotProps">
+          <span
+            :class="[
+              'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium',
+              slotProps?.item?.status === 'RESOLVED'
+                ? 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-400'
+                : slotProps?.item?.status === 'IN_PROGRESS'
+                  ? 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-400'
+                  : slotProps?.item?.status === 'OPEN'
+                    ? 'border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-800 dark:bg-blue-950/30 dark:text-blue-400'
+                    : slotProps?.item?.status === 'ASSIGNED'
+                      ? 'border-indigo-200 bg-indigo-50 text-indigo-700 dark:border-indigo-800 dark:bg-indigo-950/30 dark:text-indigo-400'
+                      : 'border-neutral-200 bg-neutral-100 text-neutral-700',
+            ]"
+          >
+            <span class="h-1.5 w-1.5 rounded-full bg-current"></span>
+            <span>{{
+              slotProps?.item?.status === 'CONFIRMED_CLOSED'
+                ? t('maintenance.status.confirmed_closed')
+                : slotProps?.item?.status === 'IN_PROGRESS'
+                  ? t('maintenance.status.in_progress')
+                  : slotProps?.item?.status === 'OPEN'
+                    ? t('maintenance.status.open')
+                    : slotProps?.item?.status === 'ASSIGNED'
+                      ? t('maintenance.status.assigned')
+                      : t('maintenance.status.resolved')
+            }}</span>
+          </span>
+        </template>
+
+        <template #cell-actions="slotProps">
+          <div class="inline-flex items-center justify-end gap-1.5">
+            <!-- Landlord / Admin: Assign Technician -->
+            <button
+              v-if="
+                slotProps?.item &&
+                (isLandlord || isAdmin) &&
+                (slotProps.item.status === 'OPEN' || slotProps.item.status === 'ASSIGNED')
+              "
+              @click="openAssignModal(slotProps.item)"
+              class="shadow-xs inline-flex cursor-pointer items-center gap-1 rounded-lg bg-primary-600 px-2.5 py-1 text-xs font-medium text-white transition-colors hover:bg-primary-700"
+              :title="t('maintenance.assign_technician')"
+            >
+              <UserCheck :size="13" />
+              <span>{{ t('maintenance.assign_technician') }}</span>
+            </button>
+
+            <!-- Technician / Admin / Landlord: Update Progress -->
+            <button
+              v-if="
+                slotProps?.item &&
+                (isTechnician || isAdmin || isLandlord) &&
+                (slotProps.item.status === 'ASSIGNED' || slotProps.item.status === 'IN_PROGRESS')
+              "
+              @click="openUpdateModal(slotProps.item)"
+              class="shadow-xs inline-flex cursor-pointer items-center gap-1 rounded-lg bg-amber-600 px-2.5 py-1 text-xs font-medium text-white transition-colors hover:bg-amber-700"
+              :title="t('maintenance.update_progress')"
+            >
+              <Wrench :size="13" />
+              <span>{{ t('maintenance.update_progress') }}</span>
+            </button>
+
+            <!-- Tenant / Admin: Confirm Completion -->
+            <button
+              v-if="
+                slotProps?.item && (isTenant || isAdmin) && slotProps.item.status === 'RESOLVED'
+              "
+              @click="openConfirmModal(slotProps.item)"
+              class="shadow-xs inline-flex cursor-pointer items-center gap-1 rounded-lg bg-emerald-600 px-2.5 py-1 text-xs font-medium text-white transition-colors hover:bg-emerald-700"
+              :title="t('maintenance.confirm_resolution')"
+            >
+              <CheckCheck :size="13" />
+              <span>{{ t('maintenance.confirm_resolution') }}</span>
+            </button>
+
+            <!-- Details View -->
+            <button
+              v-if="slotProps?.item"
+              @click="viewingTicket = slotProps.item"
+              class="inline-flex cursor-pointer items-center gap-1 rounded-lg border border-neutral-300 px-2.5 py-1 text-xs font-medium text-neutral-700 transition-colors hover:bg-neutral-50 dark:border-neutral-700 dark:text-neutral-200 dark:hover:bg-neutral-800"
+              :title="t('properties.details')"
+            >
+              <FileText :size="13" />
+              <span>{{ t('properties.details') }}</span>
+            </button>
+          </div>
+        </template>
+      </AppDataTable>
     </AppTableCard>
 
-    <!-- Create Maintenance Request Modal -->
-    <Teleport to="body">
-      <div
-        v-if="isCreateModalOpen"
-        class="backdrop-blur-xs fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
-      >
-        <div
-          class="w-full max-w-lg overflow-hidden rounded-xl border border-neutral-200 bg-white shadow-xl dark:border-neutral-800 dark:bg-neutral-900"
-        >
-          <div
-            class="flex items-center justify-between border-b border-neutral-200 px-6 py-4 dark:border-neutral-800"
-          >
-            <h3 class="text-base font-semibold text-neutral-900 dark:text-white">
-              {{ t('maintenance.create_modal_title') }}
-            </h3>
-            <button
-              @click="isCreateModalOpen = false"
-              class="text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200"
-            >
-              <X :size="18" />
-            </button>
-          </div>
+    <!-- Modals -->
+    <CreateMaintenanceModal
+      :is-open="isCreateModalOpen"
+      :is-submitting="isSubmitting"
+      @close="isCreateModalOpen = false"
+      @submit="executeCreateTicket"
+    />
 
-          <form @submit.prevent="executeCreateTicket" class="space-y-4 p-6">
-            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div class="space-y-1.5">
-                <label class="block text-xs font-medium text-neutral-700 dark:text-neutral-300">{{
-                  t('maintenance.unit_select_label')
-                }}</label>
-                <input
-                  v-model="createForm.unitId"
-                  type="text"
-                  required
-                  class="focus:outline-hidden w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 placeholder-neutral-400 focus:ring-2 focus:ring-primary-500 dark:border-neutral-700 dark:bg-neutral-800 dark:text-white"
-                  :placeholder="t('maintenance.unit_select_placeholder')"
-                />
-              </div>
-              <div class="space-y-1.5">
-                <label class="block text-xs font-medium text-neutral-700 dark:text-neutral-300">{{
-                  t('maintenance.select_priority')
-                }}</label>
-                <select
-                  v-model="createForm.priority"
-                  required
-                  class="focus:outline-hidden w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 focus:ring-2 focus:ring-primary-500 dark:border-neutral-700 dark:bg-neutral-800 dark:text-white"
-                >
-                  <option value="LOW">{{ t('maintenance.priority_low_desc') }}</option>
-                  <option value="MEDIUM">{{ t('maintenance.priority_medium_desc') }}</option>
-                  <option value="HIGH">{{ t('maintenance.priority_high_desc') }}</option>
-                  <option value="EMERGENCY">{{ t('maintenance.priority_emergency_desc') }}</option>
-                </select>
-              </div>
-            </div>
-
-            <div class="space-y-1.5">
-              <label class="block text-xs font-medium text-neutral-700 dark:text-neutral-300">{{
-                t('maintenance.issue_title')
-              }}</label>
-              <input
-                v-model="createForm.title"
-                type="text"
-                required
-                class="focus:outline-hidden w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 placeholder-neutral-400 focus:ring-2 focus:ring-primary-500 dark:border-neutral-700 dark:bg-neutral-800 dark:text-white"
-                placeholder="e.g. HVAC Air Conditioning Not Cooling"
-              />
-            </div>
-
-            <div class="space-y-1.5">
-              <label class="block text-xs font-medium text-neutral-700 dark:text-neutral-300">{{
-                t('maintenance.issue_desc')
-              }}</label>
-              <textarea
-                v-model="createForm.description"
-                rows="4"
-                required
-                class="focus:outline-hidden w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 placeholder-neutral-400 focus:ring-2 focus:ring-primary-500 dark:border-neutral-700 dark:bg-neutral-800 dark:text-white"
-                placeholder="Please provide precise details regarding where the issue is located, when it started, and any symptoms observed..."
-              ></textarea>
-            </div>
-
-            <div class="flex items-center justify-end gap-3 pt-2">
-              <button
-                type="button"
-                @click="isCreateModalOpen = false"
-                class="cursor-pointer rounded-lg border border-neutral-300 bg-white px-4 py-2 text-xs font-medium text-neutral-700 transition-colors hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-200 dark:hover:bg-neutral-700"
-              >
-                {{ t('common.cancel') }}
-              </button>
-              <button
-                type="submit"
-                :disabled="isSubmitting"
-                class="shadow-xs inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-primary-600 px-4 py-2 text-xs font-medium text-white transition-colors hover:bg-primary-700 disabled:opacity-50"
-              >
-                <Plus :size="14" />
-                <span>{{
-                  isSubmitting ? t('maintenance.submitting_ticket') : t('maintenance.submit_ticket')
-                }}</span>
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </Teleport>
-
-    <!-- Assign Technician Modal -->
-    <Teleport to="body">
-      <div
-        v-if="ticketToAssign"
-        class="backdrop-blur-xs fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
-      >
-        <div
-          class="w-full max-w-lg overflow-hidden rounded-xl border border-neutral-200 bg-white shadow-xl dark:border-neutral-800 dark:bg-neutral-900"
-        >
-          <div
-            class="flex items-center justify-between border-b border-neutral-200 px-6 py-4 dark:border-neutral-800"
-          >
-            <h3 class="text-base font-semibold text-neutral-900 dark:text-white">
-              {{ t('maintenance.assign_modal_title') }}
-            </h3>
-            <button
-              @click="ticketToAssign = null"
-              class="text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200"
-            >
-              <X :size="18" />
-            </button>
-          </div>
-
-          <form @submit.prevent="executeAssign" class="space-y-4 p-6">
-            <div
-              class="space-y-1.5 rounded-lg border border-neutral-200 bg-neutral-50 p-4 text-xs text-neutral-700 dark:border-neutral-800 dark:bg-neutral-800/50 dark:text-neutral-300"
-            >
-              <div>
-                <strong class="text-neutral-900 dark:text-white"
-                  >{{ t('maintenance.issue_title') }}:</strong
-                >
-                {{ ticketToAssign.title }}
-              </div>
-              <div>
-                <strong class="text-neutral-900 dark:text-white">Unit:</strong> Unit
-                {{ ticketToAssign.unit?.unitNumber }} ({{ ticketToAssign.unit?.property?.title }})
-              </div>
-              <div>
-                <strong class="text-neutral-900 dark:text-white"
-                  >{{ t('maintenance.col_priority') }}:</strong
-                >
-                {{ ticketToAssign.priority }}
-              </div>
-            </div>
-
-            <div class="space-y-1.5">
-              <label class="block text-xs font-medium text-neutral-700 dark:text-neutral-300">{{
-                t('maintenance.select_technician')
-              }}</label>
-              <select
-                v-model="assignForm.technicianId"
-                required
-                class="focus:outline-hidden w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 focus:ring-2 focus:ring-primary-500 dark:border-neutral-700 dark:bg-neutral-800 dark:text-white"
-              >
-                <option value="user-tech-01">
-                  Alex Rivers (Licensed HVAC & Plumbing Specialist)
-                </option>
-                <option value="user-technician-01">
-                  Dave Miller (General Building Maintenance)
-                </option>
-              </select>
-            </div>
-
-            <div class="space-y-1.5">
-              <label class="block text-xs font-medium text-neutral-700 dark:text-neutral-300">{{
-                t('maintenance.dispatch_notes')
-              }}</label>
-              <textarea
-                v-model="assignForm.notes"
-                rows="3"
-                class="focus:outline-hidden w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 placeholder-neutral-400 focus:ring-2 focus:ring-primary-500 dark:border-neutral-700 dark:bg-neutral-800 dark:text-white"
-                placeholder="Optional notes, access instructions, or tools needed..."
-              ></textarea>
-            </div>
-
-            <div class="flex items-center justify-end gap-3 pt-2">
-              <button
-                type="button"
-                @click="ticketToAssign = null"
-                class="cursor-pointer rounded-lg border border-neutral-300 bg-white px-4 py-2 text-xs font-medium text-neutral-700 transition-colors hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-200 dark:hover:bg-neutral-700"
-              >
-                {{ t('common.cancel') }}
-              </button>
-              <button
-                type="submit"
-                :disabled="isAssigning"
-                class="shadow-xs inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-primary-600 px-4 py-2 text-xs font-medium text-white transition-colors hover:bg-primary-700 disabled:opacity-50"
-              >
-                <UserCheck :size="14" />
-                <span>{{
-                  isAssigning
-                    ? t('maintenance.assigning_tech')
-                    : t('maintenance.confirm_assignment')
-                }}</span>
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </Teleport>
+    <AssignTechnicianModal
+      :ticket="ticketToAssign"
+      :is-assigning="isAssigning"
+      @close="ticketToAssign = null"
+      @submit="executeAssign"
+    />
 
     <!-- Update Progress / Resolve Modal -->
-    <Teleport to="body">
-      <div
-        v-if="ticketToUpdate"
-        class="backdrop-blur-xs fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
-      >
-        <div
-          class="w-full max-w-lg overflow-hidden rounded-xl border border-neutral-200 bg-white shadow-xl dark:border-neutral-800 dark:bg-neutral-900"
-        >
-          <div
-            class="flex items-center justify-between border-b border-neutral-200 px-6 py-4 dark:border-neutral-800"
-          >
-            <h3 class="text-base font-semibold text-neutral-900 dark:text-white">
-              {{ t('maintenance.update_modal_title') }}
-            </h3>
-            <button
-              @click="ticketToUpdate = null"
-              class="text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200"
-            >
-              <X :size="18" />
-            </button>
-          </div>
-
-          <form @submit.prevent="executeUpdateProgress" class="space-y-4 p-6">
-            <div
-              v-if="updateError"
-              class="flex items-center gap-2 rounded-lg border border-rose-200 bg-rose-50 p-3 text-xs text-rose-700 dark:border-rose-900/40 dark:bg-rose-950/20 dark:text-rose-400"
-            >
-              <AlertCircle :size="15" class="shrink-0 text-rose-600 dark:text-rose-400" />
-              <span>{{ updateError }}</span>
-            </div>
-            <div
-              class="space-y-1.5 rounded-lg border border-neutral-200 bg-neutral-50 p-4 text-xs text-neutral-700 dark:border-neutral-800 dark:bg-neutral-800/50 dark:text-neutral-300"
-            >
-              <div>
-                <strong class="text-neutral-900 dark:text-white"
-                  >{{ t('maintenance.issue_title') }}:</strong
-                >
-                {{ ticketToUpdate.title }}
-              </div>
-              <div>
-                <strong class="text-neutral-900 dark:text-white">Unit:</strong> Unit
-                {{ ticketToUpdate.unit?.unitNumber }}
-              </div>
-            </div>
-
-            <div class="space-y-1.5">
-              <label class="block text-xs font-medium text-neutral-700 dark:text-neutral-300">{{
-                t('maintenance.progress_status')
-              }}</label>
-              <select
-                v-model="updateForm.status"
-                required
-                class="focus:outline-hidden w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 focus:ring-2 focus:ring-primary-500 dark:border-neutral-700 dark:bg-neutral-800 dark:text-white"
-              >
-                <option value="IN_PROGRESS">In Progress (Diagnostics / Parts ordered)</option>
-                <option value="RESOLVED">
-                  Resolved (Repairs completed, ready for tenant check)
-                </option>
-              </select>
-            </div>
-
-            <div class="space-y-1.5">
-              <label class="block text-xs font-medium text-neutral-700 dark:text-neutral-300">{{
-                t('maintenance.resolution_notes')
-              }}</label>
-              <textarea
-                v-model="updateForm.resolutionNotes"
-                rows="4"
-                class="focus:outline-hidden w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 placeholder-neutral-400 focus:ring-2 focus:ring-primary-500 dark:border-neutral-700 dark:bg-neutral-800 dark:text-white"
-                placeholder="Detail parts replaced, repairs performed, and tests conducted..."
-              ></textarea>
-            </div>
-
-            <div class="flex items-center justify-end gap-3 pt-2">
-              <button
-                type="button"
-                @click="ticketToUpdate = null"
-                class="cursor-pointer rounded-lg border border-neutral-300 bg-white px-4 py-2 text-xs font-medium text-neutral-700 transition-colors hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-200 dark:hover:bg-neutral-700"
-              >
-                {{ t('common.cancel') }}
-              </button>
-              <button
-                type="submit"
-                :disabled="isUpdating"
-                class="shadow-xs inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-primary-600 px-4 py-2 text-xs font-medium text-white transition-colors hover:bg-primary-700 disabled:opacity-50"
-              >
-                <CheckCircle2 :size="14" />
-                <span>{{
-                  isUpdating ? t('maintenance.updating_progress') : t('maintenance.save_progress')
-                }}</span>
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </Teleport>
+    <UpdateTicketModal
+      :ticket="ticketToUpdate"
+      :is-updating="isUpdating"
+      :error="updateError"
+      @close="ticketToUpdate = null"
+      @submit="executeUpdateProgress"
+    />
 
     <!-- Confirm Resolution Modal -->
-    <Teleport to="body">
-      <div
-        v-if="ticketToConfirm"
-        class="backdrop-blur-xs fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
-      >
-        <div
-          class="w-full max-w-lg overflow-hidden rounded-xl border border-neutral-200 bg-white shadow-xl dark:border-neutral-800 dark:bg-neutral-900"
-        >
-          <div
-            class="flex items-center justify-between border-b border-neutral-200 px-6 py-4 dark:border-neutral-800"
-          >
-            <h3 class="text-base font-semibold text-neutral-900 dark:text-white">
-              {{ t('maintenance.confirm_modal_title') }}
-            </h3>
-            <button
-              @click="ticketToConfirm = null"
-              class="text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200"
-            >
-              <X :size="18" />
-            </button>
-          </div>
-
-          <form @submit.prevent="executeConfirmResolution" class="space-y-4 p-6">
-            <div
-              class="space-y-1.5 rounded-lg border border-neutral-200 bg-neutral-50 p-4 text-xs text-neutral-700 dark:border-neutral-800 dark:bg-neutral-800/50 dark:text-neutral-300"
-            >
-              <div>
-                <strong class="text-neutral-900 dark:text-white"
-                  >{{ t('maintenance.issue_title') }}:</strong
-                >
-                {{ ticketToConfirm.title }}
-              </div>
-              <div>
-                <strong class="text-neutral-900 dark:text-white"
-                  >{{ t('maintenance.resolution_notes') }}:</strong
-                >
-                {{ ticketToConfirm.resolutionNotes || 'Repairs completed.' }}
-              </div>
-            </div>
-
-            <p class="text-xs leading-relaxed text-neutral-500 dark:text-neutral-400">
-              {{ t('maintenance.confirm_checkbox') }}
-            </p>
-
-            <div class="space-y-1.5">
-              <label class="block text-xs font-medium text-neutral-700 dark:text-neutral-300">{{
-                t('maintenance.feedback_notes')
-              }}</label>
-              <input
-                v-model="confirmForm.feedback"
-                type="text"
-                class="focus:outline-hidden w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 placeholder-neutral-400 focus:ring-2 focus:ring-primary-500 dark:border-neutral-700 dark:bg-neutral-800 dark:text-white"
-                placeholder="e.g. Prompt and clean service, thank you!"
-              />
-            </div>
-
-            <div class="flex items-center justify-end gap-3 pt-2">
-              <button
-                type="button"
-                @click="ticketToConfirm = null"
-                class="cursor-pointer rounded-lg border border-neutral-300 bg-white px-4 py-2 text-xs font-medium text-neutral-700 transition-colors hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-200 dark:hover:bg-neutral-700"
-              >
-                {{ t('common.cancel') }}
-              </button>
-              <button
-                type="submit"
-                :disabled="isConfirming"
-                class="shadow-xs inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-emerald-600 px-4 py-2 text-xs font-medium text-white transition-colors hover:bg-emerald-700 disabled:opacity-50"
-              >
-                <CheckCheck :size="14" />
-                <span>{{
-                  isConfirming ? t('maintenance.closing_ticket') : t('maintenance.confirm_close')
-                }}</span>
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </Teleport>
+    <ConfirmResolutionModal
+      :ticket="ticketToConfirm"
+      :is-confirming="isConfirming"
+      @close="ticketToConfirm = null"
+      @confirm="executeConfirmResolution"
+    />
 
     <!-- Ticket Details Modal -->
-    <Teleport to="body">
-      <div
-        v-if="viewingTicket"
-        class="backdrop-blur-xs fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
-      >
-        <div
-          class="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-xl border border-neutral-200 bg-white shadow-xl dark:border-neutral-800 dark:bg-neutral-900"
-        >
-          <div
-            class="flex items-center justify-between border-b border-neutral-200 px-6 py-4 dark:border-neutral-800"
-          >
-            <h3 class="text-base font-semibold text-neutral-900 dark:text-white">
-              {{ t('maintenance.ticket_details_title') }}
-            </h3>
-            <button
-              @click="viewingTicket = null"
-              class="text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200"
-            >
-              <X :size="18" />
-            </button>
-          </div>
-
-          <div class="space-y-4 p-6">
-            <div
-              class="space-y-2 rounded-lg border border-neutral-200 bg-neutral-50 p-4 text-xs text-neutral-700 dark:border-neutral-800 dark:bg-neutral-800/50 dark:text-neutral-300"
-            >
-              <div>
-                <strong class="text-neutral-900 dark:text-white"
-                  >{{ t('maintenance.issue_title') }}:</strong
-                >
-                {{ viewingTicket.title }}
-              </div>
-              <div class="flex items-center gap-2">
-                <strong class="text-neutral-900 dark:text-white"
-                  >{{ t('maintenance.col_priority') }}:</strong
-                >
-                <span
-                  :class="[
-                    'inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-medium',
-                    viewingTicket.priority === 'EMERGENCY'
-                      ? 'border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-800 dark:bg-rose-950/30 dark:text-rose-400'
-                      : viewingTicket.priority === 'HIGH'
-                        ? 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-400'
-                        : viewingTicket.priority === 'MEDIUM'
-                          ? 'border-sky-200 bg-sky-50 text-sky-700 dark:border-sky-800 dark:bg-sky-950/30 dark:text-sky-400'
-                          : 'border-neutral-200 bg-neutral-100 text-neutral-700',
-                  ]"
-                >
-                  <span class="h-1.5 w-1.5 rounded-full bg-current"></span>
-                  <span>{{
-                    viewingTicket.priority === 'EMERGENCY'
-                      ? t('maintenance.priority.urgent')
-                      : viewingTicket.priority === 'HIGH'
-                        ? t('maintenance.priority.high')
-                        : viewingTicket.priority === 'MEDIUM'
-                          ? t('maintenance.priority.medium')
-                          : t('maintenance.priority.low')
-                  }}</span>
-                </span>
-              </div>
-              <div class="flex items-center gap-2">
-                <strong class="text-neutral-900 dark:text-white"
-                  >{{ t('maintenance.col_status') }}:</strong
-                >
-                <span
-                  :class="[
-                    'inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-medium',
-                    viewingTicket.status === 'RESOLVED'
-                      ? 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-400'
-                      : viewingTicket.status === 'IN_PROGRESS'
-                        ? 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-400'
-                        : viewingTicket.status === 'OPEN'
-                          ? 'border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-800 dark:bg-blue-950/30 dark:text-blue-400'
-                          : viewingTicket.status === 'ASSIGNED'
-                            ? 'border-indigo-200 bg-indigo-50 text-indigo-700 dark:border-indigo-800 dark:bg-indigo-950/30 dark:text-indigo-400'
-                            : 'border-neutral-200 bg-neutral-100 text-neutral-700',
-                  ]"
-                >
-                  <span class="h-1.5 w-1.5 rounded-full bg-current"></span>
-                  <span>{{
-                    viewingTicket.status === 'CONFIRMED_CLOSED'
-                      ? t('maintenance.status.confirmed_closed')
-                      : viewingTicket.status === 'IN_PROGRESS'
-                        ? t('maintenance.status.in_progress')
-                        : viewingTicket.status === 'OPEN'
-                          ? t('maintenance.status.open')
-                          : viewingTicket.status === 'ASSIGNED'
-                            ? t('maintenance.status.assigned')
-                            : t('maintenance.status.resolved')
-                  }}</span>
-                </span>
-              </div>
-              <div>
-                <strong class="text-neutral-900 dark:text-white"
-                  >{{ t('maintenance.col_unit_property') }}:</strong
-                >
-                Unit {{ viewingTicket.unit?.unitNumber }} ({{
-                  viewingTicket.unit?.property?.title
-                }})
-              </div>
-              <div>
-                <strong class="text-neutral-900 dark:text-white"
-                  >{{ t('maintenance.col_requester') }}:</strong
-                >
-                {{ viewingTicket.tenant?.fullName }} ({{ viewingTicket.tenant?.email }})
-              </div>
-              <div v-if="viewingTicket.assignments && viewingTicket.assignments.length > 0">
-                <strong class="text-neutral-900 dark:text-white"
-                  >{{ t('maintenance.col_technician') }}:</strong
-                >
-                {{ viewingTicket.assignments[0]!.technician?.fullName }}
-              </div>
-              <div>
-                <strong class="text-neutral-900 dark:text-white"
-                  >{{ t('maintenance.col_reported') }}:</strong
-                >
-                {{ new Date(viewingTicket.requestedAt).toLocaleString() }}
-              </div>
-              <div v-if="viewingTicket.resolvedAt">
-                <strong class="text-neutral-900 dark:text-white">Resolved At:</strong>
-                {{ new Date(viewingTicket.resolvedAt).toLocaleString() }}
-              </div>
-              <div v-if="viewingTicket.confirmedAt">
-                <strong class="text-neutral-900 dark:text-white">Confirmed Closed:</strong>
-                {{ new Date(viewingTicket.confirmedAt).toLocaleString() }}
-              </div>
-            </div>
-
-            <div class="space-y-1.5">
-              <label class="block text-xs font-semibold text-neutral-700 dark:text-neutral-300"
-                >{{ t('maintenance.issue_desc') }}:</label
-              >
-              <div
-                class="rounded-lg border border-neutral-200 bg-neutral-50 p-3 text-xs leading-relaxed text-neutral-800 dark:border-neutral-700 dark:bg-neutral-800/60 dark:text-neutral-200"
-              >
-                {{ viewingTicket.description }}
-              </div>
-            </div>
-
-            <div v-if="viewingTicket.resolutionNotes" class="space-y-1.5">
-              <label class="block text-xs font-semibold text-neutral-700 dark:text-neutral-300"
-                >{{ t('maintenance.resolution_notes') }}:</label
-              >
-              <div
-                class="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-xs leading-relaxed text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/20 dark:text-emerald-300"
-              >
-                {{ viewingTicket.resolutionNotes }}
-              </div>
-            </div>
-
-            <div class="flex justify-end pt-2">
-              <button
-                @click="viewingTicket = null"
-                class="cursor-pointer rounded-lg border border-neutral-300 bg-white px-4 py-2 text-xs font-medium text-neutral-700 transition-colors hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-200 dark:hover:bg-neutral-700"
-              >
-                {{ t('maintenance.close_btn') }}
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </Teleport>
+    <TicketDetailsModal :ticket="viewingTicket" @close="viewingTicket = null" />
   </div>
 </template>

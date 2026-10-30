@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import {
   X,
   ChevronLeft,
@@ -7,7 +7,6 @@ import {
   Bed,
   Bath,
   Maximize2,
-  DollarSign,
   FileSignature,
   Image as ImageIcon,
 } from '@lucide/vue';
@@ -27,11 +26,12 @@ export interface UnitDetail {
 }
 
 interface Props {
-  unit: UnitDetail;
+  unit?: UnitDetail | null;
   initialIndex?: number;
 }
 
 const props = withDefaults(defineProps<Props>(), {
+  unit: null,
   initialIndex: 0,
 });
 
@@ -42,9 +42,10 @@ const emit = defineEmits<{
 
 const { t } = useI18n();
 const activeIndex = ref(props.initialIndex);
+const isMounted = ref(false);
 
 const currentImages = computed(() => {
-  if (props.unit.images && props.unit.images.length > 0) {
+  if (props.unit?.images && props.unit.images.length > 0) {
     return props.unit.images;
   }
   // Default fallback if no images attached
@@ -88,11 +89,31 @@ function handleKeydown(e: KeyboardEvent) {
 }
 
 onMounted(() => {
+  isMounted.value = true;
   window.addEventListener('keydown', handleKeydown);
+  if (typeof document !== 'undefined' && props.unit) {
+    document.body.classList.add('overflow-hidden');
+  }
 });
+
+watch(
+  () => props.unit,
+  (val) => {
+    if (typeof document !== 'undefined') {
+      if (val) {
+        document.body.classList.add('overflow-hidden');
+      } else {
+        document.body.classList.remove('overflow-hidden');
+      }
+    }
+  }
+);
 
 onUnmounted(() => {
   window.removeEventListener('keydown', handleKeydown);
+  if (typeof document !== 'undefined') {
+    document.body.classList.remove('overflow-hidden');
+  }
 });
 
 // Room label heuristics based on image index
@@ -108,13 +129,13 @@ function getImageLabel(index: number): string {
 </script>
 
 <template>
-  <Teleport to="body">
+  <Teleport v-if="isMounted && unit" to="body">
     <div
       class="backdrop-blur-xs fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
       @click.self="emit('close')"
     >
       <div
-        class="flex max-h-[92vh] w-full max-w-4xl flex-col overflow-hidden rounded-xl border border-neutral-200 bg-white shadow-2xl dark:border-neutral-800 dark:bg-neutral-900"
+        class="flex max-h-[92vh] w-full max-w-4xl flex-col overflow-y-auto rounded-xl border border-neutral-200 bg-white shadow-2xl dark:border-neutral-800 dark:bg-neutral-900"
       >
         <!-- Modal Header -->
         <div
@@ -122,7 +143,7 @@ function getImageLabel(index: number): string {
         >
           <div>
             <h3 class="text-sm font-semibold text-neutral-100">
-              {{ t('properties.unit_label', { number: unit.unitNumber }) }} &bull;
+              {{ t('properties.unit_label', { number: unit?.unitNumber || '' }) }} &bull;
               {{ t('gallery.interior_gallery') }}
             </h3>
             <span class="mt-0.5 flex items-center gap-1.5 text-xs text-neutral-400">
@@ -148,7 +169,7 @@ function getImageLabel(index: number): string {
 
         <!-- Main Stage -->
         <div
-          class="relative flex max-h-[480px] min-h-[300px] flex-1 select-none items-center justify-center overflow-hidden bg-black/95"
+          class="relative flex max-h-[360px] min-h-[220px] flex-1 select-none items-center justify-center overflow-hidden bg-black/95 sm:max-h-[480px] sm:min-h-[300px]"
         >
           <button
             v-if="currentImages.length > 1"
@@ -163,7 +184,7 @@ function getImageLabel(index: number): string {
           <div class="relative flex h-full w-full items-center justify-center p-2">
             <img
               :src="activeImage"
-              :alt="`Unit ${unit.unitNumber} - ${getImageLabel(activeIndex)}`"
+              :alt="`Unit ${unit?.unitNumber || ''} - ${getImageLabel(activeIndex)}`"
               class="mx-auto max-h-[460px] w-auto max-w-full object-contain"
             />
             <div
@@ -216,41 +237,41 @@ function getImageLabel(index: number): string {
               class="rounded-md border border-neutral-200 bg-white px-2.5 py-1 text-neutral-700 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-300"
             >
               <span class="mr-1 text-neutral-400">{{ t('properties.floor') }}:</span>
-              <strong>{{ t('properties.level', { floor: unit.floor }) }}</strong>
+              <strong>{{ t('properties.level', { floor: unit?.floor ?? 0 }) }}</strong>
             </div>
             <div
               class="flex items-center gap-1.5 rounded-md border border-neutral-200 bg-white px-2.5 py-1 text-neutral-700 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-300"
             >
               <Maximize2 :size="13" class="text-neutral-400" />
-              <strong>{{ t('properties.sq_m', { size: unit.sizeSqFt }) }}</strong>
+              <strong>{{ t('properties.sq_m', { size: unit?.sizeSqFt ?? 0 }) }}</strong>
             </div>
             <div
               class="flex items-center gap-1.5 rounded-md border border-neutral-200 bg-white px-2.5 py-1 text-neutral-700 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-300"
             >
               <Bed :size="13" class="text-neutral-400" />
               <strong>{{
-                unit.bedrooms === 0
+                unit?.bedrooms === 0
                   ? t('properties.studio')
-                  : t('properties.bed_short', { count: unit.bedrooms })
+                  : t('properties.bed_short', { count: unit?.bedrooms ?? 1 })
               }}</strong>
             </div>
             <div
               class="flex items-center gap-1.5 rounded-md border border-neutral-200 bg-white px-2.5 py-1 text-neutral-700 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-300"
             >
               <Bath :size="13" class="text-neutral-400" />
-              <strong>{{ t('properties.bath_short', { count: unit.bathrooms }) }}</strong>
+              <strong>{{ t('properties.bath_short', { count: unit?.bathrooms ?? 1 }) }}</strong>
             </div>
             <div
               class="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-1 font-mono font-semibold text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300"
             >
-              <span>${{ unit.rentAmount.toLocaleString() }}</span>
+              <span>${{ unit?.rentAmount ? unit.rentAmount.toLocaleString() : '0' }}</span>
               <span class="ml-1 text-[10px] font-normal text-emerald-600 dark:text-emerald-400">{{
                 t('properties.per_month_short')
               }}</span>
             </div>
           </div>
 
-          <div class="flex items-center gap-2">
+          <div class="flex w-full items-center justify-end gap-2 sm:w-auto">
             <button
               type="button"
               @click="emit('close')"
@@ -259,10 +280,10 @@ function getImageLabel(index: number): string {
               {{ t('common.close') }}
             </button>
             <button
-              v-if="unit.status === 'AVAILABLE'"
+              v-if="unit?.status === 'AVAILABLE'"
               type="button"
               @click="emit('apply', unit)"
-              class="shadow-xs inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-primary-600 px-4 py-2 text-xs font-medium text-white transition-colors hover:bg-primary-700"
+              class="shadow-xs inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-lg bg-primary-600 px-4 py-2 text-xs font-medium text-white transition-colors hover:bg-primary-700"
             >
               <FileSignature :size="14" />
               <span>{{ t('gallery.apply_for_unit') }}</span>
@@ -271,7 +292,7 @@ function getImageLabel(index: number): string {
               v-else
               class="rounded-lg bg-neutral-200 px-3 py-1.5 text-xs font-semibold text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400"
             >
-              {{ unit.status }}
+              {{ unit?.status || 'UNAVAILABLE' }}
             </span>
           </div>
         </div>
