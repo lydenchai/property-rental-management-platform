@@ -10,7 +10,7 @@ export default defineNuxtConfig({
       Inter: [400, 500, 600, 700],
     },
   },
-  devtools: { enabled: true },
+  devtools: { enabled: false },
   imports: {
     dirs: ['stores', 'stores/**'],
   },
@@ -61,5 +61,51 @@ export default defineNuxtConfig({
   devServer: {
     host: process.env.NUXT_HOST || '0.0.0.0',
     port: Number(process.env.NUXT_PORT || process.env.PORT || 4000),
+  },
+  vite: {
+    optimizeDeps: {
+      include: ['@lucide/vue', 'maplibre-gl'],
+    },
+    plugins: [
+      {
+        name: 'lucide-vue-firefox-fix',
+        enforce: 'pre',
+        transform(code, id) {
+          const normalizedId = id.replace(/\\/g, '/');
+          if (normalizedId.includes('@lucide/vue') && normalizedId.includes('createLucideIcon')) {
+            if (code.includes('context = {}')) return null;
+            return code.replace(
+              /\(props,\s*\{\s*slots\s*\}\)\s*=>\s*h\(/g,
+              '(props = {}, context = {}) => { const slots = context?.slots || {}; return h('
+            );
+          }
+          if (normalizedId.includes('@lucide/vue') && normalizedId.includes('Icon.mjs')) {
+            if (code.includes('context = {}')) return null;
+            return code.replace(
+              /\},\s*\{\s*slots\s*\}\s*\)\s*=>\s*\{/g,
+              '}, context = {}) => {\n  const slots = context?.slots || {};'
+            );
+          }
+          if (
+            normalizedId.includes('lucide-vue-next') &&
+            normalizedId.includes('createLucideIcon')
+          ) {
+            if (code.includes('context = {}')) return null;
+            return code.replace(
+              /\(props,\s*\{\s*slots,\s*attrs\s*\}\)\s*=>\s*h\(/g,
+              '(props = {}, context = {}) => { const slots = context?.slots || {}; const attrs = context?.attrs || {}; return h('
+            );
+          }
+          if (normalizedId.includes('lucide-vue-next') && normalizedId.includes('Icon.js')) {
+            if (code.includes('context = {}')) return null;
+            return code.replace(
+              /\},\s*\{\s*slots\s*\}\s*\)\s*=>\s*\{/g,
+              '}, context = {}) => {\n  const slots = context?.slots || {};'
+            );
+          }
+          return null;
+        },
+      },
+    ],
   },
 });
