@@ -110,14 +110,33 @@ onMounted(() => {
       </NuxtLink>
     </div>
 
-    <!-- Loading State -->
-    <div v-if="isLoading" class="flex flex-col items-center gap-3 py-20 text-center">
-      <div
-        class="h-8 w-8 animate-spin rounded-full border-2 border-neutral-300 border-t-blue-600"
-      />
-      <p class="text-sm text-neutral-500 dark:text-neutral-400">
-        {{ t('properties.loading_property_details') }}
-      </p>
+    <!-- Loading Skeleton State -->
+    <div
+      v-if="isLoading"
+      class="shadow-xs flex flex-col gap-6 rounded-2xl border border-neutral-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-900 sm:p-8 animate-pulse"
+      aria-hidden="true"
+    >
+      <div class="flex items-center gap-3.5 border-b border-neutral-100 pb-5 dark:border-neutral-800">
+        <div class="h-10 w-10 rounded-xl bg-neutral-200 dark:bg-neutral-800" />
+        <div class="space-y-2">
+          <div class="h-5 w-48 rounded bg-neutral-200 dark:bg-neutral-800" />
+          <div class="h-3 w-64 rounded bg-neutral-200 dark:bg-neutral-800" />
+        </div>
+      </div>
+      <div class="grid grid-cols-1 gap-5 md:grid-cols-2">
+        <div class="space-y-2">
+          <div class="h-3.5 w-24 rounded bg-neutral-200 dark:bg-neutral-800" />
+          <div class="h-10 w-full rounded-xl bg-neutral-100 dark:bg-neutral-800/60" />
+        </div>
+        <div class="space-y-2">
+          <div class="h-3.5 w-24 rounded bg-neutral-200 dark:bg-neutral-800" />
+          <div class="h-10 w-full rounded-xl bg-neutral-100 dark:bg-neutral-800/60" />
+        </div>
+      </div>
+      <div class="space-y-2">
+        <div class="h-3.5 w-32 rounded bg-neutral-200 dark:bg-neutral-800" />
+        <div class="h-24 w-full rounded-xl bg-neutral-100 dark:bg-neutral-800/60" />
+      </div>
     </div>
 
     <div

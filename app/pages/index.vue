@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
 import {
+  Building2,
   Building,
   Key,
   Wrench,
@@ -17,6 +18,7 @@ import {
   ChevronRight,
   Lock,
   Database,
+  RotateCcw,
 } from '@lucide/vue';
 import { useAuth } from '../composables/useAuth';
 
@@ -27,6 +29,16 @@ const { isAuthenticated } = useAuth();
 const searchCity = ref('');
 const searchBeds = ref('');
 const searchBudget = ref('');
+
+const hasActiveFilters = computed(() =>
+  Boolean(searchCity.value || searchBeds.value || searchBudget.value)
+);
+
+function resetQuickSearch() {
+  searchCity.value = '';
+  searchBeds.value = '';
+  searchBudget.value = '';
+}
 
 function handleQuickSearch() {
   const query: Record<string, string> = {};
@@ -71,9 +83,9 @@ const keyMetrics = computed(() => [
   },
   {
     label: t('landing.metrics_map'),
-    val: 'OpenFreeMap',
+    val: '4',
     detail: t('landing.metrics_map_detail'),
-    icon: Compass,
+    icon: MapPin,
   },
 ]);
 
@@ -121,48 +133,48 @@ const stakeholderPortals = computed(() => [
     icon: Building,
     role: t('landing.cap_landlord_title'),
     desc: t('landing.cap_landlord_desc'),
-    tag: 'Portals: Landlord',
+    tag: 'For Landlords',
     features: [
-      'Occupancy analytics & real-time rent rolls',
-      'One-click automated invoice generation',
+      'Real-time vacancy tracking & unit inventory',
+      'Automated monthly invoice generation',
       'Custom digital lease agreement builder',
-      'Tenant background vetting workflow',
+      'Tenant application screening workflow',
     ],
   },
   {
     icon: Key,
     role: t('landing.cap_tenant_title'),
     desc: t('landing.cap_tenant_desc'),
-    tag: 'Portals: Tenant',
+    tag: 'For Tenants',
     features: [
-      'Verified unit floor plans & room specs',
-      'Digital lease signing with legal enforceability',
-      'Online payment records & settlement receipts',
-      'Maintenance dispatch tracking with photos',
+      'Verified property listings & floor plans',
+      'Online application & background submission',
+      'Legally binding digital lease execution',
+      'Digital payment receipts & repair requests',
     ],
   },
   {
     icon: Wrench,
     role: t('landing.cap_tech_title'),
     desc: t('landing.cap_tech_desc'),
-    tag: 'Portals: Technician',
+    tag: 'For Technicians',
     features: [
-      'Mobile-optimized task queue & SLA tracking',
-      'Direct unit specification & access notes',
-      'On-site photo documentation & cost logging',
-      'Instant landlord repair resolution sign-off',
+      'Mobile-optimized maintenance task queue',
+      'Direct unit location & access instructions',
+      'Photo documentation & cost logging',
+      'Instant landlord resolution sign-off',
     ],
   },
   {
     icon: ShieldCheck,
     role: t('landing.cap_admin_title'),
     desc: t('landing.cap_admin_desc'),
-    tag: 'Portals: Admin',
+    tag: 'For Administrators',
     features: [
-      'Cross-tenant organization account management',
-      'Cryptographic scrypt session & cookie security',
-      'Immutable audit logging for security compliance',
-      'Health check monitoring & vector tile integration',
+      'Platform-wide user & property oversight',
+      'Role-based permissions & access control',
+      'Comprehensive audit log & activity history',
+      'System health & operational monitoring',
     ],
   },
 ]);
@@ -173,11 +185,11 @@ const stakeholderPortals = computed(() => [
     <!-- Hero Section -->
     <section class="px-4 pt-16 text-center sm:px-6 sm:pt-20">
       <div class="mx-auto flex max-w-4xl flex-col items-center">
-        <!-- Live System Status Badge -->
+        <!-- Product Badge -->
         <div
-          class="shadow-xs mb-6 inline-flex items-center gap-2 rounded-full border border-neutral-200 bg-white px-3.5 py-1.5 dark:border-neutral-800 dark:bg-neutral-900"
+          class="shadow-xs mb-6 inline-flex items-center gap-2 rounded-full border border-neutral-200 bg-neutral-50 px-3.5 py-1.5 dark:border-neutral-800 dark:bg-neutral-900"
         >
-          <span class="h-2 w-2 animate-pulse rounded-full bg-emerald-500" />
+          <Building2 :size="14" class="text-blue-600 dark:text-blue-400" />
           <span class="text-xs font-semibold text-neutral-700 dark:text-neutral-300">{{
             t('landing.badge_proptech')
           }}</span>
@@ -197,78 +209,186 @@ const stakeholderPortals = computed(() => [
 
         <!-- Interactive Quick-Search Bar -->
         <div
-          class="mt-8 w-full max-w-3xl rounded-2xl border border-neutral-200 bg-white p-4 text-left shadow-sm dark:border-neutral-800 dark:bg-neutral-900 sm:p-5"
+          class="mt-8 w-full max-w-3xl rounded-2xl border border-neutral-200 bg-white p-3 text-left shadow-sm transition-all hover:border-neutral-300 dark:border-neutral-800 dark:bg-neutral-900 dark:hover:border-neutral-700 sm:p-4"
         >
           <form
             @submit.prevent="handleQuickSearch"
-            class="flex flex-col items-stretch gap-3 md:flex-row md:items-center"
+            class="flex flex-col items-stretch gap-2.5 md:flex-row md:items-center"
           >
-            <div class="flex flex-1 flex-col gap-1 px-2">
+            <!-- City Input Tile -->
+            <div
+              class="flex flex-1 flex-col gap-1 rounded-xl bg-neutral-50/80 p-2.5 transition-colors focus-within:ring-2 focus-within:ring-blue-500 hover:bg-neutral-100/70 dark:bg-neutral-800/60 dark:hover:bg-neutral-800"
+            >
               <label
-                class="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-neutral-400 dark:text-neutral-500"
+                class="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider transition-colors"
+                :class="
+                  searchCity
+                    ? 'text-blue-600 dark:text-blue-400'
+                    : 'text-neutral-400 dark:text-neutral-500'
+                "
               >
-                <MapPin :size="13" class="text-neutral-400" />
+                <MapPin
+                  :size="13"
+                  :class="searchCity ? 'text-blue-600 dark:text-blue-400' : 'text-neutral-400'"
+                />
                 <span>{{ t('landing.search_city_label') }}</span>
               </label>
               <select
                 v-model="searchCity"
-                class="w-full cursor-pointer border-none bg-transparent p-0 text-sm font-semibold text-neutral-900 focus:outline-none dark:text-white"
+                class="w-full cursor-pointer border-none bg-transparent p-0 text-sm font-semibold text-neutral-900 focus:outline-none dark:bg-neutral-900 dark:text-white"
               >
-                <option value="">{{ t('landing.search_all_cities') }}</option>
-                <option value="Phnom Penh">Phnom Penh</option>
-                <option value="Siem Reap">Siem Reap</option>
-                <option value="Sihanoukville">Sihanoukville</option>
-                <option value="Kampot">Kampot</option>
+                <option
+                  value=""
+                  class="bg-white text-neutral-900 dark:bg-neutral-900 dark:text-white"
+                >
+                  {{ t('landing.search_all_cities') }}
+                </option>
+                <option
+                  value="Phnom Penh"
+                  class="bg-white text-neutral-900 dark:bg-neutral-900 dark:text-white"
+                >
+                  Phnom Penh
+                </option>
+                <option
+                  value="Siem Reap"
+                  class="bg-white text-neutral-900 dark:bg-neutral-900 dark:text-white"
+                >
+                  Siem Reap
+                </option>
+                <option
+                  value="Sihanoukville"
+                  class="bg-white text-neutral-900 dark:bg-neutral-900 dark:text-white"
+                >
+                  Sihanoukville
+                </option>
+                <option
+                  value="Kampot"
+                  class="bg-white text-neutral-900 dark:bg-neutral-900 dark:text-white"
+                >
+                  Kampot
+                </option>
               </select>
             </div>
 
-            <div class="hidden h-8 w-px bg-neutral-200 dark:bg-neutral-800 md:block" />
-
-            <div class="flex flex-1 flex-col gap-1 px-2">
+            <!-- Bedrooms Input Tile -->
+            <div
+              class="flex flex-1 flex-col gap-1 rounded-xl bg-neutral-50/80 p-2.5 transition-colors focus-within:ring-2 focus-within:ring-blue-500 hover:bg-neutral-100/70 dark:bg-neutral-800/60 dark:hover:bg-neutral-800"
+            >
               <label
-                class="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-neutral-400 dark:text-neutral-500"
+                class="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider transition-colors"
+                :class="
+                  searchBeds
+                    ? 'text-blue-600 dark:text-blue-400'
+                    : 'text-neutral-400 dark:text-neutral-500'
+                "
               >
-                <Building :size="13" class="text-neutral-400" />
+                <Building
+                  :size="13"
+                  :class="searchBeds ? 'text-blue-600 dark:text-blue-400' : 'text-neutral-400'"
+                />
                 <span>{{ t('landing.search_beds_label') }}</span>
               </label>
               <select
                 v-model="searchBeds"
-                class="w-full cursor-pointer border-none bg-transparent p-0 text-sm font-semibold text-neutral-900 focus:outline-none dark:text-white"
+                class="w-full cursor-pointer border-none bg-transparent p-0 text-sm font-semibold text-neutral-900 focus:outline-none dark:bg-neutral-900 dark:text-white"
               >
-                <option value="">{{ t('landing.search_all_beds') }}</option>
-                <option value="1">1 Bedroom</option>
-                <option value="2">2 Bedrooms</option>
-                <option value="3">3+ Bedrooms</option>
+                <option
+                  value=""
+                  class="bg-white text-neutral-900 dark:bg-neutral-900 dark:text-white"
+                >
+                  {{ t('landing.search_all_beds') }}
+                </option>
+                <option
+                  value="1"
+                  class="bg-white text-neutral-900 dark:bg-neutral-900 dark:text-white"
+                >
+                  1 Bedroom
+                </option>
+                <option
+                  value="2"
+                  class="bg-white text-neutral-900 dark:bg-neutral-900 dark:text-white"
+                >
+                  2 Bedrooms
+                </option>
+                <option
+                  value="3"
+                  class="bg-white text-neutral-900 dark:bg-neutral-900 dark:text-white"
+                >
+                  3+ Bedrooms
+                </option>
               </select>
             </div>
 
-            <div class="hidden h-8 w-px bg-neutral-200 dark:bg-neutral-800 md:block" />
-
-            <div class="flex flex-1 flex-col gap-1 px-2">
+            <!-- Budget Input Tile -->
+            <div
+              class="flex flex-1 flex-col gap-1 rounded-xl bg-neutral-50/80 p-2.5 transition-colors focus-within:ring-2 focus-within:ring-blue-500 hover:bg-neutral-100/70 dark:bg-neutral-800/60 dark:hover:bg-neutral-800"
+            >
               <label
-                class="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-neutral-400 dark:text-neutral-500"
+                class="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider transition-colors"
+                :class="
+                  searchBudget
+                    ? 'text-blue-600 dark:text-blue-400'
+                    : 'text-neutral-400 dark:text-neutral-500'
+                "
               >
-                <DollarSign :size="13" class="text-neutral-400" />
+                <DollarSign
+                  :size="13"
+                  :class="searchBudget ? 'text-blue-600 dark:text-blue-400' : 'text-neutral-400'"
+                />
                 <span>{{ t('landing.search_budget_label') }}</span>
               </label>
               <select
                 v-model="searchBudget"
-                class="w-full cursor-pointer border-none bg-transparent p-0 text-sm font-semibold text-neutral-900 focus:outline-none dark:text-white"
+                class="w-full cursor-pointer border-none bg-transparent p-0 text-sm font-semibold text-neutral-900 focus:outline-none dark:bg-neutral-900 dark:text-white"
               >
-                <option value="">{{ t('landing.search_all_budgets') }}</option>
-                <option value="under500">&lt; $500 / mo</option>
-                <option value="500-1200">$500 – $1,200 / mo</option>
-                <option value="1200plus">$1,200+ / mo</option>
+                <option
+                  value=""
+                  class="bg-white text-neutral-900 dark:bg-neutral-900 dark:text-white"
+                >
+                  {{ t('landing.search_all_budgets') }}
+                </option>
+                <option
+                  value="under500"
+                  class="bg-white text-neutral-900 dark:bg-neutral-900 dark:text-white"
+                >
+                  &lt; $500 / mo
+                </option>
+                <option
+                  value="500-1200"
+                  class="bg-white text-neutral-900 dark:bg-neutral-900 dark:text-white"
+                >
+                  $500 – $1,200 / mo
+                </option>
+                <option
+                  value="1200plus"
+                  class="bg-white text-neutral-900 dark:bg-neutral-900 dark:text-white"
+                >
+                  $1,200+ / mo
+                </option>
               </select>
             </div>
 
-            <button
-              type="submit"
-              class="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-neutral-900 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-neutral-800 dark:bg-blue-600 dark:hover:bg-blue-700"
-            >
-              <Search :size="16" />
-              <span>{{ t('landing.search_btn') }}</span>
-            </button>
+            <!-- Action Buttons: Search & Clear -->
+            <div class="flex items-center gap-2">
+              <button
+                v-if="hasActiveFilters"
+                type="button"
+                @click="resetQuickSearch"
+                class="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-xs font-semibold text-neutral-600 transition-colors hover:bg-neutral-100 hover:text-neutral-900 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-700 dark:hover:text-white"
+                :title="t('common.reset')"
+              >
+                <RotateCcw :size="14" />
+                <span class="md:hidden lg:inline">{{ t('common.reset') }}</span>
+              </button>
+
+              <button
+                type="submit"
+                class="inline-flex flex-1 shrink-0 items-center justify-center gap-2 rounded-xl bg-neutral-900 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-neutral-800 dark:bg-blue-600 dark:hover:bg-blue-700 md:flex-initial"
+              >
+                <Search :size="16" />
+                <span>{{ t('landing.search_btn') }}</span>
+              </button>
+            </div>
           </form>
 
           <!-- Quick Tags Filter Strip -->
@@ -418,7 +538,7 @@ const stakeholderPortals = computed(() => [
                 loading="lazy"
               />
               <div
-                class="backdrop-blur-xs absolute bottom-2 left-2 rounded-md bg-neutral-950/80 px-2.5 py-1 text-xs font-bold text-white"
+                class="shadow-xs absolute bottom-2 left-2 rounded-md bg-neutral-900 px-2.5 py-1 text-xs font-semibold text-white"
               >
                 {{ t('landing.preview_unit_price') }}
               </div>
@@ -590,7 +710,7 @@ const stakeholderPortals = computed(() => [
             >
             <span
               class="rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-xs font-semibold text-blue-600 dark:border-blue-800/40 dark:bg-blue-950/40 dark:text-blue-400"
-              >VECTOR 2.0</span
+              >Interactive Map</span
             >
           </div>
 
@@ -659,12 +779,12 @@ const stakeholderPortals = computed(() => [
               loading="lazy"
             />
             <div
-              class="backdrop-blur-xs absolute left-2.5 top-2.5 rounded-md bg-neutral-950/80 px-2 py-0.5 text-[11px] font-semibold text-white"
+              class="shadow-xs absolute left-2.5 top-2.5 rounded-md bg-neutral-900 px-2 py-0.5 text-[11px] font-semibold text-white"
             >
               {{ city.count }}
             </div>
             <div
-              class="backdrop-blur-xs absolute bottom-2.5 right-2.5 rounded-md bg-neutral-950/80 px-2 py-0.5 text-[11px] font-semibold text-white"
+              class="shadow-xs absolute bottom-2.5 right-2.5 rounded-md bg-neutral-900 px-2 py-0.5 text-[11px] font-semibold text-white"
             >
               Avg. {{ city.avgRent }}/mo
             </div>

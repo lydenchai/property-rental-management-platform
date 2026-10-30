@@ -635,6 +635,35 @@ onUnmounted(() => {
   height: 7px;
   border-radius: 50%;
   background: var(--accent-emerald, #10b981);
-  box-shadow: 0 0 6px rgba(16, 185, 129, 0.8);
+}
+
+@media (max-width: 640px) {
+  .explorer-header {
+    padding: 8px 10px;
+    gap: 8px;
+  }
+  .explorer-header-left {
+    width: 100%;
+    justify-content: space-between;
+  }
+  .explorer-header-actions {
+    width: 100%;
+    justify-content: space-between;
+    gap: 4px;
+  }
+  .style-switcher {
+    flex: 1;
+    justify-content: space-around;
+  }
+  .style-pill {
+    padding: 2.5px 4px;
+    font-size: 0.65rem;
+    flex: 1;
+    text-align: center;
+  }
+  .header-btn {
+    padding: 4px 6px;
+    font-size: 0.7rem;
+  }
 }
 </style>

@@ -126,7 +126,7 @@ onUnmounted(() => {
           <slot name="header">
             <div
               v-if="title || $slots.header"
-              class="flex shrink-0 items-center justify-between border-b border-neutral-200 px-6 py-4 dark:border-neutral-800"
+              class="flex shrink-0 items-center justify-between border-b border-neutral-200 px-5 py-3.5 sm:px-6 sm:py-4 dark:border-neutral-800"
             >
               <div class="flex min-w-0 items-center gap-3 pr-4">
                 <div
@@ -159,14 +159,14 @@ onUnmounted(() => {
           </slot>
 
           <!-- Scrollable Body -->
-          <div class="flex-1 overflow-y-auto p-6">
+          <div class="flex-1 overflow-y-auto px-5 py-4 sm:px-6 sm:py-5">
             <slot />
           </div>
 
           <!-- Optional Footer -->
           <div
             v-if="$slots.footer"
-            class="shrink-0 border-t border-neutral-200 bg-neutral-50 px-6 py-3 dark:border-neutral-800 dark:bg-neutral-900/50"
+            class="shrink-0 border-t border-neutral-200/90 bg-neutral-50/80 px-5 py-3 sm:px-6 sm:py-3.5 dark:border-neutral-800 dark:bg-neutral-900/60"
           >
             <slot name="footer" />
           </div>

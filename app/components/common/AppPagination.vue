@@ -9,6 +9,7 @@ interface Props {
   pageSizeOptions?: number[];
   showPageSize?: boolean;
   itemName?: string;
+  bordered?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -16,6 +17,7 @@ const props = withDefaults(defineProps<Props>(), {
   pageSizeOptions: () => [5, 10, 20, 50],
   showPageSize: true,
   itemName: 'items',
+  bordered: true,
 });
 
 const emit = defineEmits<{
@@ -88,7 +90,12 @@ function onPageSizeChange(event: Event) {
 <template>
   <div
     v-if="totalItems > 0"
-    class="flex flex-col items-center justify-between gap-3 border-t border-neutral-200 bg-white px-3.5 py-3 text-xs text-neutral-500 dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-400 sm:flex-row sm:px-5"
+    :class="[
+      'flex flex-col items-center justify-between gap-3 text-xs text-neutral-500 dark:text-neutral-400 sm:flex-row',
+      bordered
+        ? 'border-t border-neutral-200 bg-white px-3.5 py-3 dark:border-neutral-800 dark:bg-neutral-900 sm:px-5'
+        : 'bg-transparent px-0 py-2.5',
+    ]"
   >
     <!-- Left: Items Info & Per-Page Selector -->
     <div
@@ -125,10 +132,7 @@ function onPageSizeChange(event: Event) {
     </div>
 
     <!-- Right: Page Navigation Buttons -->
-    <nav
-      class="inline-flex flex-wrap items-center justify-center gap-1"
-      aria-label="Pagination Navigation"
-    >
+    <nav class="inline-flex items-center justify-center gap-1" aria-label="Pagination Navigation">
       <!-- First Page (hidden on mobile) -->
       <button
         type="button"
@@ -146,21 +150,28 @@ function onPageSizeChange(event: Event) {
         type="button"
         :disabled="currentPage <= 1"
         @click="goToPage(currentPage - 1)"
-        class="flex h-7 w-7 cursor-pointer items-center justify-center rounded border border-neutral-200 bg-white text-neutral-600 transition-colors hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-700"
+        class="flex h-8 w-8 cursor-pointer items-center justify-center rounded border border-neutral-200 bg-white text-neutral-600 transition-colors hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-700 sm:h-7 sm:w-7"
         :title="$t('common.prev_page')"
         :aria-label="$t('common.prev_page')"
       >
         <ChevronLeft :size="14" />
       </button>
 
-      <!-- Page Numbers -->
+      <!-- Compact Mobile Page Indicator -->
+      <span
+        class="inline-flex h-8 items-center px-2 text-xs font-semibold text-neutral-700 dark:text-neutral-300 sm:hidden"
+      >
+        {{ currentPage }} / {{ totalPages }}
+      </span>
+
+      <!-- Desktop Page Numbers -->
       <template v-for="(item, idx) in displayedPages" :key="idx">
-        <span v-if="item === '...'" class="px-1 text-neutral-400"> &hellip; </span>
+        <span v-if="item === '...'" class="hidden px-1 text-neutral-400 sm:inline"> &hellip; </span>
         <button
           v-else
           type="button"
           :class="[
-            'flex h-7 min-w-[28px] cursor-pointer items-center justify-center rounded border px-2 text-xs transition-colors',
+            'hidden h-7 min-w-[28px] cursor-pointer items-center justify-center rounded border px-2 text-xs transition-colors sm:flex',
             item === currentPage
               ? 'shadow-xs border-neutral-900 bg-neutral-900 font-semibold text-white dark:border-blue-600 dark:bg-blue-600'
               : 'border border-neutral-200 bg-white font-medium text-neutral-700 hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-700',
@@ -177,7 +188,7 @@ function onPageSizeChange(event: Event) {
         type="button"
         :disabled="currentPage >= totalPages"
         @click="goToPage(currentPage + 1)"
-        class="flex h-7 w-7 cursor-pointer items-center justify-center rounded border border-neutral-200 bg-white text-neutral-600 transition-colors hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-700"
+        class="flex h-8 w-8 cursor-pointer items-center justify-center rounded border border-neutral-200 bg-white text-neutral-600 transition-colors hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-700 sm:h-7 sm:w-7"
         :title="$t('common.next_page')"
         :aria-label="$t('common.next_page')"
       >

@@ -365,12 +365,14 @@ onMounted(() => {
       </div>
 
       <template #footer>
-        <button
-          @click="selectedLog = null"
-          class="rounded-lg border border-neutral-300 bg-white px-4 py-2 text-xs font-medium text-neutral-700 transition-colors hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-200 dark:hover:bg-neutral-700"
-        >
-          {{ t('common.close') }}
-        </button>
+        <div class="flex justify-end">
+          <button
+            @click="selectedLog = null"
+            class="btn-secondary"
+          >
+            {{ t('common.close') }}
+          </button>
+        </div>
       </template>
     </AppModal>
   </div>

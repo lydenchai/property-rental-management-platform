@@ -184,7 +184,7 @@ watch(
     <!-- Sidebar Drawer / Static Panel -->
     <aside
       :class="[
-        'fixed inset-y-0 left-0 z-50 flex h-screen max-h-screen w-64 shrink-0 flex-col overflow-hidden border-r border-neutral-200 bg-white shadow-2xl transition-transform duration-200 ease-out dark:border-neutral-800 dark:bg-neutral-950 md:static md:shadow-none',
+        'fixed inset-y-0 left-0 z-50 flex h-screen max-h-screen w-64 max-w-[80vw] shrink-0 flex-col overflow-hidden border-r border-neutral-200 bg-white shadow-2xl transition-transform duration-200 ease-out dark:border-neutral-800 dark:bg-neutral-950 sm:w-64 md:static md:shadow-none',
         modelValue ? 'translate-x-0' : '-translate-x-full md:translate-x-0',
       ]"
     >
@@ -228,7 +228,7 @@ watch(
             v-for="item in section.items"
             :key="item.to + item.name"
             :to="item.to"
-            class="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors"
+            class="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors sm:py-2"
             :class="
               isLinkActive(item)
                 ? 'shadow-xs bg-neutral-900 font-semibold text-white dark:bg-blue-600 dark:text-white'

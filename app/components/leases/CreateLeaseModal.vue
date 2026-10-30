@@ -111,10 +111,10 @@ function handleSubmit() {
 
 <template>
   <AppModal :is-open="isOpen" :title="t('leases.new_lease')" size="xl" @close="emit('close')">
-    <form @submit.prevent="handleSubmit" class="space-y-4 p-6">
+    <form id="create-lease-form" @submit.prevent="handleSubmit" class="space-y-4">
       <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <!-- Unit Selection -->
-        <div class="space-y-1.5">
+        <div class="space-y-2">
           <label class="block text-xs font-medium text-neutral-700 dark:text-neutral-300">
             {{ t('leases.unit_select_label') }} *
           </label>
@@ -141,7 +141,7 @@ function handleSubmit() {
         </div>
 
         <!-- Tenant Selection -->
-        <div class="space-y-1.5">
+        <div class="space-y-2">
           <div class="flex items-center justify-between">
             <label class="block text-xs font-medium text-neutral-700 dark:text-neutral-300">
               {{ t('leases.tenant_select_label') }} *
@@ -183,7 +183,7 @@ function handleSubmit() {
       </div>
 
       <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <div class="space-y-1.5">
+        <div class="space-y-2">
           <label class="block text-xs font-medium text-neutral-700 dark:text-neutral-300">
             {{ t('leases.start_date') }} *
           </label>
@@ -194,7 +194,7 @@ function handleSubmit() {
             class="focus:outline-hidden w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 focus:ring-2 focus:ring-primary-500 dark:border-neutral-700 dark:bg-neutral-800 dark:text-white"
           />
         </div>
-        <div class="space-y-1.5">
+        <div class="space-y-2">
           <label class="block text-xs font-medium text-neutral-700 dark:text-neutral-300">
             {{ t('leases.end_date') }} *
           </label>
@@ -208,7 +208,7 @@ function handleSubmit() {
       </div>
 
       <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <div class="space-y-1.5">
+        <div class="space-y-2">
           <label class="block text-xs font-medium text-neutral-700 dark:text-neutral-300">
             {{ t('leases.monthly_rent') }} ($) *
           </label>
@@ -221,7 +221,7 @@ function handleSubmit() {
             class="focus:outline-hidden w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 focus:ring-2 focus:ring-primary-500 dark:border-neutral-700 dark:bg-neutral-800 dark:text-white"
           />
         </div>
-        <div class="space-y-1.5">
+        <div class="space-y-2">
           <label class="block text-xs font-medium text-neutral-700 dark:text-neutral-300">
             {{ t('leases.deposit') }} ($) *
           </label>
@@ -234,7 +234,7 @@ function handleSubmit() {
             class="focus:outline-hidden w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 focus:ring-2 focus:ring-primary-500 dark:border-neutral-700 dark:bg-neutral-800 dark:text-white"
           />
         </div>
-        <div class="space-y-1.5">
+        <div class="space-y-2">
           <label class="block text-xs font-medium text-neutral-700 dark:text-neutral-300">
             {{ t('leases.due_day') }} *
           </label>
@@ -249,7 +249,7 @@ function handleSubmit() {
         </div>
       </div>
 
-      <div class="space-y-1.5">
+      <div class="space-y-2">
         <label class="block text-xs font-medium text-neutral-700 dark:text-neutral-300">
           {{ t('leases.terms_obligations') }} *
         </label>
@@ -260,19 +260,22 @@ function handleSubmit() {
           class="focus:outline-hidden w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 focus:ring-2 focus:ring-primary-500 dark:border-neutral-700 dark:bg-neutral-800 dark:text-white"
         ></textarea>
       </div>
+    </form>
 
-      <div class="flex items-center justify-end gap-3 pt-2">
+    <template #footer>
+      <div class="flex items-center justify-end gap-2.5">
         <button
           type="button"
           @click="emit('close')"
-          class="cursor-pointer rounded-lg border border-neutral-300 bg-white px-4 py-2 text-xs font-medium text-neutral-700 transition-colors hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-200 dark:hover:bg-neutral-700"
+          class="btn-secondary"
         >
           {{ t('common.cancel') }}
         </button>
         <button
           type="submit"
+          form="create-lease-form"
           :disabled="isCreating"
-          class="shadow-xs inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-primary-600 px-4 py-2 text-xs font-medium text-white transition-colors hover:bg-primary-700 disabled:opacity-50"
+          class="btn-primary"
         >
           <Plus :size="14" />
           <span>{{
@@ -280,6 +283,6 @@ function handleSubmit() {
           }}</span>
         </button>
       </div>
-    </form>
+    </template>
   </AppModal>
 </template>

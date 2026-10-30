@@ -329,7 +329,7 @@ onMounted(() => {
             v-if="slotProps?.item && slotProps.item.role !== 'ADMIN'"
             @click="userToToggle = slotProps.item"
             :class="[
-              'inline-flex cursor-pointer items-center gap-1 rounded-lg border px-2.5 py-1 text-xs font-medium transition-colors',
+              'inline-flex h-8 shrink-0 cursor-pointer items-center gap-1.5 whitespace-nowrap rounded-lg border px-3 text-xs font-semibold transition-colors',
               slotProps.item.status === 'ACTIVE'
                 ? 'border-rose-200 text-rose-600 hover:bg-rose-50 dark:border-rose-800 dark:text-rose-400 dark:hover:bg-rose-950/30'
                 : 'border-emerald-200 text-emerald-600 hover:bg-emerald-50 dark:border-emerald-800 dark:text-emerald-400 dark:hover:bg-emerald-950/30',
@@ -379,23 +379,18 @@ onMounted(() => {
       </div>
 
       <template #footer>
-        <div v-if="userToToggle" class="flex items-center justify-end gap-3">
+        <div v-if="userToToggle" class="flex items-center justify-end gap-2.5">
           <button
             type="button"
             @click="userToToggle = null"
-            class="rounded-lg border border-neutral-300 bg-white px-4 py-2 text-xs font-medium text-neutral-700 transition-colors hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-200 dark:hover:bg-neutral-700"
+            class="btn-secondary"
           >
             {{ t('common.cancel') }}
           </button>
           <button
             @click="executeToggleStatus"
             :disabled="isToggling"
-            :class="[
-              'shadow-xs cursor-pointer rounded-lg px-4 py-2 text-xs font-medium text-white transition-colors disabled:opacity-50',
-              userToToggle.status === 'ACTIVE'
-                ? 'bg-rose-600 hover:bg-rose-700'
-                : 'bg-emerald-600 hover:bg-emerald-700',
-            ]"
+            :class="userToToggle.status === 'ACTIVE' ? 'btn-danger' : 'btn-primary'"
           >
             <span>{{
               isToggling

@@ -19,6 +19,7 @@ import PropertyMap from '../../components/common/PropertyMap.vue';
 import AppDataTable from '../../components/common/AppDataTable.vue';
 import UnitGalleryModal, { type UnitDetail } from '../../components/units/UnitGalleryModal.vue';
 import ApplyUnitModal, { type ApplyFormData } from '../../components/units/ApplyUnitModal.vue';
+import PropertyDetailSkeleton from '../../components/properties/PropertyDetailSkeleton.vue';
 import { useAuth } from '../../composables/useAuth';
 import type { ApiResponse } from '../../../shared/types/api';
 import type { TableColumn } from '~~/shared/types';
@@ -266,15 +267,8 @@ onMounted(() => {
       {{ errorMessage }}
     </div>
 
-    <!-- Loading State -->
-    <div v-if="isLoading" class="flex flex-col items-center gap-3 py-20 text-center">
-      <div
-        class="h-8 w-8 animate-spin rounded-full border-2 border-neutral-300 border-t-blue-600"
-      />
-      <p class="text-sm text-neutral-500 dark:text-neutral-400">
-        {{ t('properties.loading_property_details') }}
-      </p>
-    </div>
+    <!-- Loading Skeleton State -->
+    <PropertyDetailSkeleton v-if="isLoading" />
 
     <div v-else-if="property" class="flex flex-col gap-8">
       <!-- Property Header & Overview -->

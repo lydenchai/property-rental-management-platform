@@ -97,13 +97,44 @@ const paginatedLeases = computed(() => {
 });
 
 const columns = computed<TableColumn[]>(() => [
-  { key: 'unit', label: t('leases.col_unit_property') },
-  { key: 'parties', label: t('leases.col_tenant') },
-  { key: 'period', label: t('leases.col_period') },
-  { key: 'rent', label: t('leases.col_rent') },
-  { key: 'signatures', label: t('leases.col_signatures') },
-  { key: 'status', label: t('leases.col_status') },
-  { key: 'actions', label: t('leases.col_actions'), align: 'right' },
+  { key: 'unit', label: t('leases.col_unit_property'), headerClass: 'whitespace-nowrap' },
+  {
+    key: 'parties',
+    label: t('leases.col_tenant'),
+    headerClass: 'whitespace-nowrap',
+    class: 'whitespace-nowrap',
+  },
+  {
+    key: 'period',
+    label: t('leases.col_period'),
+    headerClass: 'whitespace-nowrap',
+    class: 'whitespace-nowrap',
+  },
+  {
+    key: 'rent',
+    label: t('leases.col_rent'),
+    headerClass: 'whitespace-nowrap',
+    class: 'whitespace-nowrap',
+  },
+  {
+    key: 'signatures',
+    label: t('leases.col_signatures'),
+    headerClass: 'whitespace-nowrap',
+    class: 'whitespace-nowrap',
+  },
+  {
+    key: 'status',
+    label: t('leases.col_status'),
+    headerClass: 'whitespace-nowrap',
+    class: 'whitespace-nowrap',
+  },
+  {
+    key: 'actions',
+    label: t('leases.col_actions'),
+    align: 'right',
+    headerClass: 'whitespace-nowrap text-right',
+    class: 'whitespace-nowrap text-right',
+  },
 ]);
 
 watch([activeTab, searchQuery], () => {
@@ -309,7 +340,7 @@ onMounted(() => {
         :columns="columns"
         :items="paginatedLeases"
         :is-loading="isLoading"
-        min-width="min-w-[750px]"
+        min-width="min-w-[1000px]"
       >
         <template #cell-unit="slotProps">
           <div class="flex flex-col">
@@ -434,11 +465,11 @@ onMounted(() => {
         </template>
 
         <template #cell-actions="slotProps">
-          <div class="inline-flex items-center justify-end gap-1.5">
+          <div class="inline-flex items-center justify-end gap-1.5 whitespace-nowrap">
             <button
               v-if="slotProps?.item && userNeedsToSign(slotProps.item)"
               @click="slotProps?.item && openSignModal(slotProps.item)"
-              class="shadow-xs inline-flex items-center gap-1 rounded-lg bg-primary-600 px-2.5 py-1 text-xs font-medium text-white transition-colors hover:bg-primary-700"
+              class="shadow-xs inline-flex h-8 shrink-0 cursor-pointer items-center gap-1.5 whitespace-nowrap rounded-lg bg-primary-600 px-3 text-xs font-semibold text-white transition-colors hover:bg-primary-700"
             >
               <FileSignature :size="13" />
               <span>{{ t('leases.sign_agreement') }}</span>
@@ -446,7 +477,7 @@ onMounted(() => {
             <button
               v-if="slotProps?.item"
               @click="viewLeaseModal = slotProps.item"
-              class="inline-flex items-center gap-1 rounded-lg border border-neutral-300 px-2.5 py-1 text-xs font-medium text-neutral-700 transition-colors hover:bg-neutral-50 dark:border-neutral-700 dark:text-neutral-200 dark:hover:bg-neutral-800"
+              class="inline-flex h-8 shrink-0 cursor-pointer items-center gap-1.5 whitespace-nowrap rounded-lg border border-neutral-300 bg-white px-3 text-xs font-semibold text-neutral-700 transition-colors hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-200 dark:hover:bg-neutral-700"
               :title="t('leases.view_terms')"
             >
               <FileText :size="13" />
@@ -457,7 +488,7 @@ onMounted(() => {
                 slotProps?.item && (isLandlord || isAdmin) && slotProps.item.status === 'ACTIVE'
               "
               @click="leaseToTerminate = slotProps.item"
-              class="inline-flex items-center gap-1 rounded-lg border border-rose-200 px-2.5 py-1 text-xs font-medium text-rose-600 transition-colors hover:bg-rose-50 dark:border-rose-800 dark:text-rose-400 dark:hover:bg-rose-950/30"
+              class="inline-flex h-8 shrink-0 cursor-pointer items-center gap-1.5 whitespace-nowrap rounded-lg border border-rose-200 px-3 text-xs font-semibold text-rose-600 transition-colors hover:bg-rose-50 dark:border-rose-800 dark:text-rose-400 dark:hover:bg-rose-950/30"
               :title="t('leases.terminate')"
             >
               <Slash :size="13" />

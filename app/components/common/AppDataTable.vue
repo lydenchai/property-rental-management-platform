@@ -159,7 +159,7 @@ function getCellSlotName(colKey: string): string | null {
               :key="col.key"
               scope="col"
               :class="[
-                'px-4 py-3',
+                'whitespace-nowrap px-4 py-3',
                 getAlignmentClass(col.align),
                 col.headerClass || col.class || '',
                 col.sortable

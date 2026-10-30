@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { AlertTriangle } from '@lucide/vue';
 import type { LeaseItem } from '~~/shared/types';
 import AppModal from '../common/AppModal.vue';
 
@@ -26,25 +27,36 @@ function handleConfirm() {
   <AppModal
     :is-open="!!lease"
     :title="t('leases.terminate_modal_title')"
+    :icon="AlertTriangle"
     size="md"
     @close="emit('close')"
   >
-    <div v-if="lease" class="space-y-4 p-6 text-sm text-neutral-700 dark:text-neutral-300">
-      <p>
-        {{
-          t('leases.terminate_confirm_question', {
-            unit: lease.unit?.unitNumber || '',
-          })
-        }}
-      </p>
-      <p class="text-xs text-neutral-500 dark:text-neutral-400">
-        {{ t('leases.terminate_status_note') }}
-      </p>
-      <div class="flex items-center justify-end gap-3 pt-2">
+    <div v-if="lease" class="space-y-3">
+      <div
+        class="flex items-start gap-3 rounded-lg border border-amber-100 bg-amber-50/60 p-3.5 dark:border-amber-900/30 dark:bg-amber-950/20"
+      >
+        <AlertTriangle :size="18" class="mt-0.5 shrink-0 text-amber-600 dark:text-amber-400" />
+        <div class="space-y-1 text-xs">
+          <p class="font-semibold text-neutral-900 dark:text-neutral-100">
+            {{
+              t('leases.terminate_confirm_question', {
+                unit: lease.unit?.unitNumber || '',
+              })
+            }}
+          </p>
+          <p class="text-neutral-600 dark:text-neutral-400">
+            {{ t('leases.terminate_status_note') }}
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <template #footer>
+      <div v-if="lease" class="flex items-center justify-end gap-2.5">
         <button
           type="button"
           @click="emit('close')"
-          class="cursor-pointer rounded-lg border border-neutral-300 bg-white px-4 py-2 text-xs font-medium text-neutral-700 transition-colors hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-200 dark:hover:bg-neutral-700"
+          class="btn-secondary"
         >
           {{ t('common.cancel') }}
         </button>
@@ -52,13 +64,14 @@ function handleConfirm() {
           type="button"
           @click="handleConfirm"
           :disabled="isTerminating"
-          class="shadow-xs cursor-pointer rounded-lg bg-rose-600 px-4 py-2 text-xs font-medium text-white transition-colors hover:bg-rose-700 disabled:opacity-50"
+          class="btn-danger"
         >
+          <AlertTriangle :size="14" />
           <span>{{
             isTerminating ? t('leases.terminating_btn') : t('leases.confirm_termination_btn')
           }}</span>
         </button>
       </div>
-    </div>
+    </template>
   </AppModal>
 </template>

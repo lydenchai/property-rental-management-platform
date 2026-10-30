@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Printer, CheckCircle2 } from '@lucide/vue';
+import { Printer, CheckCircle2, X } from '@lucide/vue';
 import type { PaymentReceipt } from '~~/shared/types';
 import AppModal from '../common/AppModal.vue';
 
@@ -31,7 +31,7 @@ function printReceipt() {
   >
     <template #header>
       <div
-        class="flex items-center justify-between border-b border-neutral-200 px-6 py-4 dark:border-neutral-800 print:hidden"
+        class="flex items-center justify-between border-b border-neutral-200 px-5 py-3.5 sm:px-6 sm:py-4 dark:border-neutral-800 print:hidden"
       >
         <h3 class="text-base font-semibold text-neutral-900 dark:text-white">
           {{ t('invoices.receipt_header_title') }}
@@ -49,22 +49,15 @@ function printReceipt() {
             type="button"
             @click="emit('close')"
             class="cursor-pointer rounded-lg p-1 text-neutral-400 transition-colors hover:bg-neutral-100 hover:text-neutral-700 dark:hover:bg-neutral-800 dark:hover:text-neutral-200"
+            aria-label="Close"
           >
-            <span class="sr-only">{{ t('common.cancel') }}</span>
-            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
+            <X :size="18" />
           </button>
         </div>
       </div>
     </template>
 
-    <div v-if="receipt" class="space-y-5 p-6 print:p-0">
+    <div v-if="receipt" class="space-y-4 print:p-0 print:space-y-3">
       <div class="flex items-start justify-between">
         <div>
           <div class="text-xl font-bold tracking-tight text-neutral-900 dark:text-white">
@@ -207,7 +200,7 @@ function printReceipt() {
         <button
           type="button"
           @click="emit('close')"
-          class="rounded-lg border border-neutral-300 bg-white px-4 py-2 text-xs font-medium text-neutral-700 transition-colors hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-200 dark:hover:bg-neutral-700"
+          class="btn-secondary"
         >
           {{ t('common.cancel') }}
         </button>

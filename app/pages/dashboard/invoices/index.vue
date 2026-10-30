@@ -92,14 +92,50 @@ const paginatedInvoices = computed(() => {
 });
 
 const columns = computed<TableColumn[]>(() => [
-  { key: 'invoiceNumber', label: t('invoices.col_invoice_num') },
-  { key: 'propertyUnit', label: t('invoices.col_property_unit') },
-  { key: 'tenant', label: t('invoices.col_tenant') },
-  { key: 'dueDate', label: t('invoices.col_due_date') },
-  { key: 'amountDue', label: t('invoices.col_amount') },
-  { key: 'amountPaid', label: t('invoices.col_paid') },
-  { key: 'status', label: t('invoices.col_status') },
-  { key: 'actions', label: t('invoices.col_actions'), align: 'right' },
+  {
+    key: 'invoiceNumber',
+    label: t('invoices.col_invoice_num'),
+    headerClass: 'whitespace-nowrap',
+    class: 'whitespace-nowrap',
+  },
+  { key: 'propertyUnit', label: t('invoices.col_property_unit'), headerClass: 'whitespace-nowrap' },
+  {
+    key: 'tenant',
+    label: t('invoices.col_tenant'),
+    headerClass: 'whitespace-nowrap',
+    class: 'whitespace-nowrap',
+  },
+  {
+    key: 'dueDate',
+    label: t('invoices.col_due_date'),
+    headerClass: 'whitespace-nowrap',
+    class: 'whitespace-nowrap',
+  },
+  {
+    key: 'amountDue',
+    label: t('invoices.col_amount'),
+    headerClass: 'whitespace-nowrap',
+    class: 'whitespace-nowrap',
+  },
+  {
+    key: 'amountPaid',
+    label: t('invoices.col_paid'),
+    headerClass: 'whitespace-nowrap',
+    class: 'whitespace-nowrap',
+  },
+  {
+    key: 'status',
+    label: t('invoices.col_status'),
+    headerClass: 'whitespace-nowrap',
+    class: 'whitespace-nowrap',
+  },
+  {
+    key: 'actions',
+    label: t('invoices.col_actions'),
+    align: 'right',
+    headerClass: 'whitespace-nowrap text-right',
+    class: 'whitespace-nowrap text-right',
+  },
 ]);
 
 watch([activeTab, searchQuery], () => {
@@ -395,7 +431,7 @@ onMounted(async () => {
         :columns="columns"
         :items="paginatedInvoices"
         :is-loading="isLoading"
-        min-width="min-w-[850px]"
+        min-width="min-w-[1050px]"
       >
         <template #cell-invoiceNumber="slotProps">
           <div class="flex flex-col">
@@ -501,11 +537,11 @@ onMounted(async () => {
         </template>
 
         <template #cell-actions="slotProps">
-          <div class="inline-flex items-center justify-end gap-1.5">
+          <div class="inline-flex items-center justify-end gap-1.5 whitespace-nowrap">
             <button
               v-if="slotProps?.item?.status !== 'PAID' && slotProps?.item?.status !== 'CANCELLED'"
               @click="slotProps?.item && openPayModal(slotProps.item)"
-              class="shadow-xs inline-flex cursor-pointer items-center gap-1 rounded-lg bg-primary-600 px-2.5 py-1 text-xs font-medium text-white transition-colors hover:bg-primary-700"
+              class="shadow-xs inline-flex h-8 shrink-0 cursor-pointer items-center gap-1.5 whitespace-nowrap rounded-lg bg-primary-600 px-3 text-xs font-semibold text-white transition-colors hover:bg-primary-700"
             >
               <CreditCard :size="13" />
               <span>{{ isTenant ? t('invoices.pay_now') : t('invoices.record_payment') }}</span>
@@ -516,7 +552,7 @@ onMounted(async () => {
               @click="
                 slotProps?.item?.payments?.[0]?.id && viewReceipt(slotProps.item.payments[0]!.id)
               "
-              class="inline-flex cursor-pointer items-center gap-1 rounded-lg border border-neutral-300 px-2.5 py-1 text-xs font-medium text-neutral-700 transition-colors hover:bg-neutral-50 dark:border-neutral-700 dark:text-neutral-200 dark:hover:bg-neutral-800"
+              class="inline-flex h-8 shrink-0 cursor-pointer items-center gap-1.5 whitespace-nowrap rounded-lg border border-neutral-300 bg-white px-3 text-xs font-semibold text-neutral-700 transition-colors hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-200 dark:hover:bg-neutral-700"
               :title="t('invoices.view_receipt')"
             >
               <Receipt :size="13" />

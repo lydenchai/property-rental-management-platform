@@ -400,12 +400,12 @@ onMounted(() => {
           <!-- Landlord / Admin Review Actions -->
           <div
             v-else-if="isLandlord || isAdmin"
-            class="inline-flex items-center justify-end gap-1.5"
+            class="inline-flex items-center justify-end gap-1.5 whitespace-nowrap"
           >
             <template v-if="slotProps?.item?.status === 'PENDING'">
               <button
                 @click="slotProps?.item && openReviewModal(slotProps.item, 'APPROVED')"
-                class="shadow-xs inline-flex cursor-pointer items-center gap-1 rounded-lg bg-emerald-600 px-2.5 py-1 text-xs font-medium text-white transition-colors hover:bg-emerald-700"
+                class="shadow-xs inline-flex h-8 shrink-0 cursor-pointer items-center gap-1.5 whitespace-nowrap rounded-lg bg-emerald-600 px-3 text-xs font-semibold text-white transition-colors hover:bg-emerald-700"
                 :title="t('applications.approve')"
               >
                 <CheckCircle2 :size="13" />
@@ -413,7 +413,7 @@ onMounted(() => {
               </button>
               <button
                 @click="slotProps?.item && openReviewModal(slotProps.item, 'REJECTED')"
-                class="inline-flex cursor-pointer items-center gap-1 rounded-lg border border-rose-200 px-2.5 py-1 text-xs font-medium text-rose-600 transition-colors hover:bg-rose-50 dark:border-rose-800 dark:text-rose-400 dark:hover:bg-rose-950/30"
+                class="inline-flex h-8 shrink-0 cursor-pointer items-center gap-1.5 whitespace-nowrap rounded-lg border border-rose-200 px-3 text-xs font-semibold text-rose-600 transition-colors hover:bg-rose-50 dark:border-rose-800 dark:text-rose-400 dark:hover:bg-rose-950/30"
                 :title="t('applications.reject')"
               >
                 <XCircle :size="13" />

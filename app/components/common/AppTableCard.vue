@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Search, FileText, X } from '@lucide/vue';
+import { Search, FileText, X, ArrowLeftRight } from '@lucide/vue';
 import AppPagination from './AppPagination.vue';
 
 interface Props {
@@ -144,6 +144,16 @@ function onSearchInput(event: Event) {
 
     <!-- Table Container (Horizontal Scrolling wrapper) -->
     <div v-else class="flex min-w-0 flex-col">
+      <!-- Mobile scroll hint -->
+      <div
+        class="flex items-center justify-between border-b border-neutral-100 bg-neutral-50/70 px-3 py-1 text-[11px] text-neutral-500 dark:border-neutral-800 dark:bg-neutral-800/40 dark:text-neutral-400 sm:hidden"
+      >
+        <span class="inline-flex items-center gap-1.5 font-medium">
+          <ArrowLeftRight :size="12" class="text-neutral-400" />
+          <span>Swipe table to view all columns</span>
+        </span>
+      </div>
+
       <div class="overflow-x-auto scroll-smooth">
         <slot :item="{}" />
       </div>

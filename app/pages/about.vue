@@ -156,7 +156,7 @@ const cambodiaHubs = [
         </div>
 
         <div
-          class="shadow-xs flex flex-col gap-3 rounded-xl border border-emerald-500/30 bg-white p-6 dark:bg-neutral-900 sm:p-8"
+          class="shadow-xs flex flex-col gap-3 rounded-xl border border-neutral-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-900 sm:p-8"
         >
           <span
             class="text-xs font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400"

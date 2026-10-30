@@ -24,12 +24,12 @@ watch(
   >
     <!-- Navbar -->
     <header
-      class="sticky top-0 z-50 border-b border-neutral-200 bg-white/95 backdrop-blur-sm transition-colors duration-200 dark:border-neutral-800 dark:bg-neutral-950/95"
+      class="sticky top-0 z-50 border-b border-neutral-200 bg-white transition-colors duration-200 dark:border-neutral-800 dark:bg-neutral-950"
     >
       <div class="mx-auto flex max-w-7xl items-center justify-between gap-2 px-4 py-3 sm:px-6">
         <NuxtLink
           to="/"
-          class="flex items-center gap-2.5 text-xl font-bold text-neutral-900 transition-opacity hover:opacity-90 dark:text-white"
+          class="brand-name flex items-center gap-2.5 text-xl font-bold text-neutral-900 transition-opacity hover:opacity-90 dark:text-white"
         >
           <div
             class="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-neutral-900 text-white shadow-sm dark:bg-blue-600"

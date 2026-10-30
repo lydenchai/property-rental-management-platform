@@ -79,7 +79,7 @@ function handleSubmit() {
     size="lg"
     @close="emit('close')"
   >
-    <div v-if="unit" class="p-6">
+    <div v-if="unit">
       <div v-if="successMessage" class="alert-success">
         <div class="flex flex-col gap-3">
           <div class="flex items-start gap-2">
@@ -97,7 +97,7 @@ function handleSubmit() {
         </div>
       </div>
 
-      <form v-else @submit.prevent="handleSubmit" class="flex flex-col gap-4">
+      <form v-else id="apply-unit-form" @submit.prevent="handleSubmit" class="flex flex-col gap-4">
         <div v-if="errorMessage" class="alert-error">
           <AlertCircle :size="15" />
           <span>{{ errorMessage }}</span>
@@ -132,7 +132,7 @@ function handleSubmit() {
         </div>
 
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div class="flex flex-col gap-1.5">
+          <div class="flex flex-col gap-2">
             <label
               class="text-xs font-semibold uppercase tracking-wider text-neutral-900 dark:text-neutral-100"
               >{{ t('properties.desired_move_in') }}</label
@@ -140,7 +140,7 @@ function handleSubmit() {
             <input v-model="form.desiredMoveInDate" type="date" required class="input-field" />
           </div>
 
-          <div class="flex flex-col gap-1.5">
+          <div class="flex flex-col gap-2">
             <label
               class="text-xs font-semibold uppercase tracking-wider text-neutral-900 dark:text-neutral-100"
               >{{ t('properties.proposed_monthly_rent') }}</label
@@ -155,7 +155,7 @@ function handleSubmit() {
           </div>
         </div>
 
-        <div class="flex flex-col gap-1.5">
+        <div class="flex flex-col gap-2">
           <div class="flex items-center justify-between">
             <label
               class="text-xs font-semibold uppercase tracking-wider text-neutral-900 dark:text-neutral-100"
@@ -177,7 +177,7 @@ function handleSubmit() {
           ></textarea>
         </div>
 
-        <div class="flex flex-col gap-1.5">
+        <div class="flex flex-col gap-2">
           <label
             class="text-xs font-semibold uppercase tracking-wider text-neutral-900 dark:text-neutral-100"
             >{{ t('properties.additional_notes_optional') }}</label
@@ -189,23 +189,23 @@ function handleSubmit() {
             class="input-field"
           />
         </div>
-
-        <div
-          class="flex items-center justify-end gap-2 border-t border-neutral-100 pt-2 dark:border-neutral-800"
-        >
-          <button type="button" @click="emit('close')" class="btn-secondary">
-            {{ t('common.cancel') }}
-          </button>
-          <button type="submit" :disabled="isSubmitting" class="btn-primary">
-            <FileSignature :size="14" />
-            <span>{{
-              isSubmitting
-                ? t('properties.submitting_application')
-                : t('properties.submit_application')
-            }}</span>
-          </button>
-        </div>
       </form>
     </div>
+
+    <template #footer>
+      <div v-if="unit && !successMessage" class="flex items-center justify-end gap-2.5">
+        <button type="button" @click="emit('close')" class="btn-secondary">
+          {{ t('common.cancel') }}
+        </button>
+        <button type="submit" form="apply-unit-form" :disabled="isSubmitting" class="btn-primary">
+          <FileSignature :size="14" />
+          <span>{{
+            isSubmitting
+              ? t('properties.submitting_application')
+              : t('properties.submit_application')
+          }}</span>
+        </button>
+      </div>
+    </template>
   </AppModal>
 </template>

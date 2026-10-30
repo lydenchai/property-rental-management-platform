@@ -3,11 +3,11 @@ import { ref } from 'vue';
 import { Plus } from '@lucide/vue';
 import AppModal from '../common/AppModal.vue';
 
-export interface CreateMaintenanceFormData {
+export interface MaintenanceFormData {
   unitId: string;
-  priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'EMERGENCY';
   title: string;
   description: string;
+  priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'EMERGENCY';
 }
 
 interface Props {
@@ -19,16 +19,16 @@ defineProps<Props>();
 
 const emit = defineEmits<{
   (e: 'close'): void;
-  (e: 'submit', form: CreateMaintenanceFormData): void;
+  (e: 'submit', form: MaintenanceFormData): void;
 }>();
 
 const { t } = useI18n();
 
-const form = ref<CreateMaintenanceFormData>({
+const form = ref<MaintenanceFormData>({
   unitId: '',
-  priority: 'MEDIUM',
   title: '',
   description: '',
+  priority: 'MEDIUM',
 });
 
 function handleSubmit() {
@@ -43,9 +43,9 @@ function handleSubmit() {
     size="lg"
     @close="emit('close')"
   >
-    <form @submit.prevent="handleSubmit" class="space-y-4 p-6">
+    <form id="create-maintenance-form" @submit.prevent="handleSubmit" class="space-y-4">
       <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <div class="space-y-1.5">
+        <div class="space-y-2">
           <label class="block text-xs font-medium text-neutral-700 dark:text-neutral-300">
             {{ t('maintenance.unit_select_label') }}
           </label>
@@ -57,7 +57,7 @@ function handleSubmit() {
             :placeholder="t('maintenance.unit_select_placeholder')"
           />
         </div>
-        <div class="space-y-1.5">
+        <div class="space-y-2">
           <label class="block text-xs font-medium text-neutral-700 dark:text-neutral-300">
             {{ t('maintenance.select_priority') }}
           </label>
@@ -74,7 +74,7 @@ function handleSubmit() {
         </div>
       </div>
 
-      <div class="space-y-1.5">
+      <div class="space-y-2">
         <label class="block text-xs font-medium text-neutral-700 dark:text-neutral-300">
           {{ t('maintenance.issue_title') }}
         </label>
@@ -87,7 +87,7 @@ function handleSubmit() {
         />
       </div>
 
-      <div class="space-y-1.5">
+      <div class="space-y-2">
         <label class="block text-xs font-medium text-neutral-700 dark:text-neutral-300">
           {{ t('maintenance.issue_desc') }}
         </label>
@@ -99,19 +99,22 @@ function handleSubmit() {
           placeholder="Please provide precise details regarding where the issue is located, when it started, and any symptoms observed..."
         ></textarea>
       </div>
+    </form>
 
-      <div class="flex items-center justify-end gap-3 pt-2">
+    <template #footer>
+      <div class="flex items-center justify-end gap-2.5">
         <button
           type="button"
           @click="emit('close')"
-          class="cursor-pointer rounded-lg border border-neutral-300 bg-white px-4 py-2 text-xs font-medium text-neutral-700 transition-colors hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-200 dark:hover:bg-neutral-700"
+          class="btn-secondary"
         >
           {{ t('common.cancel') }}
         </button>
         <button
           type="submit"
+          form="create-maintenance-form"
           :disabled="isSubmitting"
-          class="shadow-xs inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-primary-600 px-4 py-2 text-xs font-medium text-white transition-colors hover:bg-primary-700 disabled:opacity-50"
+          class="btn-primary"
         >
           <Plus :size="14" />
           <span>{{
@@ -119,6 +122,6 @@ function handleSubmit() {
           }}</span>
         </button>
       </div>
-    </form>
+    </template>
   </AppModal>
 </template>

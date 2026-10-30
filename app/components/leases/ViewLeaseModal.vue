@@ -22,7 +22,7 @@ const { t } = useI18n();
     size="lg"
     @close="emit('close')"
   >
-    <div v-if="lease" class="space-y-4 p-6">
+    <div v-if="lease" class="space-y-4">
       <div
         class="space-y-1.5 rounded-lg border border-neutral-200 bg-neutral-50 p-4 text-xs text-neutral-700 dark:border-neutral-800 dark:bg-neutral-800/50 dark:text-neutral-300"
       >
@@ -80,16 +80,18 @@ const { t } = useI18n();
           class="max-h-56 overflow-y-auto whitespace-pre-wrap font-mono text-xs leading-relaxed text-neutral-700 dark:text-neutral-300"
           >{{ lease.termsAndConditions }}</pre>
       </div>
+    </div>
 
-      <div class="flex justify-end pt-2">
+    <template #footer>
+      <div class="flex justify-end">
         <button
           type="button"
           @click="emit('close')"
-          class="cursor-pointer rounded-lg border border-neutral-300 bg-white px-4 py-2 text-xs font-medium text-neutral-700 transition-colors hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-200 dark:hover:bg-neutral-700"
+          class="btn-secondary"
         >
           {{ t('leases.close_btn') }}
         </button>
       </div>
-    </div>
+    </template>
   </AppModal>
 </template>

@@ -27,4 +27,26 @@ test.describe('Public Property Listings & Browsing', () => {
     const propertyGrid = page.locator('.property-grid, .properties-list, .grid');
     await expect(propertyGrid.first()).toBeVisible();
   });
+
+  test('should allow user to fill home page filter card and navigate with pre-filled filters', async ({
+    page,
+  }) => {
+    await page.goto('/');
+
+    // Verify hero filter card exists
+    const filterCard = page.locator('form:has(button[type="submit"])').first();
+    await expect(filterCard).toBeVisible();
+
+    // Select city
+    const citySelect = filterCard.locator('select').first();
+    await citySelect.selectOption('Phnom Penh');
+
+    // Submit search
+    const submitBtn = filterCard.locator('button[type="submit"]').first();
+    await submitBtn.click();
+
+    // Verify navigation to /properties with city query parameter
+    await page.waitForURL(/\/properties/);
+    expect(page.url()).toContain('city=Phnom+Penh');
+  });
 });

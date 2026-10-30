@@ -36,10 +36,10 @@ function handleSign() {
   <AppModal
     :is-open="!!lease"
     :title="t('leases.sign_modal_title')"
-    size="lg"
+    size="md"
     @close="emit('close')"
   >
-    <form v-if="lease" @submit.prevent="handleSign" class="space-y-4 p-6">
+    <form v-if="lease" id="sign-lease-form" @submit.prevent="handleSign" class="space-y-4">
       <div
         class="space-y-1.5 rounded-lg border border-neutral-200 bg-neutral-50 p-4 text-xs text-neutral-700 dark:border-neutral-800 dark:bg-neutral-800/50 dark:text-neutral-300"
       >
@@ -85,19 +85,22 @@ function handleSign() {
         />
         <span>{{ t('leases.agree_checkbox') }}</span>
       </label>
+    </form>
 
-      <div class="flex items-center justify-end gap-3 pt-2">
+    <template #footer>
+      <div v-if="lease" class="flex items-center justify-end gap-2.5">
         <button
           type="button"
           @click="emit('close')"
-          class="cursor-pointer rounded-lg border border-neutral-300 bg-white px-4 py-2 text-xs font-medium text-neutral-700 transition-colors hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-200 dark:hover:bg-neutral-700"
+          class="btn-secondary"
         >
           {{ t('common.cancel') }}
         </button>
         <button
           type="submit"
+          form="sign-lease-form"
           :disabled="!agreeToTerms || isSigning"
-          class="shadow-xs inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-primary-600 px-4 py-2 text-xs font-medium text-white transition-colors hover:bg-primary-700 disabled:opacity-50"
+          class="btn-primary"
         >
           <FileSignature :size="14" />
           <span>{{
@@ -105,6 +108,6 @@ function handleSign() {
           }}</span>
         </button>
       </div>
-    </form>
+    </template>
   </AppModal>
 </template>

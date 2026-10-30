@@ -77,9 +77,9 @@ function handleSubmit() {
     size="lg"
     @close="emit('close')"
   >
-    <form @submit.prevent="handleSubmit" class="flex flex-col gap-4 p-6">
+    <form id="unit-form" @submit.prevent="handleSubmit" class="flex flex-col gap-4">
       <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <div class="flex flex-col gap-1.5">
+        <div class="flex flex-col gap-2">
           <label
             for="u-number"
             class="text-xs font-semibold uppercase tracking-wider text-neutral-900 dark:text-neutral-100"
@@ -95,7 +95,7 @@ function handleSubmit() {
           />
         </div>
 
-        <div class="flex flex-col gap-1.5">
+        <div class="flex flex-col gap-2">
           <label
             for="u-floor"
             class="text-xs font-semibold uppercase tracking-wider text-neutral-900 dark:text-neutral-100"
@@ -113,7 +113,7 @@ function handleSubmit() {
       </div>
 
       <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <div class="flex flex-col gap-1.5">
+        <div class="flex flex-col gap-2">
           <label
             for="u-size"
             class="text-xs font-semibold uppercase tracking-wider text-neutral-900 dark:text-neutral-100"
@@ -129,7 +129,7 @@ function handleSubmit() {
           />
         </div>
 
-        <div class="flex flex-col gap-1.5">
+        <div class="flex flex-col gap-2">
           <label
             for="u-beds"
             class="text-xs font-semibold uppercase tracking-wider text-neutral-900 dark:text-neutral-100"
@@ -145,7 +145,7 @@ function handleSubmit() {
           />
         </div>
 
-        <div class="flex flex-col gap-1.5">
+        <div class="flex flex-col gap-2">
           <label
             for="u-baths"
             class="text-xs font-semibold uppercase tracking-wider text-neutral-900 dark:text-neutral-100"
@@ -164,7 +164,7 @@ function handleSubmit() {
       </div>
 
       <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <div class="flex flex-col gap-1.5">
+        <div class="flex flex-col gap-2">
           <label
             for="u-rent"
             class="text-xs font-semibold uppercase tracking-wider text-neutral-900 dark:text-neutral-100"
@@ -180,7 +180,7 @@ function handleSubmit() {
           />
         </div>
 
-        <div class="flex flex-col gap-1.5">
+        <div class="flex flex-col gap-2">
           <label
             for="u-deposit"
             class="text-xs font-semibold uppercase tracking-wider text-neutral-900 dark:text-neutral-100"
@@ -197,7 +197,7 @@ function handleSubmit() {
         </div>
       </div>
 
-      <div class="flex flex-col gap-1.5">
+      <div class="flex flex-col gap-2">
         <label
           for="u-status"
           class="text-xs font-semibold uppercase tracking-wider text-neutral-900 dark:text-neutral-100"
@@ -210,17 +210,17 @@ function handleSubmit() {
           <option value="MAINTENANCE">{{ t('properties.status.maintenance') }}</option>
         </select>
       </div>
+    </form>
 
-      <div
-        class="flex items-center justify-end gap-2 border-t border-neutral-100 pt-3 dark:border-neutral-800"
-      >
+    <template #footer>
+      <div class="flex items-center justify-end gap-2.5">
         <button type="button" @click="emit('close')" class="btn-secondary">
           {{ t('common.cancel') }}
         </button>
-        <button type="submit" :disabled="isSubmitting" class="btn-primary">
+        <button type="submit" form="unit-form" :disabled="isSubmitting" class="btn-primary">
           <span>{{ isSubmitting ? t('properties.saving') : t('properties.save_unit') }}</span>
         </button>
       </div>
-    </form>
+    </template>
   </AppModal>
 </template>

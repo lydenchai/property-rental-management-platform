@@ -269,14 +269,25 @@ onMounted(() => {
       <span>{{ errorMessage }}</span>
     </div>
 
-    <!-- Loading State -->
-    <div v-if="isLoading" class="flex flex-col items-center gap-3 py-20 text-center">
+    <!-- Loading Skeleton State -->
+    <div v-if="isLoading" class="flex flex-col gap-6 animate-pulse" aria-hidden="true">
       <div
-        class="h-8 w-8 animate-spin rounded-full border-2 border-neutral-300 border-t-blue-600"
+        class="shadow-xs flex flex-col justify-between gap-6 rounded-2xl border border-neutral-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-900 md:flex-row md:items-center"
+      >
+        <div class="flex flex-col gap-2 w-full max-w-md">
+          <div class="h-3 w-28 rounded bg-neutral-200 dark:bg-neutral-800" />
+          <div class="h-7 w-3/4 rounded-lg bg-neutral-200 dark:bg-neutral-800" />
+          <div class="h-3.5 w-1/2 rounded bg-neutral-200 dark:bg-neutral-800" />
+        </div>
+        <div class="flex items-center gap-3">
+          <div class="h-16 w-20 rounded-xl bg-neutral-100 dark:bg-neutral-800" />
+          <div class="h-16 w-20 rounded-xl bg-neutral-100 dark:bg-neutral-800" />
+          <div class="h-8 w-24 rounded-lg bg-neutral-200 dark:bg-neutral-800" />
+        </div>
+      </div>
+      <div
+        class="shadow-xs rounded-2xl border border-neutral-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-900 h-96"
       />
-      <p class="text-sm text-neutral-500 dark:text-neutral-400">
-        {{ t('properties.loading_property_units') }}
-      </p>
     </div>
 
     <div v-else-if="property" class="flex flex-col gap-6">

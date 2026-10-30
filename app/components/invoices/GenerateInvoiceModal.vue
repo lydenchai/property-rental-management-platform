@@ -40,11 +40,11 @@ function handleSubmit() {
   <AppModal
     :is-open="isOpen"
     :title="t('invoices.generate_modal_title')"
-    size="lg"
+    size="md"
     @close="emit('close')"
   >
-    <form @submit.prevent="handleSubmit" class="space-y-4 p-6">
-      <div class="space-y-1.5">
+    <form id="generate-invoice-form" @submit.prevent="handleSubmit" class="space-y-4">
+      <div class="space-y-2">
         <label class="block text-xs font-medium text-neutral-700 dark:text-neutral-300">
           {{ t('invoices.active_lease_select_label') }} *
         </label>
@@ -58,7 +58,7 @@ function handleSubmit() {
       </div>
 
       <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <div class="space-y-1.5">
+        <div class="space-y-2">
           <label class="block text-xs font-medium text-neutral-700 dark:text-neutral-300">
             {{ t('invoices.due_date') }} *
           </label>
@@ -69,7 +69,7 @@ function handleSubmit() {
             class="focus:outline-hidden w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 focus:ring-2 focus:ring-primary-500 dark:border-neutral-700 dark:bg-neutral-800 dark:text-white"
           />
         </div>
-        <div class="space-y-1.5">
+        <div class="space-y-2">
           <label class="block text-xs font-medium text-neutral-700 dark:text-neutral-300">
             {{ t('invoices.amount_due_label') }} *
           </label>
@@ -84,7 +84,7 @@ function handleSubmit() {
         </div>
       </div>
 
-      <div class="space-y-1.5">
+      <div class="space-y-2">
         <label class="block text-xs font-medium text-neutral-700 dark:text-neutral-300">
           {{ t('invoices.invoice_memo_label') }}
         </label>
@@ -95,19 +95,22 @@ function handleSubmit() {
           :placeholder="t('invoices.invoice_memo_placeholder')"
         />
       </div>
+    </form>
 
-      <div class="flex items-center justify-end gap-3 pt-2">
+    <template #footer>
+      <div class="flex items-center justify-end gap-2.5">
         <button
           type="button"
           @click="emit('close')"
-          class="cursor-pointer rounded-lg border border-neutral-300 bg-white px-4 py-2 text-xs font-medium text-neutral-700 transition-colors hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-200 dark:hover:bg-neutral-700"
+          class="btn-secondary"
         >
           {{ t('common.cancel') }}
         </button>
         <button
           type="submit"
+          form="generate-invoice-form"
           :disabled="isGenerating"
-          class="shadow-xs inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-primary-600 px-4 py-2 text-xs font-medium text-white transition-colors hover:bg-primary-700 disabled:opacity-50"
+          class="btn-primary"
         >
           <Plus :size="14" />
           <span>{{
@@ -115,6 +118,6 @@ function handleSubmit() {
           }}</span>
         </button>
       </div>
-    </form>
+    </template>
   </AppModal>
 </template>

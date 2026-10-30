@@ -47,6 +47,7 @@ export class PropertyService {
 
         return {
           ...property,
+          units,
           unitsCount: units.length,
           availableUnitsCount: availableUnits.length,
           minRent,
@@ -64,6 +65,12 @@ export class PropertyService {
       return enhanced.filter((prop) => {
         if (filter.minRent && prop.maxRent < filter.minRent) return false;
         if (filter.maxRent && prop.minRent > filter.maxRent) return false;
+        if (filter.bedrooms !== undefined) {
+          const hasMatchingBedrooms = (prop.units || []).some(
+            (u: any) => u.bedrooms >= filter.bedrooms!
+          );
+          if (!hasMatchingBedrooms) return false;
+        }
         return true;
       });
     }

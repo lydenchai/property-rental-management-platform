@@ -58,10 +58,10 @@ function handleSubmit() {
   <AppModal
     :is-open="!!invoice"
     :title="isTenant ? t('invoices.pay_rent_invoice_title') : t('invoices.record_payment')"
-    size="lg"
+    size="md"
     @close="emit('close')"
   >
-    <form v-if="invoice" @submit.prevent="handleSubmit" class="space-y-4 p-6">
+    <form v-if="invoice" id="record-payment-form" @submit.prevent="handleSubmit" class="space-y-4">
       <div
         class="space-y-1.5 rounded-lg border border-neutral-200 bg-neutral-50 p-4 text-xs text-neutral-700 dark:border-neutral-800 dark:bg-neutral-800/50 dark:text-neutral-300"
       >
@@ -92,7 +92,7 @@ function handleSubmit() {
       </div>
 
       <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <div class="space-y-1.5">
+        <div class="space-y-2">
           <label class="block text-xs font-medium text-neutral-700 dark:text-neutral-300">
             {{ t('invoices.amount_to_pay') }} *
           </label>
@@ -107,7 +107,7 @@ function handleSubmit() {
           />
         </div>
 
-        <div class="space-y-1.5">
+        <div class="space-y-2">
           <label class="block text-xs font-medium text-neutral-700 dark:text-neutral-300">
             {{ t('invoices.payment_method') }} *
           </label>
@@ -129,7 +129,7 @@ function handleSubmit() {
         </div>
       </div>
 
-      <div class="space-y-1.5">
+      <div class="space-y-2">
         <label class="block text-xs font-medium text-neutral-700 dark:text-neutral-300">
           {{ t('invoices.reference_number') }}
         </label>
@@ -141,7 +141,7 @@ function handleSubmit() {
         />
       </div>
 
-      <div class="space-y-1.5">
+      <div class="space-y-2">
         <label class="block text-xs font-medium text-neutral-700 dark:text-neutral-300">
           {{ t('invoices.payment_notes') }}
         </label>
@@ -152,24 +152,27 @@ function handleSubmit() {
           :placeholder="t('invoices.payment_notes')"
         />
       </div>
+    </form>
 
-      <div class="flex items-center justify-end gap-3 pt-2">
+    <template #footer>
+      <div v-if="invoice" class="flex items-center justify-end gap-2.5">
         <button
           type="button"
           @click="emit('close')"
-          class="cursor-pointer rounded-lg border border-neutral-300 bg-white px-4 py-2 text-xs font-medium text-neutral-700 transition-colors hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-200 dark:hover:bg-neutral-700"
+          class="btn-secondary"
         >
           {{ t('common.cancel') }}
         </button>
         <button
           type="submit"
+          form="record-payment-form"
           :disabled="isPaying"
-          class="shadow-xs inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-primary-600 px-4 py-2 text-xs font-medium text-white transition-colors hover:bg-primary-700 disabled:opacity-50"
+          class="btn-primary"
         >
           <DollarSign :size="14" />
           <span>{{ isPaying ? t('invoices.processing_btn') : t('invoices.confirm_payment') }}</span>
         </button>
       </div>
-    </form>
+    </template>
   </AppModal>
 </template>

@@ -59,10 +59,10 @@ function handleSubmit() {
         ? t('applications.approve_modal_title')
         : t('applications.reject_modal_title')
     "
-    size="lg"
+    size="md"
     @close="emit('close')"
   >
-    <form v-if="application" @submit.prevent="handleSubmit" class="space-y-4 p-6">
+    <form v-if="application" id="application-review-form" @submit.prevent="handleSubmit" class="space-y-4">
       <div
         v-if="error || localError"
         class="flex items-center gap-2 rounded-lg border border-rose-200 bg-rose-50 p-3 text-xs text-rose-700 dark:border-rose-900/40 dark:bg-rose-950/20 dark:text-rose-400"
@@ -109,7 +109,7 @@ function handleSubmit() {
         </div>
       </div>
 
-      <div class="space-y-1.5">
+      <div class="space-y-2">
         <label class="block text-xs font-semibold text-neutral-700 dark:text-neutral-300">
           {{ t('applications.review_notes_label') }}
         </label>
@@ -128,24 +128,22 @@ function handleSubmit() {
       >
         {{ t('applications.approval_auto_note', { unit: application.unit?.unitNumber || '' }) }}
       </p>
+    </form>
 
-      <div class="flex items-center justify-end gap-3 pt-2">
+    <template #footer>
+      <div v-if="application" class="flex items-center justify-end gap-2.5">
         <button
           type="button"
           @click="emit('close')"
-          class="cursor-pointer rounded-lg border border-neutral-300 bg-white px-4 py-2 text-xs font-medium text-neutral-700 transition-colors hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-200 dark:hover:bg-neutral-700"
+          class="btn-secondary"
         >
           {{ t('common.cancel') }}
         </button>
         <button
           type="submit"
+          form="application-review-form"
           :disabled="isSubmitting || reason.trim().length < 3"
-          :class="[
-            'shadow-xs cursor-pointer rounded-lg px-4 py-2 text-xs font-medium text-white transition-colors disabled:cursor-not-allowed disabled:opacity-50',
-            decision === 'REJECTED'
-              ? 'bg-rose-600 hover:bg-rose-700'
-              : 'bg-primary-600 hover:bg-primary-700',
-          ]"
+          :class="decision === 'REJECTED' ? 'btn-danger' : 'btn-primary'"
         >
           <span>{{
             isSubmitting
@@ -156,6 +154,6 @@ function handleSubmit() {
           }}</span>
         </button>
       </div>
-    </form>
+    </template>
   </AppModal>
 </template>

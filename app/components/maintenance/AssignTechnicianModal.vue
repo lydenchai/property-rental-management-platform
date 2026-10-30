@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue';
+import { ref } from 'vue';
 import { UserCheck } from '@lucide/vue';
 import type { MaintenanceItem } from '~~/shared/types';
 import AppModal from '../common/AppModal.vue';
 
 interface Props {
   ticket: MaintenanceItem | null;
+  technicians?: Array<{ id: string; fullName: string; email: string }>;
   isAssigning?: boolean;
 }
 
@@ -13,27 +14,27 @@ const props = defineProps<Props>();
 
 const emit = defineEmits<{
   (e: 'close'): void;
-  (e: 'submit', payload: { technicianId: string; notes?: string }): void;
+  (e: 'assign', data: { ticketId: string; technicianId: string; notes?: string }): void;
 }>();
 
 const { t } = useI18n();
 
-const technicianId = ref('user-tech-01');
+const selectedTechnicianId = ref('');
 const notes = ref('');
 
-watch(
-  () => props.ticket,
-  () => {
-    technicianId.value = 'user-tech-01';
-    notes.value = '';
-  }
-);
+// Pre-fill default technicians if not passed
+const defaultTechs = [
+  { id: 'tech-001', fullName: 'Alex Rivers', email: 'alex.rivers@rentease.com' },
+  { id: 'tech-002', fullName: 'Marcus Vance', email: 'marcus.v@rentease.com' },
+  { id: 'tech-003', fullName: 'Elena Rostova', email: 'elena.r@rentease.com' },
+];
 
 function handleSubmit() {
-  if (!props.ticket) return;
-  emit('submit', {
-    technicianId: technicianId.value,
-    notes: notes.value || undefined,
+  if (!props.ticket || !selectedTechnicianId.value) return;
+  emit('assign', {
+    ticketId: props.ticket.id,
+    technicianId: selectedTechnicianId.value,
+    notes: notes.value,
   });
 }
 </script>
@@ -42,10 +43,10 @@ function handleSubmit() {
   <AppModal
     :is-open="!!ticket"
     :title="t('maintenance.assign_modal_title')"
-    size="lg"
+    size="md"
     @close="emit('close')"
   >
-    <form v-if="ticket" @submit.prevent="handleSubmit" class="space-y-4 p-6">
+    <form v-if="ticket" id="assign-tech-form" @submit.prevent="handleSubmit" class="space-y-4">
       <div
         class="space-y-1.5 rounded-lg border border-neutral-200 bg-neutral-50 p-4 text-xs text-neutral-700 dark:border-neutral-800 dark:bg-neutral-800/50 dark:text-neutral-300"
       >
@@ -67,21 +68,27 @@ function handleSubmit() {
         </div>
       </div>
 
-      <div class="space-y-1.5">
-        <label class="block text-xs font-medium text-neutral-700 dark:text-neutral-300">{{
-          t('maintenance.select_technician')
-        }}</label>
+      <div class="space-y-2">
+        <label class="block text-xs font-medium text-neutral-700 dark:text-neutral-300">
+          {{ t('maintenance.select_technician') }} *
+        </label>
         <select
-          v-model="technicianId"
+          v-model="selectedTechnicianId"
           required
           class="focus:outline-hidden w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 focus:ring-2 focus:ring-primary-500 dark:border-neutral-700 dark:bg-neutral-800 dark:text-white"
         >
-          <option value="user-tech-01">Alex Rivers (Licensed HVAC & Plumbing Specialist)</option>
-          <option value="user-technician-01">Dave Miller (General Building Maintenance)</option>
+          <option value="" disabled>{{ t('maintenance.choose_technician') }}</option>
+          <option
+            v-for="tech in technicians && technicians.length > 0 ? technicians : defaultTechs"
+            :key="tech.id"
+            :value="tech.id"
+          >
+            {{ tech.fullName }} ({{ tech.email }})
+          </option>
         </select>
       </div>
 
-      <div class="space-y-1.5">
+      <div class="space-y-2">
         <label class="block text-xs font-medium text-neutral-700 dark:text-neutral-300">{{
           t('maintenance.dispatch_notes')
         }}</label>
@@ -92,19 +99,22 @@ function handleSubmit() {
           placeholder="Optional notes, access instructions, or tools needed..."
         ></textarea>
       </div>
+    </form>
 
-      <div class="flex items-center justify-end gap-3 pt-2">
+    <template #footer>
+      <div v-if="ticket" class="flex items-center justify-end gap-2.5">
         <button
           type="button"
           @click="emit('close')"
-          class="cursor-pointer rounded-lg border border-neutral-300 bg-white px-4 py-2 text-xs font-medium text-neutral-700 transition-colors hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-200 dark:hover:bg-neutral-700"
+          class="btn-secondary"
         >
           {{ t('common.cancel') }}
         </button>
         <button
           type="submit"
+          form="assign-tech-form"
           :disabled="isAssigning"
-          class="shadow-xs inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-primary-600 px-4 py-2 text-xs font-medium text-white transition-colors hover:bg-primary-700 disabled:opacity-50"
+          class="btn-primary"
         >
           <UserCheck :size="14" />
           <span>{{
@@ -112,6 +122,6 @@ function handleSubmit() {
           }}</span>
         </button>
       </div>
-    </form>
+    </template>
   </AppModal>
 </template>
