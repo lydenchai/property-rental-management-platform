@@ -4,6 +4,8 @@ import { Building2, Menu, X } from '@lucide/vue';
 import { useAuth } from '../composables/useAuth';
 import ThemeToggle from '../components/common/ThemeToggle.vue';
 import LanguageSwitcher from '../components/common/LanguageSwitcher.vue';
+import NotificationBell from '../components/common/NotificationBell.vue';
+import AppToastContainer from '../components/common/AppToastContainer.vue';
 
 const { t } = useI18n();
 const { isAuthenticated, logout } = useAuth();
@@ -77,6 +79,7 @@ watch(
         <div class="flex items-center gap-1.5 sm:gap-2.5">
           <LanguageSwitcher />
           <ThemeToggle />
+          <NotificationBell v-if="isAuthenticated" />
 
           <!-- Desktop Auth Buttons -->
           <div class="hidden items-center gap-2 sm:flex">
@@ -385,5 +388,8 @@ watch(
         </div>
       </div>
     </footer>
+
+    <!-- Global Toast Notifications -->
+    <AppToastContainer />
   </div>
 </template>

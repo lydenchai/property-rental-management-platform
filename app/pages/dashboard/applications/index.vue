@@ -10,6 +10,7 @@ import {
   X,
 } from '@lucide/vue';
 import { useAuth } from '../../../composables/useAuth';
+import { useToast } from '../../../composables/useToast';
 import { useApplicationStore } from '../../../stores/application.store';
 import type { ApplicationItem, TableColumn } from '~~/shared/types';
 import AppTableCard from '../../../components/common/AppTableCard.vue';
@@ -40,6 +41,7 @@ const {
 const { loadApplications, reviewApplication } = applicationStore;
 
 const successMessage = ref<string | null>(null);
+const toast = useToast();
 const activeTab = ref<'ALL' | 'PENDING' | 'APPROVED' | 'REJECTED'>('ALL');
 const searchQuery = ref('');
 
@@ -116,8 +118,9 @@ async function handleSubmitReview(payload: { applicationId: string; reason: stri
   })) as any;
 
   if (res.success) {
-    successMessage.value =
-      res.message || `Application ${reviewDecision.value.toLowerCase()} successfully.`;
+    const msg = res.message || `Application ${reviewDecision.value.toLowerCase()} successfully.`;
+    successMessage.value = msg;
+    toast.success(msg);
     appToReview.value = null;
     reviewError.value = null;
     setTimeout(() => {

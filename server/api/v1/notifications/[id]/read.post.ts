@@ -1,4 +1,4 @@
-import { defineEventHandler } from 'h3';
+import { defineEventHandler, getRouterParam } from 'h3';
 import { notificationRepository } from '../../../../repositories/notification.repo';
 import { requireAuth } from '../../../../utils/permissions';
 import { createApiResponse, handleApiError, createValidationError } from '../../../../utils/errors';
@@ -6,13 +6,14 @@ import { createApiResponse, handleApiError, createValidationError } from '../../
 export default defineEventHandler(async (event) => {
   try {
     const user = requireAuth(event);
-    const id = event.context.params?.id;
+    const id = getRouterParam(event, 'id') || event.context.params?.id;
 
     if (!id) {
       throw createValidationError('Notification ID is required');
     }
 
-    const updated = await notificationRepository.markAsRead(id, user.id);
+    const isAdmin = user.role === 'ADMIN';
+    const updated = await notificationRepository.markAsRead(id, user.id, isAdmin);
 
     return createApiResponse({
       notification: updated,

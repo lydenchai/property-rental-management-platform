@@ -4,6 +4,7 @@ import { leaseRepository } from '../repositories/lease.repo';
 import { propertyRepository } from '../repositories/property.repo';
 import { unitRepository } from '../repositories/unit.repo';
 import { userRepository } from '../repositories/user.repo';
+import { notificationRepository } from '../repositories/notification.repo';
 import {
   GenerateInvoiceSchema,
   RecordPaymentSchema,
@@ -52,6 +53,17 @@ export class BillingService {
       status: initialStatus,
       notes: validated.notes,
     });
+
+    // Notify tenant of new invoice
+    if (lease.tenantId) {
+      await notificationRepository.create({
+        userId: lease.tenantId,
+        title: 'New Invoice Issued',
+        message: `Invoice #${invoiceNumber} for $${validated.amountDue} has been issued. Due on ${dueDate.toISOString().split('T')[0]}.`,
+        type: 'INFO',
+        link: '/dashboard/invoices',
+      }).catch(() => {});
+    }
 
     const enriched = await this.enrichInvoice(invoice);
     return enriched;
@@ -106,6 +118,24 @@ export class BillingService {
       amountPaid: newAmountPaid,
       status: newStatus,
     });
+
+    // Notify tenant and admin of payment confirmation
+    if (lease?.tenantId) {
+      await notificationRepository.create({
+        userId: lease.tenantId,
+        title: 'Payment Confirmed',
+        message: `Your payment of $${validated.amount} for invoice ${invoice.invoiceNumber} has been confirmed.`,
+        type: 'SUCCESS',
+        link: '/dashboard/invoices',
+      }).catch(() => {});
+    }
+    await notificationRepository.create({
+      userId: 'user-admin-01',
+      title: 'Payment Received',
+      message: `Payment of $${validated.amount} recorded for invoice ${invoice.invoiceNumber}.`,
+      type: 'SUCCESS',
+      link: '/dashboard/invoices',
+    }).catch(() => {});
 
     const enrichedInvoice = await this.enrichInvoice(updatedInvoice || invoice);
 

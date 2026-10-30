@@ -17,6 +17,7 @@ import {
   AlertCircle,
 } from '@lucide/vue';
 import { useAuth } from '../../../composables/useAuth';
+import { useToast } from '../../../composables/useToast';
 import { useMaintenanceStore } from '../../../stores/maintenance.store';
 import type {
   MaintenanceItem,
@@ -62,6 +63,7 @@ const {
 } = maintenanceStore;
 
 const successMessage = ref<string | null>(null);
+const toast = useToast();
 
 // Filters
 const activeTab = ref<
@@ -154,7 +156,9 @@ watch([activeTab, searchQuery], () => {
 async function executeCreateTicket(formData: CreateMaintenanceFormData) {
   const res = (await maintenanceStore.createTicket(formData)) as any;
   if (res.success) {
-    successMessage.value = res.message || 'Maintenance ticket created successfully';
+    const msg = res.message || 'Maintenance ticket created successfully';
+    successMessage.value = msg;
+    toast.success(msg);
     isCreateModalOpen.value = false;
     setTimeout(() => {
       successMessage.value = null;
@@ -170,7 +174,9 @@ async function executeAssign(payload: { technicianId: string; notes?: string }) 
   if (!ticketToAssign.value) return;
   const res = (await maintenanceStore.assignTechnician(ticketToAssign.value.id, payload)) as any;
   if (res.success) {
-    successMessage.value = res.message || 'Technician assigned successfully';
+    const msg = res.message || 'Technician assigned successfully';
+    successMessage.value = msg;
+    toast.success(msg);
     ticketToAssign.value = null;
     setTimeout(() => {
       successMessage.value = null;
@@ -191,13 +197,16 @@ async function executeUpdateProgress(payload: {
   updateError.value = null;
   const res = (await maintenanceStore.updateProgress(ticketToUpdate.value.id, payload)) as any;
   if (res.success) {
-    successMessage.value = res.message || 'Progress updated successfully';
+    const msg = res.message || 'Progress updated successfully';
+    successMessage.value = msg;
+    toast.success(msg);
     ticketToUpdate.value = null;
     setTimeout(() => {
       successMessage.value = null;
     }, 4000);
   } else {
     updateError.value = res.error || 'Failed to update progress';
+    toast.error(updateError.value);
   }
 }
 
@@ -211,7 +220,9 @@ async function executeConfirmResolution(ticketId: string) {
     feedback: '',
   })) as any;
   if (res.success) {
-    successMessage.value = res.message || 'Ticket closed and resolution confirmed';
+    const msg = res.message || 'Ticket closed and resolution confirmed';
+    successMessage.value = msg;
+    toast.success(msg);
     ticketToConfirm.value = null;
     setTimeout(() => {
       successMessage.value = null;

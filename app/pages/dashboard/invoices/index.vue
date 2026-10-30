@@ -15,6 +15,7 @@ import {
   X,
 } from '@lucide/vue';
 import { useAuth } from '../../../composables/useAuth';
+import { useToast } from '../../../composables/useToast';
 import { useInvoiceStore } from '../../../stores/invoice.store';
 import type { InvoiceItem, TableColumn } from '~~/shared/types';
 import AppTableCard from '../../../components/common/AppTableCard.vue';
@@ -54,6 +55,7 @@ const {
 const { fetchInvoices, loadInvoices, generateInvoice, recordPayment, viewReceipt } = invoiceStore;
 
 const successMessage = ref<string | null>(null);
+const toast = useToast();
 
 // Filters
 const activeTab = ref<'ALL' | 'UNPAID' | 'PARTIALLY_PAID' | 'PAID' | 'OVERDUE'>('ALL');
@@ -149,7 +151,9 @@ async function executeGenerateInvoice(formData: GenerateInvoiceFormData) {
   })) as any;
 
   if (res.success) {
-    successMessage.value = res.message || 'Invoice generated successfully';
+    const msg = res.message || 'Invoice generated successfully';
+    successMessage.value = msg;
+    toast.success(msg);
     isGenerateModalOpen.value = false;
     setTimeout(() => {
       successMessage.value = null;
@@ -172,7 +176,9 @@ async function executeRecordPayment(paymentData: PaymentFormData) {
   })) as any;
 
   if (res.success) {
-    successMessage.value = res.message || 'Payment recorded successfully';
+    const msg = res.message || 'Payment recorded successfully';
+    successMessage.value = msg;
+    toast.success(msg);
     const paymentId = res.payment?.id;
     invoiceToPay.value = null;
 

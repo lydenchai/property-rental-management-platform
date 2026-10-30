@@ -57,6 +57,16 @@ export class MaintenanceService {
       });
     }
 
+    // Notify admin
+    await notificationRepository.create({
+      userId: 'user-admin-01',
+      title: `Maintenance: ${validated.priority} Priority`,
+      message: `New ticket "${validated.title}" submitted for Unit ${unit.unitNumber}.`,
+      type:
+        validated.priority === 'HIGH' || validated.priority === 'EMERGENCY' ? 'WARNING' : 'INFO',
+      link: '/dashboard/maintenance',
+    }).catch(() => {});
+
     return this.enrichRequest(request);
   }
 
@@ -110,6 +120,15 @@ export class MaintenanceService {
       type: 'INFO',
       link: '/dashboard/maintenance',
     });
+
+    // Notify admin
+    await notificationRepository.create({
+      userId: 'user-admin-01',
+      title: 'Technician Assigned',
+      message: `${technician.fullName} assigned to "${request.title}" at Unit ${unit?.unitNumber || ''}.`,
+      type: 'INFO',
+      link: '/dashboard/maintenance',
+    }).catch(() => {});
 
     return this.enrichRequest(updated || request);
   }

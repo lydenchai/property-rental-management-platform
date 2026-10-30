@@ -6,7 +6,8 @@ import { createApiResponse, handleApiError } from '../../../utils/errors';
 export default defineEventHandler(async (event) => {
   try {
     const user = requireAuth(event);
-    const count = await notificationRepository.markAllAsRead(user.id);
+    const isAdmin = user.role === 'ADMIN';
+    const count = await notificationRepository.markAllAsRead(user.id, isAdmin);
 
     return createApiResponse({
       markedCount: count,

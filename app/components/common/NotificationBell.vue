@@ -5,11 +5,14 @@ import type { ApiResponse } from '../../../shared/types/api';
 import type { NotificationDetail } from '../../../shared/types/notification';
 
 const { t } = useI18n();
+const containerRef = ref<HTMLElement | null>(null);
 const isOpen = ref(false);
+const isLoading = ref(false);
 const notifications = ref<NotificationDetail[]>([]);
 const unreadCount = ref(0);
 
 async function fetchNotifications() {
+  isLoading.value = true;
   try {
     const res =
       await $fetch<ApiResponse<{ notifications: NotificationDetail[]; unreadCount: number }>>(
@@ -21,33 +24,37 @@ async function fetchNotifications() {
     }
   } catch (err) {
     // Silent fail for polling
+  } finally {
+    isLoading.value = false;
   }
 }
 
-async function markAsRead(id: string, link?: string | null) {
-  try {
-    await $fetch(`/api/v1/notifications/${id}/read`, { method: 'POST' });
-    const target = notifications.value.find((n) => n.id === id);
-    if (target && !target.isRead) {
-      target.isRead = true;
-      unreadCount.value = Math.max(0, unreadCount.value - 1);
-    }
-    if (link) {
-      isOpen.value = false;
-      await navigateTo(link);
-    }
-  } catch (err) {
-    // Ignore error
+async function toggleDropdown() {
+  isOpen.value = !isOpen.value;
+  if (isOpen.value) {
+    await fetchNotifications();
+  }
+}
+
+async function handleNotificationClick(notif: NotificationDetail) {
+  if (!notif.isRead) {
+    notif.isRead = true;
+    unreadCount.value = Math.max(0, unreadCount.value - 1);
+    $fetch(`/api/v1/notifications/${notif.id}/read`, { method: 'POST' }).catch(() => {});
+  }
+  isOpen.value = false;
+  if (notif.link) {
+    await navigateTo(notif.link);
   }
 }
 
 async function markAllRead() {
   try {
-    await $fetch('/api/v1/notifications/read-all', { method: 'POST' });
     notifications.value.forEach((n) => {
       n.isRead = true;
     });
     unreadCount.value = 0;
+    await $fetch('/api/v1/notifications/read-all', { method: 'POST' });
   } catch (err) {
     // Ignore error
   }
@@ -62,42 +69,62 @@ function timeAgo(dateStr: string | Date) {
   return t('notifications.days_ago', { count: Math.floor(diffSec / 86400) });
 }
 
-let pollInterval: any = null;
+function handleDocumentClick(event: MouseEvent) {
+  if (isOpen.value && containerRef.value && !containerRef.value.contains(event.target as Node)) {
+    isOpen.value = false;
+  }
+}
+
+function handleKeydown(event: KeyboardEvent) {
+  if (event.key === 'Escape' && isOpen.value) {
+    isOpen.value = false;
+  }
+}
+
+let pollInterval: ReturnType<typeof setInterval> | null = null;
 
 onMounted(() => {
   fetchNotifications();
   pollInterval = setInterval(fetchNotifications, 15000);
+  document.addEventListener('click', handleDocumentClick);
+  document.addEventListener('keydown', handleKeydown);
 });
 
 onUnmounted(() => {
   if (pollInterval) clearInterval(pollInterval);
+  document.removeEventListener('click', handleDocumentClick);
+  document.removeEventListener('keydown', handleKeydown);
 });
 </script>
 
 <template>
-  <div class="relative">
+  <div ref="containerRef" class="relative">
     <button
-      @click="isOpen = !isOpen"
-      class="relative flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg border border-neutral-200 bg-white text-neutral-600 transition-colors hover:border-neutral-300 hover:text-neutral-900 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:border-neutral-600 dark:hover:text-white"
-      :class="{ 'border-primary-500 text-primary-600 dark:text-primary-400': isOpen }"
+      type="button"
+      @click="toggleDropdown"
+      class="relative flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg border border-neutral-200 bg-white text-neutral-600 transition-colors hover:border-neutral-300 hover:text-neutral-900 dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-300 dark:hover:border-neutral-700 dark:hover:text-white"
+      :class="{ 'border-blue-600 text-blue-600 dark:border-blue-500 dark:text-blue-400': isOpen }"
       :title="t('notifications.title')"
+      aria-label="Toggle notifications menu"
+      :aria-expanded="isOpen"
     >
       <Bell :size="16" />
       <span
         v-if="unreadCount > 0"
-        class="absolute -right-1 -top-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-primary-600 px-1 text-[10px] font-bold text-white ring-2 ring-white dark:ring-neutral-900"
+        class="absolute -right-1 -top-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-blue-600 px-1 text-[10px] font-bold text-white ring-2 ring-white dark:ring-neutral-900"
       >
-        {{ unreadCount }}
+        {{ unreadCount > 99 ? '99+' : unreadCount }}
       </span>
     </button>
 
     <!-- Dropdown Menu -->
     <div
       v-if="isOpen"
-      class="absolute right-0 top-full z-50 mt-2 w-80 overflow-hidden rounded-xl border border-neutral-200 bg-white shadow-xl dark:border-neutral-800 dark:bg-neutral-900 sm:w-96"
+      class="absolute right-0 top-full z-50 mt-2 w-80 max-w-[calc(100vw-1.5rem)] overflow-hidden rounded-xl border border-neutral-200 bg-white shadow-xl dark:border-neutral-800 dark:bg-neutral-900 sm:w-96"
     >
+      <!-- Header -->
       <div
-        class="flex items-center justify-between border-b border-neutral-200 px-4 py-3 dark:border-neutral-800"
+        class="flex items-center justify-between border-b border-neutral-100 px-4 py-3 dark:border-neutral-800"
       >
         <div class="flex items-center gap-2">
           <span class="text-sm font-semibold text-neutral-900 dark:text-white">{{
@@ -105,7 +132,7 @@ onUnmounted(() => {
           }}</span>
           <span
             v-if="unreadCount > 0"
-            class="rounded-full border border-primary-200 bg-primary-50 px-2 py-0.5 text-[10px] font-medium text-primary-700 dark:border-primary-800 dark:bg-primary-950/40 dark:text-primary-300"
+            class="rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-[10px] font-medium text-blue-700 dark:border-blue-900/50 dark:bg-blue-950/40 dark:text-blue-300"
           >
             {{ t('notifications.new', { count: unreadCount }) }}
           </span>
@@ -113,22 +140,26 @@ onUnmounted(() => {
         <div class="flex items-center gap-2">
           <button
             v-if="unreadCount > 0"
+            type="button"
             @click="markAllRead"
-            class="inline-flex cursor-pointer items-center gap-1 text-xs text-primary-600 hover:underline dark:text-primary-400"
+            class="inline-flex cursor-pointer items-center gap-1 text-xs text-blue-600 hover:underline dark:text-blue-400"
             :title="t('notifications.mark_all_read')"
           >
             <CheckCheck :size="13" />
             <span>{{ t('notifications.mark_all_read') }}</span>
           </button>
           <button
+            type="button"
             @click="isOpen = false"
             class="cursor-pointer text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200"
+            aria-label="Close"
           >
             <X :size="16" />
           </button>
         </div>
       </div>
 
+      <!-- Notifications List -->
       <div class="max-h-80 overflow-y-auto">
         <div
           v-if="notifications.length === 0"
@@ -143,8 +174,8 @@ onUnmounted(() => {
             v-for="notif in notifications"
             :key="notif.id"
             class="flex cursor-pointer items-start gap-3 p-3.5 transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-800/40"
-            :class="{ 'bg-primary-50/30 dark:bg-primary-950/10': !notif.isRead }"
-            @click="markAsRead(notif.id, notif.link)"
+            :class="{ 'bg-blue-50/40 dark:bg-blue-950/20': !notif.isRead }"
+            @click="handleNotificationClick(notif)"
           >
             <div class="shrink-0 pt-0.5">
               <span
@@ -155,10 +186,17 @@ onUnmounted(() => {
                   'bg-blue-500': notif.type === 'INFO',
                   'bg-rose-500': notif.type === 'ERROR',
                 }"
-              ></span>
+              />
             </div>
             <div class="min-w-0 flex-1 space-y-0.5">
-              <div class="truncate text-xs font-semibold text-neutral-900 dark:text-white">
+              <div
+                class="truncate text-xs font-semibold"
+                :class="
+                  notif.isRead
+                    ? 'text-neutral-700 dark:text-neutral-300'
+                    : 'text-neutral-900 dark:text-white font-bold'
+                "
+              >
                 {{ notif.title }}
               </div>
               <div
@@ -172,8 +210,8 @@ onUnmounted(() => {
             </div>
             <div
               v-if="!notif.isRead"
-              class="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-primary-600"
-            ></div>
+              class="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-blue-600 dark:bg-blue-500"
+            />
           </div>
         </div>
       </div>
